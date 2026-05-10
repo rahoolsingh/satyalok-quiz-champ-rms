@@ -8,6 +8,8 @@ function makeConfig(overrides: Partial<PortalConfiguration> = {}): PortalConfigu
     openingDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
     closingDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
     manualStatus: 'AUTO',
+    feeJunior: 100,
+    feeSenior: 150,
     createdAt: now,
     updatedAt: now,
     ...overrides,
