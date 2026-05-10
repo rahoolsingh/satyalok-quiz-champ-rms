@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import https from 'https';
+import axios from 'axios';
 import { OTPVerification } from '../db/models';
 
 const OTP_EXPIRY_MINUTES = 5;
@@ -59,7 +59,7 @@ export async function verifyOTP(
 }
 
 /**
- * Sends OTP via 2Factor API (https://2factor.in).
+ * Sends OTP via a custom SMS API (axios, x-api-key auth).
  * Falls back to console log in mock mode.
  */
 export async function sendOTP(mobileNumber: string, otp: string): Promise<void> {
@@ -70,37 +70,37 @@ export async function sendOTP(mobileNumber: string, otp: string): Promise<void> 
     return;
   }
 
-  if (provider === '2factor') {
-    const apiKey = process.env.TWOFACTOR_API_KEY;
-    if (!apiKey) throw new Error('TWOFACTOR_API_KEY is not set');
+  if (provider === 'api') {
+    const smsApiUrl = process.env.SMS_API_URL;
+    const smsApiKey = process.env.SMS_API_KEY;
+    if (!smsApiUrl) throw new Error('SMS_API_URL is not set');
+    if (!smsApiKey) throw new Error('SMS_API_KEY is not set');
 
-    // 2Factor transactional SMS — send a custom OTP (no AUTOGEN suffix)
-    // GET https://2factor.in/API/V1/{api_key}/SMS/{phone}/{otp}
-    const url = `https://2factor.in/API/V1/${apiKey}/SMS/${mobileNumber}/${otp}`;
+    const message = otpTemplate(otp);
 
-    await new Promise<void>((resolve, reject) => {
-      https
-        .get(url, (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.Status === 'Success') {
-                resolve();
-              } else {
-                reject(new Error(`2Factor error: ${parsed.Details || data}`));
-              }
-            } catch {
-              reject(new Error(`2Factor unexpected response: ${data}`));
-            }
-          });
-        })
-        .on('error', reject);
-    });
+    const response = await axios.post(
+      smsApiUrl,
+      { mobileNumber, message },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': smsApiKey,
+        },
+      }
+    );
+
+    if (!response.data?.success) {
+      throw new Error(`SMS API error: ${response.data?.message || 'Unknown error'}`);
+    }
 
     return;
   }
 
   throw new Error(`SMS provider "${provider}" is not supported`);
+}
+
+// ─── SMS template ─────────────────────────────────────────────────────────────
+
+function otpTemplate(otp: string): string {
+  return `Your Quiz Champ 2026 OTP is: ${otp}. Valid for 5 minutes. Do not share this with anyone.`;
 }
