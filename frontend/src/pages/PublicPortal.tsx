@@ -9,6 +9,7 @@ import { OTPVerification } from '../components/OTPVerification';
 import { PaymentGateway } from '../components/PaymentGateway';
 import { AdmitCard } from '../components/AdmitCard';
 import { ResultChecker } from '../components/ResultChecker';
+import { SatyalokBadge } from '../components/SatyalokBadge';
 import { SliderImage, BatchType, PaymentSession, AdmitCardData } from '../types';
 import { portalApi } from '../api/client';
 
@@ -51,7 +52,8 @@ export function PublicPortal() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: 'center', maxWidth: 480 }}>
           <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0071e3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Quiz Champ 2026</p>
           <h1 style={{ fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#1d1d1f', marginBottom: 12 }}>Coming Soon</h1>
-          <p style={{ color: '#86868b', lineHeight: 1.6 }}>Registration is currently closed. Stay tuned for updates.</p>
+          <p style={{ color: '#86868b', lineHeight: 1.6, marginBottom: 32 }}>Registration is currently closed. Stay tuned for updates.</p>
+          <SatyalokBadge variant="footer" />
         </motion.div>
       </div>
     );
@@ -97,6 +99,7 @@ export function PublicPortal() {
           {isFlow ? (
             <motion.div key={step} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               {flowContent()}
+              <SatyalokBadge variant="footer" />
             </motion.div>
           ) : (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
@@ -106,9 +109,10 @@ export function PublicPortal() {
                 <h1 style={{ fontSize: 'clamp(2rem,5vw,3.2rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#1d1d1f', marginBottom: 10 }}>
                   Quiz Champ 2026
                 </h1>
-                <p style={{ color: '#86868b', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 480 }}>
+                <p style={{ color: '#86868b', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 480, marginBottom: 16 }}>
                   The ultimate knowledge championship for students across all classes.
                 </p>
+                <SatyalokBadge variant="inline" />
               </motion.div>
 
               {/* Slider */}
@@ -127,6 +131,8 @@ export function PublicPortal() {
                   <ResultChecker />
                 </motion.div>
               )}
+
+              <SatyalokBadge variant="footer" />
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SatyalokBadge } from './SatyalokBadge';
 
 function ParticleCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -100,7 +101,8 @@ export function CountdownTimer({ targetDate, onComplete }: { targetDate: string;
           <Unit value={tl.seconds} label="Seconds" />
         </div>
         <hr style={{ border: 'none', borderTop: '1px solid #d2d2d7', margin: '40px auto', maxWidth: 320 }} />
-        <p style={{ color: '#86868b', fontSize: '0.9rem' }}>Stay tuned — something extraordinary is coming</p>
+        <p style={{ color: '#86868b', fontSize: '0.9rem', marginBottom: 24 }}>Stay tuned — something extraordinary is coming</p>
+        <SatyalokBadge variant="footer" />
       </motion.div>
     </div>
   );
