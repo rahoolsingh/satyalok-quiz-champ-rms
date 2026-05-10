@@ -28,6 +28,8 @@ export async function getPortalConfig(): Promise<PortalConfiguration | null> {
     closingDate: doc.closingDate,
     manualStatus: doc.manualStatus,
     resultPublicationDate: doc.resultPublicationDate,
+    feeJunior: doc.feeJunior ?? 100,
+    feeSenior: doc.feeSenior ?? 150,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };

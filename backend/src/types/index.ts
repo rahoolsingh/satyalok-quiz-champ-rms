@@ -38,6 +38,8 @@ export interface PortalConfiguration {
   closingDate: Date;
   manualStatus: ManualStatus;
   resultPublicationDate?: Date;
+  feeJunior: number;
+  feeSenior: number;
   createdAt: Date;
   updatedAt: Date;
 }

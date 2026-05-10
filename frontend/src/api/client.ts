@@ -51,4 +51,7 @@ export const adminApi = {
     api.put('/admin/results/publish', { publicationDate }),
   getRegistrations: (params?: object) =>
     api.get('/admin/registrations', { params }),
+  getFees: () => api.get('/admin/portal/fees'),
+  updateFees: (feeJunior: number, feeSenior: number) =>
+    api.put('/admin/portal/fees', { feeJunior, feeSenior }),
 };

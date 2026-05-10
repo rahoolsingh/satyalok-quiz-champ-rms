@@ -3,12 +3,14 @@ import { DateConfiguration } from './DateConfiguration';
 import { SliderManager } from './SliderManager';
 import { ResultUploader } from './ResultUploader';
 import { RegistrationList } from './RegistrationList';
+import { FeeConfiguration } from './FeeConfiguration';
 
-type Tab = 'registrations' | 'dates' | 'slider' | 'results';
+type Tab = 'registrations' | 'dates' | 'fees' | 'slider' | 'results';
 
 const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: 'registrations', label: 'Registrations', icon: '👥' },
   { id: 'dates', label: 'Portal Dates', icon: '📅' },
+  { id: 'fees', label: 'Fees', icon: '💰' },
   { id: 'slider', label: 'Slider Images', icon: '🖼️' },
   { id: 'results', label: 'Results', icon: '📊' },
 ];
@@ -45,6 +47,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <main className="flex-1 bg-[#f5f5f7] p-8 overflow-y-auto">
         {active === 'registrations' && <RegistrationList />}
         {active === 'dates' && <DateConfiguration />}
+        {active === 'fees' && <FeeConfiguration />}
         {active === 'slider' && <SliderManager />}
         {active === 'results' && <ResultUploader />}
       </main>

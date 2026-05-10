@@ -73,7 +73,7 @@ registrationRouter.post('/verify-otp', async (req: Request, res: Response) => {
     }
 
     // Compute fee server-side from batchType — never trust client amount
-    const amount = getRegistrationFee(participant.batchType);
+    const amount = await getRegistrationFee(participant.batchType);
     const merchantTransactionId = generateMerchantTransactionId();
 
     // Persist merchantTransactionId before calling PGS so we can look it up on callback

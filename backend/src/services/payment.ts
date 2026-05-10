@@ -1,21 +1,22 @@
 import { BatchType } from '../types';
+import { PortalConfig } from '../db/models';
 
-// ─── Fee table ────────────────────────────────────────────────────────────────
-const REGISTRATION_FEES: Record<BatchType, number> = {
+// ─── Default fees (used if DB not yet configured) ─────────────────────────────
+const DEFAULT_FEES: Record<BatchType, number> = {
   JUNIOR: 100,
   SENIOR: 150,
 };
 
 /**
- * Returns the canonical registration fee for a given batch type.
+ * Returns the registration fee for a given batch type.
+ * Reads from PortalConfig in DB; falls back to defaults if not set.
  * The fee is derived solely from batchType — never from client input.
  */
-export function getRegistrationFee(batchType: BatchType): number {
-  const fee = REGISTRATION_FEES[batchType];
-  if (fee === undefined) {
-    throw new Error(`Unknown batchType: ${batchType}`);
-  }
-  return fee;
+export async function getRegistrationFee(batchType: BatchType): Promise<number> {
+  const config = await PortalConfig.findOne().lean();
+  if (batchType === 'JUNIOR') return config?.feeJunior ?? DEFAULT_FEES.JUNIOR;
+  if (batchType === 'SENIOR') return config?.feeSenior ?? DEFAULT_FEES.SENIOR;
+  throw new Error(`Unknown batchType: ${batchType}`);
 }
 
 // ─── Merchant Transaction ID ──────────────────────────────────────────────────

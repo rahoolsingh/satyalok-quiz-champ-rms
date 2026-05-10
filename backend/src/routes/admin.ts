@@ -248,6 +248,42 @@ adminRouter.put('/results/publish', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/admin/portal/fees
+adminRouter.get('/portal/fees', async (_req: AuthRequest, res: Response) => {
+  try {
+    const config = await PortalConfig.findOne().lean();
+    return res.json({
+      feeJunior: config?.feeJunior ?? 100,
+      feeSenior: config?.feeSenior ?? 150,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to get fees' });
+  }
+});
+
+// PUT /api/admin/portal/fees
+adminRouter.put('/portal/fees', async (req: AuthRequest, res: Response) => {
+  try {
+    const { feeJunior, feeSenior } = req.body;
+    if (typeof feeJunior !== 'number' || typeof feeSenior !== 'number') {
+      return res.status(400).json({ error: 'feeJunior and feeSenior must be numbers' });
+    }
+    if (feeJunior <= 0 || feeSenior <= 0) {
+      return res.status(400).json({ error: 'Fees must be greater than 0' });
+    }
+    await PortalConfig.findOneAndUpdate(
+      {},
+      { feeJunior, feeSenior },
+      { upsert: true, new: true }
+    );
+    return res.json({ message: 'Fees updated successfully', feeJunior, feeSenior });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update fees' });
+  }
+});
+
 // GET /api/admin/registrations
 adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   try {
