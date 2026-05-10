@@ -16,10 +16,15 @@ First, ensure the payment gateway service has the correct environment variables 
 # Add or update these variables:
 QCB_API_KEY=your-shared-secret-key-here
 QCB_CALLBACK_URL=http://localhost:5006/api/payment/callback
+QUIZCHAMP_URL=http://localhost:3000
 FRONTEND_URL=http://localhost:3000
 ```
 
-**Important:** The `QCB_API_KEY` should be a strong, random string that both services share.
+**Important:** 
+- The `QCB_API_KEY` should be a strong, random string that both services share
+- `QCB_CALLBACK_URL` should point to the Quiz Champ Backend callback endpoint (port 5006 by default)
+- `QUIZCHAMP_URL` should point to the Quiz Champ Frontend (port 3000 by default)
+- If running in Docker, use service names: `QCB_CALLBACK_URL=http://quiz-champ-backend:3001/api/payment/callback`
 
 ### 2. Configure Quiz Champ Backend
 
@@ -151,3 +156,20 @@ Expected response:
 - Use strong, random strings for `QCB_API_KEY` / `PGS_API_KEY`
 - In production, use HTTPS for `PGS_BASE_URL`
 - Ensure the callback URL is publicly accessible in production
+
+## Recent Fixes
+
+### Group Enum Validation Error (Fixed)
+**Issue:** `SENIOR` is not a valid enum value for path `group`
+
+**Solution:** Updated the QuizChamp model in the payment gateway to accept both old format (A, B) and new format (JUNIOR, SENIOR):
+
+```javascript
+group: {
+    type: String,
+    enum: ["JUNIOR", "SENIOR", "A", "B"],
+    required: true,
+}
+```
+
+This maintains backward compatibility with existing records while supporting the new registration flow.
