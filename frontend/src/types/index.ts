@@ -1,0 +1,59 @@
+export type BatchType = 'JUNIOR' | 'SENIOR';
+export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+export type PortalState = 'COUNTDOWN' | 'OPEN' | 'CLOSED';
+
+export interface PortalStatus {
+  state: PortalState;
+  openingDate: string;
+  closingDate: string;
+  resultsPublished: boolean;
+  resultPublicationDate?: string;
+}
+
+export interface SliderImage {
+  id: string;
+  imageUrl: string;
+  displayOrder: number;
+}
+
+export interface RegistrationInput {
+  name: string;
+  class: string;
+  batchType: BatchType;
+  guardianName: string;
+  address: string;
+  mobileNumber: string;
+  email?: string;
+  referralSource?: string;
+}
+
+export interface AdmitCardData {
+  rollNumber: string;
+  name: string;
+  class: string;
+  batchType: string;
+  guardianName: string;
+  mobileNumber: string;
+  eventName: string;
+  generatedAt: string;
+}
+
+export interface ResultData {
+  rollNumber: string;
+  name: string;
+  class: string;
+  batchType: string;
+  score: number;
+  rank?: number;
+  remarks?: string;
+  publishedAt?: string;
+}
+
+export interface PaymentSession {
+  sessionId: string;
+  amount: number;
+  currency: string;
+  participantId: string;
+  provider: string;
+  providerOrderId?: string;
+}

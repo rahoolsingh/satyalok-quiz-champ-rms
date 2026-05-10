@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand: #6c3bff;
+  --brand-light: #8b5cf6;
+  --brand-dark: #4c1d95;
+  --accent: #f59e0b;
+  --accent2: #06b6d4;
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a2e;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.1);
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --success: #10b981;
+  --error: #ef4444;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+input, select, textarea { outline: none; font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 3px; }
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-purple { box-shadow: 0 0 40px rgba(108,59,255,0.3); }
+.glow-cyan { box-shadow: 0 0 40px rgba(6,182,212,0.3); }
+
+/* Animations */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(108,59,255,0.4); } 50% { box-shadow: 0 0 60px rgba(108,59,255,0.8); } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* Focus */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 2px solid var(--brand-light);
+  outline-offset: 2px;
+}
+
+/* Skip nav */
+.skip-nav {
+  position: absolute; top: -40px; left: 0;
+  background: var(--brand); color: white;
+  padding: 8px 16px; z-index: 10000;
+  border-radius: 0 0 8px 0; font-weight: 600;
+  transition: top 0.2s;
+}
+.skip-nav:focus { top: 0; }
+
+/* Responsive admin */
+@media (max-width: 768px) {
+  .admin-layout { flex-direction: column !important; }
+  .admin-sidebar { width: 100% !important; }
+}
