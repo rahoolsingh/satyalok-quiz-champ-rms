@@ -33,7 +33,7 @@ export function PaymentFailed() {
               Try again
             </Link>
             <a
-              href="mailto:support@satyalok.org"
+              href="mailto:contact@satyalok.in"
               className="flex-1 py-3 px-6 bg-transparent text-[#0066cc] border border-[#d2d2d7] rounded-full text-[0.95rem] font-medium text-center hover:border-[#0071e3] transition-colors"
             >
               Contact support
