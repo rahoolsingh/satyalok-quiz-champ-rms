@@ -59,8 +59,8 @@ export async function verifyOTP(
 }
 
 /**
- * Sends OTP via a custom SMS API (axios, x-api-key auth).
- * Falls back to console log in mock mode.
+ * Sends OTP via SMS API (axios, x-api-key auth).
+ * Set SMS_PROVIDER=mock to skip the real call during development.
  */
 export async function sendOTP(mobileNumber: string, otp: string): Promise<void> {
   const provider = process.env.SMS_PROVIDER || 'mock';
@@ -70,33 +70,27 @@ export async function sendOTP(mobileNumber: string, otp: string): Promise<void> 
     return;
   }
 
-  if (provider === 'api') {
-    const smsApiUrl = process.env.SMS_API_URL;
-    const smsApiKey = process.env.SMS_API_KEY;
-    if (!smsApiUrl) throw new Error('SMS_API_URL is not set');
-    if (!smsApiKey) throw new Error('SMS_API_KEY is not set');
+  const smsApiUrl = process.env.SMS_API_URL;
+  const smsApiKey = process.env.SMS_API_KEY;
+  if (!smsApiUrl) throw new Error('SMS_API_URL is not set');
+  if (!smsApiKey) throw new Error('SMS_API_KEY is not set');
 
-    const message = otpTemplate(otp);
+  const message = otpTemplate(otp);
 
-    const response = await axios.post(
-      smsApiUrl,
-      { mobileNumber, message },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': smsApiKey,
-        },
-      }
-    );
+  console.log('Sending OTP to', mobileNumber);
 
-    if (!response.data?.success) {
-      throw new Error(`SMS API error: ${response.data?.message || 'Unknown error'}`);
+  const response = await axios.post(
+    smsApiUrl,
+    { mobileNumber, message },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': smsApiKey,
+      },
     }
+  );
 
-    return;
-  }
-
-  throw new Error(`SMS provider "${provider}" is not supported`);
+  console.log('SMS response:', response.data);
 }
 
 // ─── SMS template ─────────────────────────────────────────────────────────────
