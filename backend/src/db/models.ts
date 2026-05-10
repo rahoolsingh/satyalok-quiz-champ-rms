@@ -88,6 +88,8 @@ export interface IParticipant extends Document {
   paymentId?: string;
   admitCardUrl?: string;
   merchantTransactionId?: string;
+  photoUrl?: string;
+  otpVerifiedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -111,6 +113,8 @@ const ParticipantSchema = new Schema<IParticipant>(
     paymentId: { type: String },
     admitCardUrl: { type: String },
     merchantTransactionId: { type: String },
+    photoUrl: { type: String },
+    otpVerifiedAt: { type: Date },
   },
   { timestamps: true }
 );
@@ -147,6 +151,30 @@ const OTPVerificationSchema = new Schema<IOTPVerification>(
 export const OTPVerification: Model<IOTPVerification> =
   mongoose.models.OTPVerification ||
   mongoose.model<IOTPVerification>('OTPVerification', OTPVerificationSchema);
+
+// ─── OtpRateLimit ─────────────────────────────────────────────────────────────
+export interface IOtpRateLimit extends Document {
+  mobileNumber: string;
+  requestCount: number;
+  windowStart: Date;
+  lastRequestAt: Date;
+  blockedUntil?: Date;
+  createdAt: Date;
+}
+
+const OtpRateLimitSchema = new Schema<IOtpRateLimit>(
+  {
+    mobileNumber: { type: String, required: true, unique: true, index: true },
+    requestCount: { type: Number, default: 0 },
+    windowStart: { type: Date, required: true },
+    lastRequestAt: { type: Date, required: true },
+    blockedUntil: { type: Date },
+  },
+  { timestamps: { createdAt: 'createdAt', updatedAt: false } }
+);
+
+export const OtpRateLimit: Model<IOtpRateLimit> =
+  mongoose.models.OtpRateLimit || mongoose.model<IOtpRateLimit>('OtpRateLimit', OtpRateLimitSchema);
 
 // ─── Result ───────────────────────────────────────────────────────────────────
 export interface IResult extends Document {

@@ -18,6 +18,7 @@ export interface Participant {
   paymentId?: string;
   admitCardUrl?: string;
   merchantTransactionId?: string;
+  photoUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -36,6 +36,7 @@ export interface AdmitCardData {
   mobileNumber: string;
   eventName: string;
   generatedAt: string;
+  photoUrl?: string;
 }
 
 export interface ResultData {

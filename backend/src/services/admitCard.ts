@@ -9,6 +9,7 @@ export interface AdmitCardData {
   mobileNumber: string;
   eventName: string;
   generatedAt: string;
+  photoUrl?: string;
 }
 
 export function generateAdmitCardData(participant: Participant): AdmitCardData {
@@ -25,6 +26,7 @@ export function generateAdmitCardData(participant: Participant): AdmitCardData {
     mobileNumber: participant.mobileNumber,
     eventName: 'Quiz Champ 2026',
     generatedAt: new Date().toISOString(),
+    photoUrl: participant.photoUrl,
   };
 }
 
@@ -56,6 +58,7 @@ export function generateAdmitCardHtml(data: AdmitCardData): string {
       <h1>${data.eventName}</h1>
       <p>Official Admit Card</p>
     </div>
+    ${data.photoUrl ? `<div style="text-align:center;margin:16px 0"><img src="${data.photoUrl}" alt="Participant photo" style="width:100px;height:100px;object-fit:cover;border-radius:50%;border:2px solid #1a237e" /></div>` : ''}
     <div class="roll-number">
       <div class="label">Roll Number</div>
       <div class="number">${data.rollNumber}</div>

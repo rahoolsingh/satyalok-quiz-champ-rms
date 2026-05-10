@@ -1,14 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { registrationApi } from '../api/client';
-import { PaymentSession } from '../types';
+import { otpApi } from '../api/client';
+import { RegistrationInput } from '../types';
 
-export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNumber: string; onSuccess: (s: PaymentSession) => void; onBack: () => void }) {
+interface OTPResult {
+  sessionToken: string;
+  draft: (Partial<RegistrationInput> & { participantId?: string; photoUrl?: string; paymentStatus?: string; merchantTransactionId?: string }) | null;
+}
+
+export function OTPVerification({
+  mobileNumber,
+  onSuccess,
+  onBack,
+}: {
+  mobileNumber: string;
+  onSuccess: (result: OTPResult) => void;
+  onBack: () => void;
+}) {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const [resending, setResending] = useState(false);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => { refs.current[0]?.focus(); }, []);
@@ -40,8 +54,8 @@ export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNum
     if (otp.length !== 6) { setError('Please enter the complete 6-digit OTP'); return; }
     setLoading(true); setError('');
     try {
-      const res = await registrationApi.verifyOtp(mobileNumber, otp);
-      onSuccess(res.data.paymentSession);
+      const res = await otpApi.verify(mobileNumber, otp);
+      onSuccess({ sessionToken: res.data.sessionToken, draft: res.data.draft });
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Verification failed');
       setDigits(['', '', '', '', '', '']);
@@ -49,7 +63,20 @@ export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNum
     } finally { setLoading(false); }
   };
 
-  const masked = mobileNumber.replace(/(\d{2})\d{6}(\d{2})/, '$1 xxxxxx $2');
+  const handleResend = async () => {
+    setResending(true); setError('');
+    try {
+      await otpApi.send(mobileNumber);
+      setCanResend(false); setTimer(60);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string; retryAfterSeconds?: number } } };
+      const wait = e.response?.data?.retryAfterSeconds;
+      setError(e.response?.data?.error || 'Failed to resend OTP');
+      if (wait) { setTimer(wait); setCanResend(false); }
+    } finally { setResending(false); }
+  };
+
+  const masked = mobileNumber.replace(/^(\d{2})\d{6}(\d{2})$/, '$1 xxxxxx $2');
 
   return (
     <motion.div className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
@@ -71,15 +98,10 @@ export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNum
       <form onSubmit={handleSubmit}>
         <div className="flex gap-2.5 mb-7" onPaste={handlePaste}>
           {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={el => { refs.current[i] = el; }}
-              value={d}
+            <input key={i} ref={el => { refs.current[i] = el; }} value={d}
               onChange={e => handleChange(i, e.target.value)}
               onKeyDown={e => handleKeyDown(i, e)}
-              maxLength={1}
-              inputMode="numeric"
-              aria-label={`OTP digit ${i + 1}`}
+              maxLength={1} inputMode="numeric" aria-label={`OTP digit ${i + 1}`}
               className={`w-12 h-14 text-center text-2xl font-bold bg-white text-[#1d1d1f] rounded-lg outline-none transition-all
                 ${d ? 'border-2 border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.15)]' : 'border border-[#d2d2d7]'}`}
             />
@@ -97,7 +119,10 @@ export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNum
 
       <div className="mt-5 text-center">
         {canResend
-          ? <button onClick={() => { setCanResend(false); setTimer(30); }} className="text-[#0066cc] text-sm font-medium hover:opacity-75 transition-opacity">Resend OTP</button>
+          ? <button onClick={handleResend} disabled={resending}
+              className="text-[#0066cc] text-sm font-medium hover:opacity-75 transition-opacity disabled:opacity-50">
+              {resending ? 'Sending…' : 'Resend OTP'}
+            </button>
           : <p className="text-[#86868b] text-sm">Resend in <span className="text-[#1d1d1f] font-medium">{timer}s</span></p>
         }
       </div>

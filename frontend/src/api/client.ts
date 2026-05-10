@@ -21,11 +21,27 @@ export const portalApi = {
   getSliderImages: () => api.get('/portal/slider-images'),
 };
 
+export const otpApi = {
+  send: (mobileNumber: string) => api.post('/otp/send', { mobileNumber }),
+  verify: (mobileNumber: string, otp: string) => api.post('/otp/verify', { mobileNumber, otp }),
+};
+
 export const registrationApi = {
+  // Legacy — kept for backward compat
   submit: (data: object) => api.post('/registration', data),
   verifyOtp: (mobileNumber: string, otp: string) =>
     api.post('/registration/verify-otp', { mobileNumber, otp }),
   confirmPayment: (data: object) => api.post('/registration/confirm-payment', data),
+  // New V2 endpoints
+  saveDraft: (formData: FormData, token: string) =>
+    api.post('/registration/draft', formData, {
+      headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+    }),
+  getDraft: (token: string) =>
+    api.get('/registration/draft', { headers: { Authorization: `Bearer ${token}` } }),
+  initiatePayment: (token: string) =>
+    api.post('/registration/initiate-payment', {}, { headers: { Authorization: `Bearer ${token}` } }),
+  track: (mobile: string) => api.get('/registration/track', { params: { mobile } }),
   getAdmitCard: (id: string) => api.get(`/registration/admit-card/${id}`),
 };
 

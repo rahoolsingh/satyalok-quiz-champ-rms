@@ -5,14 +5,22 @@ import { CountdownTimer } from '../components/CountdownTimer';
 import { ImageSlider } from '../components/ImageSlider';
 import { BatchSelector } from '../components/BatchSelector';
 import { RegistrationForm } from '../components/RegistrationForm';
+import { MobileEntry } from '../components/MobileEntry';
 import { OTPVerification } from '../components/OTPVerification';
 import { PaymentGateway } from '../components/PaymentGateway';
 import { ResultChecker } from '../components/ResultChecker';
 import { SatyalokBadge } from '../components/SatyalokBadge';
-import { SliderImage, BatchType, PaymentSession } from '../types';
+import { SliderImage, BatchType, PaymentSession, RegistrationInput } from '../types';
 import { portalApi } from '../api/client';
 
-type Step = 'home' | 'register' | 'otp' | 'payment';
+type Step = 'home' | 'mobile-entry' | 'otp' | 'form' | 'payment';
+
+interface Draft extends Partial<RegistrationInput> {
+  participantId?: string;
+  photoUrl?: string;
+  paymentStatus?: string;
+  merchantTransactionId?: string;
+}
 
 export function PublicPortal() {
   const { status, loading, error, refetch } = usePortalState();
@@ -20,6 +28,8 @@ export function PublicPortal() {
   const [step, setStep] = useState<Step>('home');
   const [batch, setBatch] = useState<BatchType | null>(null);
   const [mobile, setMobile] = useState('');
+  const [sessionToken, setSessionToken] = useState<string>('');
+  const [draft, setDraft] = useState<Draft | null>(null);
   const [session, setSession] = useState<PaymentSession | null>(null);
 
   useEffect(() => { portalApi.getSliderImages().then(r => setImages(r.data)).catch(() => {}); }, []);
@@ -62,11 +72,45 @@ export function PublicPortal() {
     if (step === 'payment' && session) {
       return <PaymentGateway session={session} onFailure={msg => alert(msg)} />;
     }
-    if (step === 'otp') {
-      return <OTPVerification mobileNumber={mobile} onSuccess={s => { setSession(s); setStep('payment'); }} onBack={() => setStep('register')} />;
+    if (step === 'form' && batch && mobile && sessionToken) {
+      return (
+        <RegistrationForm
+          batchType={batch}
+          mobileNumber={mobile}
+          sessionToken={sessionToken}
+          draft={draft}
+          onSuccess={(paymentSession) => {
+            setSession(paymentSession);
+            setStep('payment');
+          }}
+          onBack={() => setStep('otp')}
+        />
+      );
     }
-    if (step === 'register' && batch) {
-      return <RegistrationForm batchType={batch} onSuccess={m => { setMobile(m); setStep('otp'); }} onBack={() => setStep('home')} />;
+    if (step === 'otp' && mobile) {
+      return (
+        <OTPVerification
+          mobileNumber={mobile}
+          onSuccess={result => {
+            setSessionToken(result.sessionToken);
+            setDraft(result.draft);
+            setStep('form');
+          }}
+          onBack={() => setStep('mobile-entry')}
+        />
+      );
+    }
+    if (step === 'mobile-entry') {
+      return (
+        <MobileEntry
+          onSuccess={(mobileNumber, selectedBatch) => {
+            setMobile(mobileNumber);
+            setBatch(selectedBatch);
+            setStep('otp');
+          }}
+          onBack={() => setStep('home')}
+        />
+      );
     }
     return null;
   };
@@ -98,7 +142,7 @@ export function PublicPortal() {
                 </motion.div>
               )}
 
-              <BatchSelector onSelect={b => { setBatch(b); setStep('register'); }} />
+              <BatchSelector onSelect={b => { setBatch(b); setStep('mobile-entry'); }} />
 
               {status.resultsPublished && (
                 <motion.div className="mt-14 pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>

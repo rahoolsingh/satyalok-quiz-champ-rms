@@ -22,6 +22,9 @@ export function AdmitCard({ data, participantId }: { data: AdmitCardData; partic
 
         {/* Roll number */}
         <div className="px-6 py-5 border-b border-[#d2d2d7] text-center">
+          {data.photoUrl && (
+            <img src={data.photoUrl} alt="Participant" className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2 border-[#d2d2d7]" />
+          )}
           <p className="text-xs font-semibold text-[#86868b] tracking-widest uppercase mb-2">Roll Number</p>
           <motion.p
             className="text-5xl font-bold tracking-[0.15em] text-[#1d1d1f]"

@@ -7,6 +7,7 @@ import { registrationRouter } from "./routes/registration";
 import { resultsRouter } from "./routes/results";
 import { adminRouter } from "./routes/admin";
 import { paymentRouter } from "./routes/payment";
+import { otpRouter } from "./routes/otp";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/portal", portalRouter);
+app.use("/api/otp", otpRouter);
 app.use("/api/registration", registrationRouter);
 app.use("/api/results", resultsRouter);
 app.use("/api/admin", adminRouter);
