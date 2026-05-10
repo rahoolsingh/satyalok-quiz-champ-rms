@@ -45,7 +45,7 @@ export function PaymentSuccess() {
 
   return (
     <div className="min-h-screen bg-[#fbfbfd]">
-      <div className="max-w-2xl mx-auto px-6 py-[clamp(32px,5vw,64px)]">
+      <div className="max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {loading && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
             <div className="w-6 h-6 border-2 border-[#d2d2d7] border-t-[#0071e3] rounded-full animate-spin" />
@@ -65,9 +65,9 @@ export function PaymentSuccess() {
             </h2>
             <p className={txnId ? 'text-[#86868b]' : 'text-[#ef4444]'}>{error}</p>
             {txnId && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-[#1d1d1f]">
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-[#1d1d1f] w-full">
                 <p className="font-medium mb-1">Transaction ID:</p>
-                <p className="font-mono text-[#0071e3]">{txnId}</p>
+                <p className="font-mono text-[#0071e3] break-all">{txnId}</p>
               </div>
             )}
             {!txnId && (
@@ -90,7 +90,9 @@ export function PaymentSuccess() {
         {!loading && admitCard && (
           <>
             <AdmitCard data={admitCard} participantId={participantId ?? undefined} />
-            <SatyalokBadge variant="footer" />
+            <div className="mt-8">
+              <SatyalokBadge variant="footer" />
+            </div>
           </>
         )}
       </div>

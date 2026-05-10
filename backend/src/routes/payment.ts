@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { Participant } from '../db/models';
 import { verifyPhonePePayment } from '../services/pgsClient';
 import { generateUniqueRollNumber } from '../services/rollNumber';
+import { sendEmail, generateAdmitCardEmail } from '../services/email';
+import { generateAdmitCardPDF } from '../services/admitCardPdf';
 
 export const paymentRouter = Router();
 
@@ -56,6 +58,48 @@ paymentRouter.get('/callback', async (req: Request, res: Response) => {
       paymentId: statusResponse.data?.transactionId || merchantTransactionId,
       rollNumber,
     });
+
+    // Fetch updated participant
+    const updatedParticipant = await Participant.findById(participant._id);
+    
+    // Send admit card email (async, don't block the redirect)
+    if (updatedParticipant && updatedParticipant.email) {
+      (async () => {
+        try {
+          const pdfBuffer = await generateAdmitCardPDF({
+            rollNumber: updatedParticipant.rollNumber!,
+            name: updatedParticipant.name,
+            class: updatedParticipant.class,
+            batchType: updatedParticipant.batchType,
+            guardianName: updatedParticipant.guardianName,
+            mobileNumber: updatedParticipant.mobileNumber,
+            photoUrl: updatedParticipant.photoUrl,
+            eventName: 'Quiz Champ 2026',
+          });
+
+          const emailHtml = generateAdmitCardEmail({
+            name: updatedParticipant.name,
+            rollNumber: updatedParticipant.rollNumber!,
+            batch: updatedParticipant.batchType,
+          });
+
+          await sendEmail({
+            to: updatedParticipant.email,
+            subject: 'Quiz Champ 2026 - Your Admit Card',
+            html: emailHtml,
+            attachments: [{
+              filename: `admit-card-${updatedParticipant.rollNumber}.pdf`,
+              content: pdfBuffer,
+            }],
+          });
+
+          console.log(`[payment/callback] Admit card email sent to ${updatedParticipant.email}`);
+        } catch (emailErr) {
+          console.error('[payment/callback] Failed to send admit card email:', emailErr);
+          // Don't fail the payment - email can be resent later
+        }
+      })();
+    }
 
     return res.redirect(
       `${frontendUrl}/payment-success?participantId=${participant._id.toString()}`

@@ -9,6 +9,7 @@ import { uploadToS3 } from '../services/storage';
 import { Participant } from '../db/models';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { validateImageFormat } from '../services/validation';
+import { generateAdmitCardPDF } from '../services/admitCardPdf';
 
 export const registrationRouter = Router();
 
@@ -305,4 +306,39 @@ registrationRouter.post('/verify-otp', async (_req, res) => {
 
 registrationRouter.post('/confirm-payment', async (_req, res) => {
   return res.status(410).json({ error: 'This endpoint is no longer used. Payment is confirmed via PhonePe callback.' });
+});
+
+
+// ─── GET /api/registration/admit-card/:id/download ──────────────────────────
+// Download admit card as PDF
+registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const participant = await Participant.findById(id);
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(403).json({ error: 'Admit card not available. Payment not completed.' });
+    }
+
+    const pdfBuffer = await generateAdmitCardPDF({
+      rollNumber: participant.rollNumber ?? 'N/A',
+      name: participant.name,
+      class: participant.class,
+      batchType: participant.batchType,
+      guardianName: participant.guardianName,
+      mobileNumber: participant.mobileNumber,
+      photoUrl: participant.photoUrl,
+      eventName: 'Quiz Champ 2026',
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="admit-card-${participant.rollNumber}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('[registration/admit-card/download]', err);
+    return res.status(500).json({ error: 'Failed to generate admit card PDF' });
+  }
 });

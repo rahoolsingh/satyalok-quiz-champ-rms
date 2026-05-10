@@ -150,12 +150,13 @@ export function PublicPortal() {
 
   return (
     <div className="min-h-screen bg-[#fbfbfd]">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-[clamp(32px,5vw,64px)]">
+      {/* Mobile-first container - centered on desktop except for admin routes */}
+      <div className="max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header with logout button */}
         {sessionToken && step !== 'home' && (
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#d2d2d7]">
             <div className="text-sm text-[#86868b]">
-              Logged in: <span className="font-medium text-[#1d1d1f]">{mobile}</span>
+              <span className="font-medium text-[#1d1d1f]">{mobile}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -175,17 +176,17 @@ export function PublicPortal() {
           ) : (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               {/* Hero */}
-              <motion.div className="mb-8 sm:mb-10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2.5">Registration Open</p>
-                <h1 className="text-[clamp(1.75rem,5vw,3.2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2.5">Quiz Champ 2026</h1>
-                <p className="text-[#86868b] text-sm sm:text-base leading-relaxed max-w-lg mb-4">
+              <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Registration Open</p>
+                <h1 className="text-[clamp(1.75rem,5vw,2.5rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Quiz Champ 2026</h1>
+                <p className="text-[#86868b] text-sm leading-relaxed mb-4">
                   The ultimate knowledge championship for students across all classes.
                 </p>
                 <SatyalokBadge variant="inline" />
               </motion.div>
 
               {images.length > 0 && (
-                <motion.div className="mb-10 sm:mb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                <motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
                   <ImageSlider images={images} />
                 </motion.div>
               )}
@@ -193,7 +194,7 @@ export function PublicPortal() {
               <BatchSelector onSelect={b => { setBatch(b); setStep('mobile-entry'); }} />
 
               {status.resultsPublished && (
-                <motion.div className="mt-12 sm:mt-14 pt-8 sm:pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                <motion.div className="mt-10 pt-8 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
                   <ResultChecker />
                 </motion.div>
               )}
