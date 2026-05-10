@@ -2,29 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SliderImage } from '../types';
 
-interface ImageSliderProps {
-  images: SliderImage[];
-  autoPlayInterval?: number;
-}
-
-export function ImageSlider({ images, autoPlayInterval = 5000 }: ImageSliderProps) {
+export function ImageSlider({ images, autoPlayInterval = 5000 }: { images: SliderImage[]; autoPlayInterval?: number }) {
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [dir, setDir] = useState(1);
 
-  const go = useCallback((idx: number) => {
-    setDirection(idx > current ? 1 : -1);
-    setCurrent(idx);
-  }, [current]);
-
-  const next = useCallback(() => {
-    setDirection(1);
-    setCurrent((c) => (c + 1) % images.length);
-  }, [images.length]);
-
-  const prev = () => {
-    setDirection(-1);
-    setCurrent((c) => (c - 1 + images.length) % images.length);
-  };
+  const next = useCallback(() => { setDir(1); setCurrent(c => (c + 1) % images.length); }, [images.length]);
+  const prev = () => { setDir(-1); setCurrent(c => (c - 1 + images.length) % images.length); };
 
   useEffect(() => {
     if (images.length <= 1) return;
@@ -32,7 +15,7 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: ImageSliderProp
     return () => clearInterval(t);
   }, [next, images.length, autoPlayInterval]);
 
-  if (images.length === 0) return null;
+  if (!images.length) return null;
 
   const variants = {
     enter: (d: number) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
@@ -41,63 +24,41 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: ImageSliderProp
   };
 
   return (
-    <div style={wrap} role="region" aria-label="Event image slider">
-      {/* Slide */}
-      <div style={slideArea}>
-        <AnimatePresence custom={direction} mode="popLayout">
+    <div style={{ width: '100%' }}>
+      <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 'clamp(200px,40vw,440px)', background: '#f5f5f7' }} role="region" aria-label="Event image slider">
+        <AnimatePresence custom={dir} mode="popLayout">
           <motion.img
             key={current}
             src={images[current].imageUrl}
             alt={`Slide ${current + 1}`}
-            custom={direction}
+            custom={dir}
             variants={variants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-            style={imgStyle}
+            transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </AnimatePresence>
 
-        {/* Gradient overlay */}
-        <div style={overlay} />
-
-        {/* Nav buttons */}
         {images.length > 1 && (
           <>
-            <motion.button
-              style={{ ...navBtn, left: '16px' }}
-              onClick={prev}
-              whileHover={{ scale: 1.1, background: 'rgba(108,59,255,0.6)' }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Previous slide"
-            >
-              ‹
-            </motion.button>
-            <motion.button
-              style={{ ...navBtn, right: '16px' }}
-              onClick={next}
-              whileHover={{ scale: 1.1, background: 'rgba(108,59,255,0.6)' }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Next slide"
-            >
-              ›
-            </motion.button>
+            <button onClick={prev} aria-label="Previous" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+            <button onClick={next} aria-label="Next" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
           </>
         )}
       </div>
 
-      {/* Dots */}
       {images.length > 1 && (
-        <div style={dots}>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 12 }}>
           {images.map((_, i) => (
             <motion.button
               key={i}
-              style={dotBase}
-              animate={{ width: i === current ? 28 : 8, background: i === current ? '#8b5cf6' : 'rgba(255,255,255,0.3)' }}
-              transition={{ duration: 0.3 }}
-              onClick={() => go(i)}
-              aria-label={`Go to slide ${i + 1}`}
+              onClick={() => { setDir(i > current ? 1 : -1); setCurrent(i); }}
+              animate={{ width: i === current ? 20 : 6, background: i === current ? '#0071e3' : '#d2d2d7' }}
+              transition={{ duration: 0.25 }}
+              style={{ height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0 }}
+              aria-label={`Slide ${i + 1}`}
             />
           ))}
         </div>
@@ -105,33 +66,3 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: ImageSliderProp
     </div>
   );
 }
-
-const wrap: React.CSSProperties = { width: '100%', maxWidth: '960px', margin: '0 auto' };
-const slideArea: React.CSSProperties = {
-  position: 'relative', borderRadius: '20px', overflow: 'hidden',
-  height: 'clamp(240px, 45vw, 480px)',
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
-};
-const imgStyle: React.CSSProperties = {
-  position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-};
-const overlay: React.CSSProperties = {
-  position: 'absolute', inset: 0,
-  background: 'linear-gradient(to top, rgba(10,10,15,0.6) 0%, transparent 50%)',
-  pointerEvents: 'none',
-};
-const navBtn: React.CSSProperties = {
-  position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-  background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
-  color: 'white', border: '1px solid rgba(255,255,255,0.15)',
-  borderRadius: '50%', width: '48px', height: '48px',
-  fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  cursor: 'pointer', zIndex: 2, transition: 'background 0.2s',
-};
-const dots: React.CSSProperties = {
-  display: 'flex', gap: '6px', justifyContent: 'center', marginTop: '16px',
-};
-const dotBase: React.CSSProperties = {
-  height: '8px', borderRadius: '4px', border: 'none', cursor: 'pointer', padding: 0,
-};
