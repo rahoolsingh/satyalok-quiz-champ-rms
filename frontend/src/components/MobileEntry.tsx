@@ -50,8 +50,8 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
       <button onClick={onBack} className="text-[#0066cc] text-sm font-medium mb-6 block hover:opacity-75 transition-opacity">← Back</button>
 
       <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 1 of 3</p>
-      <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Choose batch & verify</h2>
-      <p className="text-[#86868b] text-sm mb-7">Select your batch and enter your mobile number to get started.</p>
+      <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Choose batch & verify</h2>
+      <p className="text-[#86868b] text-sm mb-6 sm:mb-7">Select your batch and enter your mobile number to get started.</p>
 
       <AnimatePresence>
         {alreadyRegistered && (
@@ -69,13 +69,13 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
 
       <form onSubmit={handleSubmit}>
         {/* Batch selector */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {batches.map(b => (
             <button key={b.type} type="button" onClick={() => setBatch(b.type)}
               className={`flex items-center gap-3 p-4 rounded-xl text-left transition-all
                 ${batch === b.type ? 'border-2 border-[#0071e3] bg-blue-50' : 'border border-[#d2d2d7] bg-white hover:border-[#0071e3]'}`}>
               <span className="text-2xl">{b.icon}</span>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-[#1d1d1f]">{b.label}</p>
                 <p className="text-xs text-[#86868b]">{b.sub}</p>
               </div>
@@ -89,14 +89,14 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
             Mobile Number <span className="text-[#0071e3]">*</span>
           </label>
           <div className="flex items-center gap-0">
-            <span className={`px-3.5 py-2.5 bg-[#f5f5f7] border rounded-l-lg text-sm text-[#86868b] transition-all
+            <span className={`px-3 sm:px-3.5 py-2.5 bg-[#f5f5f7] border rounded-l-lg text-sm text-[#86868b] transition-all
               ${focused ? 'border-[#0071e3]' : 'border-[#d2d2d7]'}`}>+91</span>
             <input
               type="tel" inputMode="numeric" maxLength={10}
               value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
               onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
               placeholder="10-digit mobile number"
-              className={`flex-1 px-3.5 py-2.5 bg-white text-[#1d1d1f] rounded-r-lg text-sm outline-none transition-all border
+              className={`flex-1 px-3 sm:px-3.5 py-2.5 bg-white text-[#1d1d1f] rounded-r-lg text-sm outline-none transition-all border
                 ${focused ? 'border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.2)]' : 'border-[#d2d2d7]'}`}
             />
           </div>

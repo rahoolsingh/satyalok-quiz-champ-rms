@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePortalState } from '../hooks/usePortalState';
 import { CountdownTimer } from '../components/CountdownTimer';
@@ -12,6 +12,7 @@ import { ResultChecker } from '../components/ResultChecker';
 import { SatyalokBadge } from '../components/SatyalokBadge';
 import { SliderImage, BatchType, PaymentSession, RegistrationInput } from '../types';
 import { portalApi } from '../api/client';
+import { sessionCookies } from '../utils/cookies';
 
 type Step = 'home' | 'mobile-entry' | 'otp' | 'form' | 'payment';
 
@@ -32,7 +33,37 @@ export function PublicPortal() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [session, setSession] = useState<PaymentSession | null>(null);
 
+  // Load session from cookies on mount
+  useEffect(() => {
+    const savedSession = sessionCookies.getSession();
+    if (savedSession) {
+      setSessionToken(savedSession.token);
+      setMobile(savedSession.mobile);
+      setBatch(savedSession.batch as BatchType);
+      // If we have a session, we should be on the form step
+      if (step === 'home') {
+        setStep('form');
+      }
+    }
+  }, []);
+
   useEffect(() => { portalApi.getSliderImages().then(r => setImages(r.data)).catch(() => {}); }, []);
+
+  const handleLogout = () => {
+    sessionCookies.clearSession();
+    setSessionToken('');
+    setMobile('');
+    setBatch(null);
+    setDraft(null);
+    setSession(null);
+    setStep('home');
+  };
+
+  const handleBackToHome = () => {
+    // Clear batch selection when going back to home
+    setBatch(null);
+    setStep('home');
+  };
 
   if (loading) {
     return (
@@ -94,6 +125,8 @@ export function PublicPortal() {
           onSuccess={result => {
             setSessionToken(result.sessionToken);
             setDraft(result.draft);
+            // Save to cookies
+            sessionCookies.setSession(result.sessionToken, mobile, batch!);
             setStep('form');
           }}
           onBack={() => setStep('mobile-entry')}
@@ -108,7 +141,7 @@ export function PublicPortal() {
             setBatch(selectedBatch);
             setStep('otp');
           }}
-          onBack={() => setStep('home')}
+          onBack={handleBackToHome}
         />
       );
     }
@@ -117,7 +150,22 @@ export function PublicPortal() {
 
   return (
     <div className="min-h-screen bg-[#fbfbfd]">
-      <div className="max-w-2xl mx-auto px-6 py-[clamp(32px,5vw,64px)]">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-[clamp(32px,5vw,64px)]">
+        {/* Header with logout button */}
+        {sessionToken && step !== 'home' && (
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-sm text-[#86868b]">
+              Logged in: <span className="font-medium text-[#1d1d1f]">{mobile}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-[#ef4444] hover:opacity-75 transition-opacity font-medium"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {step !== 'home' ? (
             <motion.div key={step} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
@@ -127,17 +175,17 @@ export function PublicPortal() {
           ) : (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               {/* Hero */}
-              <motion.div className="mb-10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+              <motion.div className="mb-8 sm:mb-10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                 <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2.5">Registration Open</p>
-                <h1 className="text-[clamp(2rem,5vw,3.2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2.5">Quiz Champ 2026</h1>
-                <p className="text-[#86868b] text-base leading-relaxed max-w-lg mb-4">
+                <h1 className="text-[clamp(1.75rem,5vw,3.2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2.5">Quiz Champ 2026</h1>
+                <p className="text-[#86868b] text-sm sm:text-base leading-relaxed max-w-lg mb-4">
                   The ultimate knowledge championship for students across all classes.
                 </p>
                 <SatyalokBadge variant="inline" />
               </motion.div>
 
               {images.length > 0 && (
-                <motion.div className="mb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                <motion.div className="mb-10 sm:mb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
                   <ImageSlider images={images} />
                 </motion.div>
               )}
@@ -145,7 +193,7 @@ export function PublicPortal() {
               <BatchSelector onSelect={b => { setBatch(b); setStep('mobile-entry'); }} />
 
               {status.resultsPublished && (
-                <motion.div className="mt-14 pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                <motion.div className="mt-12 sm:mt-14 pt-8 sm:pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
                   <ResultChecker />
                 </motion.div>
               )}

@@ -164,10 +164,10 @@ export function RegistrationForm({ batchType, mobileNumber, sessionToken, draft,
 
   return (
     <motion.div className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <button onClick={onBack} className="text-[#0066cc] text-sm font-medium mb-4 block hover:opacity-75 transition-opacity">← Back</button>
         <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 3 of 3</p>
-        <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-1">Registration details</h2>
+        <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-1">Registration details</h2>
         <p className="text-[#86868b] text-sm">{batchType === 'JUNIOR' ? '🎓 Junior Batch · Classes 1–7' : '🏆 Senior Batch · Classes 8–12'}</p>
         {draft && <p className="text-xs text-[#0071e3] mt-1.5">✓ Draft loaded — your previous data has been pre-filled</p>}
       </div>
@@ -185,14 +185,14 @@ export function RegistrationForm({ batchType, mobileNumber, sessionToken, draft,
         {/* Photo upload */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Photo for Admit Card</label>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {photoPreview
-              ? <img src={photoPreview} alt="Preview" className="w-16 h-16 rounded-full object-cover border-2 border-[#d2d2d7]" />
-              : <div className="w-16 h-16 rounded-full bg-[#f5f5f7] border border-[#d2d2d7] flex items-center justify-center text-2xl">📷</div>
+              ? <img src={photoPreview} alt="Preview" className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-[#d2d2d7]" />
+              : <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#f5f5f7] border border-[#d2d2d7] flex items-center justify-center text-xl sm:text-2xl">📷</div>
             }
-            <div>
+            <div className="flex-1 min-w-0">
               <button type="button" onClick={() => fileRef.current?.click()}
-                className="px-4 py-1.5 border border-[#d2d2d7] rounded-full text-sm font-medium text-[#1d1d1f] hover:border-[#0071e3] transition-colors">
+                className="px-3 sm:px-4 py-1.5 border border-[#d2d2d7] rounded-full text-sm font-medium text-[#1d1d1f] hover:border-[#0071e3] transition-colors">
                 {photoPreview ? 'Change photo' : 'Upload photo'}
               </button>
               <p className="text-xs text-[#86868b] mt-1">JPEG, PNG or WebP · max 2 MB · optional</p>
@@ -202,7 +202,7 @@ export function RegistrationForm({ batchType, mobileNumber, sessionToken, draft,
           {photoError && <p className="text-[#ef4444] text-xs mt-1.5">{photoError}</p>}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6">
           <Field label="Full Name" error={errors.name} required>
             <TInput value={form.name} onChange={set('name')} placeholder="Your full name" error={errors.name} />
           </Field>
@@ -221,7 +221,7 @@ export function RegistrationForm({ batchType, mobileNumber, sessionToken, draft,
           <TTextarea value={form.address} onChange={set('address')} placeholder="Your full address" error={errors.address} />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6">
           <Field label="Email Address" error={errors.email}>
             <TInput value={form.email || ''} onChange={set('email')} placeholder="Optional" type="email" error={errors.email} />
           </Field>
