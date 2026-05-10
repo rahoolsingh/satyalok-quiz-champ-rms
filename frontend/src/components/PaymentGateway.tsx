@@ -17,40 +17,35 @@ export function PaymentGateway({ session, onSuccess, onFailure }: { session: Pay
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }} style={{ width: '100%' }}>
-      <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0071e3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Step 3 of 3</p>
-      <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', fontWeight: 700, letterSpacing: '-0.02em', color: '#1d1d1f', marginBottom: 8 }}>Complete payment</h2>
-      <p style={{ color: '#86868b', fontSize: '0.95rem', marginBottom: 32 }}>Secure your spot at Quiz Champ 2026</p>
+    <motion.div className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
+      <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 3 of 3</p>
+      <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Complete payment</h2>
+      <p className="text-[#86868b] text-sm mb-8">Secure your spot at Quiz Champ 2026</p>
 
-      {/* Summary */}
-      <div style={{ borderTop: '1px solid #d2d2d7', borderBottom: '1px solid #d2d2d7', padding: '16px 0', marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ color: '#86868b', fontSize: '0.95rem' }}>Registration Fee</span>
-          <span style={{ color: '#1d1d1f', fontWeight: 500 }}>₹{session.amount}</span>
+      <div className="border-t border-b border-[#d2d2d7] py-4 mb-6 space-y-3">
+        <div className="flex justify-between">
+          <span className="text-[#86868b] text-sm">Registration Fee</span>
+          <span className="text-[#1d1d1f] font-medium">₹{session.amount}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontWeight: 600, color: '#1d1d1f' }}>Total</span>
-          <span style={{ fontWeight: 700, color: '#1d1d1f', fontSize: '1.05rem' }}>₹{session.amount}</span>
+        <div className="flex justify-between">
+          <span className="font-semibold text-[#1d1d1f]">Total</span>
+          <span className="font-bold text-[#1d1d1f] text-lg">₹{session.amount}</span>
         </div>
       </div>
 
-      <p style={{ color: '#86868b', fontSize: '0.82rem', marginBottom: 20, textAlign: 'center' }}>
+      <p className="text-[#86868b] text-xs text-center mb-5">
         🔒 Secured by {session.provider === 'mock' ? 'Demo Gateway' : 'Razorpay'}
       </p>
 
-      <motion.button
-        onClick={handlePay}
-        disabled={processing}
-        whileHover={{ opacity: 0.88 }}
-        whileTap={{ scale: 0.98 }}
-        style={{ width: '100%', padding: '13px 24px', background: '#0071e3', color: '#fff', border: 'none', borderRadius: 20, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-        aria-label="Pay and complete registration"
-      >
-        {processing && <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />}
+      <motion.button onClick={handlePay} disabled={processing}
+        whileHover={{ opacity: 0.88 }} whileTap={{ scale: 0.98 }}
+        className="w-full py-3 px-6 bg-[#0071e3] text-white rounded-full text-[0.95rem] font-semibold flex items-center justify-center gap-2"
+        aria-label="Pay and complete registration">
+        {processing && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
         {processing ? 'Processing…' : `Pay ₹${session.amount} & Register`}
       </motion.button>
 
-      <p style={{ textAlign: 'center', color: '#86868b', fontSize: '0.78rem', marginTop: 14 }}>
+      <p className="text-center text-[#86868b] text-xs mt-4">
         By completing payment you agree to the event terms and conditions.
       </p>
     </motion.div>

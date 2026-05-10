@@ -24,8 +24,8 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: { images: Slide
   };
 
   return (
-    <div style={{ width: '100%' }}>
-      <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 'clamp(200px,40vw,440px)', background: '#f5f5f7' }} role="region" aria-label="Event image slider">
+    <div className="w-full" role="region" aria-label="Event image slider">
+      <div className="relative rounded-xl overflow-hidden bg-[#f5f5f7]" style={{ height: 'clamp(200px,40vw,440px)' }}>
         <AnimatePresence custom={dir} mode="popLayout">
           <motion.img
             key={current}
@@ -37,27 +37,33 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: { images: Slide
             animate="center"
             exit="exit"
             transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            className="absolute inset-0 w-full h-full object-cover"
           />
         </AnimatePresence>
 
         {images.length > 1 && (
           <>
-            <button onClick={prev} aria-label="Previous" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-            <button onClick={next} aria-label="Next" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+            <button onClick={prev} aria-label="Previous"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/85 hover:bg-white border-none rounded-full w-9 h-9 text-base flex items-center justify-center cursor-pointer transition-colors shadow-sm">
+              ‹
+            </button>
+            <button onClick={next} aria-label="Next"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/85 hover:bg-white border-none rounded-full w-9 h-9 text-base flex items-center justify-center cursor-pointer transition-colors shadow-sm">
+              ›
+            </button>
           </>
         )}
       </div>
 
       {images.length > 1 && (
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 12 }}>
+        <div className="flex gap-1.5 justify-center mt-3">
           {images.map((_, i) => (
             <motion.button
               key={i}
               onClick={() => { setDir(i > current ? 1 : -1); setCurrent(i); }}
-              animate={{ width: i === current ? 20 : 6, background: i === current ? '#0071e3' : '#d2d2d7' }}
+              animate={{ width: i === current ? 20 : 6, backgroundColor: i === current ? '#0071e3' : '#d2d2d7' }}
               transition={{ duration: 0.25 }}
-              style={{ height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0 }}
+              className="h-1.5 rounded-full border-none cursor-pointer p-0"
               aria-label={`Slide ${i + 1}`}
             />
           ))}

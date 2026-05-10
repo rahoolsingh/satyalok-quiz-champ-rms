@@ -6,67 +6,48 @@ import { RegistrationList } from './RegistrationList';
 
 type Tab = 'registrations' | 'dates' | 'slider' | 'results';
 
-interface AdminDashboardProps {
-  onLogout: () => void;
-}
+const tabs: { id: Tab; label: string; icon: string }[] = [
+  { id: 'registrations', label: 'Registrations', icon: '👥' },
+  { id: 'dates', label: 'Portal Dates', icon: '📅' },
+  { id: 'slider', label: 'Slider Images', icon: '🖼️' },
+  { id: 'results', label: 'Results', icon: '📊' },
+];
 
-export function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('registrations');
+export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+  const [active, setActive] = useState<Tab>('registrations');
   const username = localStorage.getItem('adminUsername') || 'Admin';
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'registrations', label: 'Registrations', icon: '👥' },
-    { id: 'dates', label: 'Portal Dates', icon: '📅' },
-    { id: 'slider', label: 'Slider Images', icon: '🖼️' },
-    { id: 'results', label: 'Results', icon: '📊' },
-  ];
-
   return (
-    <div style={styles.layout}>
-      <aside style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
-          <h2 style={styles.sidebarTitle}>Quiz Champ</h2>
-          <p style={styles.sidebarSub}>Admin Panel</p>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-56 bg-[#1d1d1f] text-white flex flex-col shrink-0">
+        <div className="px-5 py-6 border-b border-white/10">
+          <h2 className="font-bold text-base">Quiz Champ</h2>
+          <p className="text-white/50 text-xs mt-0.5">Admin Panel</p>
         </div>
-        <nav>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              style={{ ...styles.navItem, ...(activeTab === tab.id ? styles.navItemActive : {}) }}
-              onClick={() => setActiveTab(tab.id)}
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+        <nav className="flex-1 py-2">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActive(t.id)}
+              className={`flex items-center gap-2.5 w-full px-5 py-3 text-sm text-left transition-colors
+                ${active === t.id ? 'bg-white/10 text-white border-l-2 border-white' : 'text-white/60 hover:text-white hover:bg-white/5 border-l-2 border-transparent'}`}
+              aria-current={active === t.id ? 'page' : undefined}>
+              <span>{t.icon}</span><span>{t.label}</span>
             </button>
           ))}
         </nav>
-        <div style={styles.sidebarFooter}>
-          <p style={styles.username}>👤 {username}</p>
-          <button style={styles.logoutBtn} onClick={onLogout}>Sign Out</button>
+        <div className="px-5 py-4 border-t border-white/10">
+          <p className="text-white/50 text-xs mb-2">👤 {username}</p>
+          <button onClick={onLogout} className="w-full py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition-colors">Sign Out</button>
         </div>
       </aside>
 
-      <main style={styles.main}>
-        {activeTab === 'registrations' && <RegistrationList />}
-        {activeTab === 'dates' && <DateConfiguration />}
-        {activeTab === 'slider' && <SliderManager />}
-        {activeTab === 'results' && <ResultUploader />}
+      {/* Main */}
+      <main className="flex-1 bg-[#f5f5f7] p-8 overflow-y-auto">
+        {active === 'registrations' && <RegistrationList />}
+        {active === 'dates' && <DateConfiguration />}
+        {active === 'slider' && <SliderManager />}
+        {active === 'results' && <ResultUploader />}
       </main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  layout: { display: 'flex', minHeight: '100vh' },
-  sidebar: { width: '240px', background: '#1a237e', color: 'white', display: 'flex', flexDirection: 'column', flexShrink: 0 },
-  sidebarHeader: { padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-  sidebarTitle: { fontSize: '1.2rem', fontWeight: 800 },
-  sidebarSub: { fontSize: '0.8rem', opacity: 0.7, marginTop: '2px' },
-  navItem: { display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 20px', background: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', borderLeft: '3px solid transparent' },
-  navItemActive: { background: 'rgba(255,255,255,0.15)', color: 'white', borderLeftColor: 'white' },
-  sidebarFooter: { marginTop: 'auto', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' },
-  username: { fontSize: '0.85rem', opacity: 0.8, marginBottom: '8px' },
-  logoutBtn: { background: 'rgba(255,255,255,0.15)', color: 'white', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', width: '100%' },
-  main: { flex: 1, background: '#f8fafc', padding: '32px', overflowY: 'auto' },
-};

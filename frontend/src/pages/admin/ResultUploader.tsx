@@ -3,106 +3,68 @@ import { adminApi } from '../../api/client';
 
 export function ResultUploader() {
   const [file, setFile] = useState<File | null>(null);
-  const [publicationDate, setPublicationDate] = useState('');
+  const [pubDate, setPubDate] = useState('');
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [invalidRolls, setInvalidRolls] = useState<string[]>([]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) { setError('Please select a CSV file'); return; }
-    setUploading(true);
-    setMessage('');
-    setError('');
-    setValidationErrors([]);
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await adminApi.uploadResults(formData);
-      setMessage(res.data.message);
-    } catch (err: unknown) {
-      const data = (err as { response?: { data?: { error?: string; invalidRollNumbers?: string[] } } })?.response?.data;
-      setError(data?.error || 'Upload failed');
-      if (data?.invalidRollNumbers) setValidationErrors(data.invalidRollNumbers);
-    } finally {
-      setUploading(false);
-    }
+    setUploading(true); setMessage(''); setError(''); setInvalidRolls([]);
+    const fd = new FormData(); fd.append('file', file);
+    try { const r = await adminApi.uploadResults(fd); setMessage(r.data.message); }
+    catch (err: unknown) {
+      const d = (err as { response?: { data?: { error?: string; invalidRollNumbers?: string[] } } })?.response?.data;
+      setError(d?.error || 'Upload failed');
+      if (d?.invalidRollNumbers) setInvalidRolls(d.invalidRollNumbers);
+    } finally { setUploading(false); }
   };
 
   const handlePublish = async () => {
-    setPublishing(true);
-    setMessage('');
-    setError('');
-    try {
-      await adminApi.publishResults(publicationDate || undefined);
-      setMessage('Results published successfully');
-    } catch {
-      setError('Failed to publish results');
-    } finally {
-      setPublishing(false);
-    }
+    setPublishing(true); setMessage(''); setError('');
+    try { await adminApi.publishResults(pubDate || undefined); setMessage('Results published successfully'); }
+    catch { setError('Failed to publish results'); } finally { setPublishing(false); }
   };
+
+  const inputCls = "w-full px-3.5 py-2.5 bg-white border border-[#d2d2d7] rounded-lg text-sm focus:border-[#0071e3] outline-none transition-all";
 
   return (
     <div>
-      <h2 style={styles.heading}>Result Management</h2>
-
-      {message && <div style={styles.success}>{message}</div>}
-      {error && <div style={styles.error}>{error}</div>}
-      {validationErrors.length > 0 && (
-        <div style={styles.validationBox}>
+      <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-6">Result Management</h2>
+      {message && <p className="bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-lg text-sm mb-4">{message}</p>}
+      {error && <p className="bg-red-50 border border-red-200 text-[#ef4444] px-4 py-2.5 rounded-lg text-sm mb-4">{error}</p>}
+      {invalidRolls.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg text-sm mb-4">
           <strong>Invalid Roll Numbers:</strong>
-          <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
-            {validationErrors.map((r) => <li key={r}>{r}</li>)}
-          </ul>
+          <ul className="mt-1 list-disc pl-4">{invalidRolls.map(r => <li key={r}>{r}</li>)}</ul>
         </div>
       )}
 
-      <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Upload Results (CSV)</h3>
-        <p style={styles.hint}>CSV format: <code>rollNumber,score,rank,remarks</code></p>
-        <form onSubmit={handleUpload}>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            style={styles.fileInput}
-            aria-label="Select CSV file"
-          />
-          <button type="submit" style={styles.btn} disabled={uploading || !file}>
-            {uploading ? 'Uploading...' : 'Upload Results'}
+      <div className="bg-white rounded-xl p-6 mb-4 border border-[#d2d2d7]">
+        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Upload Results (CSV)</h3>
+        <p className="text-[#86868b] text-xs mb-4">Format: <code className="bg-[#f5f5f7] px-1.5 py-0.5 rounded">rollNumber,score,rank,remarks</code></p>
+        <form onSubmit={handleUpload} className="space-y-3">
+          <input type="file" accept=".csv" onChange={e => setFile(e.target.files?.[0] || null)} className="text-sm text-[#86868b]" />
+          <button type="submit" disabled={uploading || !file} className="px-5 py-2 bg-[#0071e3] text-white rounded-full text-sm font-semibold disabled:opacity-60">
+            {uploading ? 'Uploading…' : 'Upload Results'}
           </button>
         </form>
       </div>
 
-      <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Publish Results</h3>
-        <p style={styles.hint}>Set a publication date or publish immediately.</p>
-        <div style={styles.field}>
-          <label style={styles.label}>Publication Date & Time (optional)</label>
-          <input type="datetime-local" style={styles.input} value={publicationDate} onChange={(e) => setPublicationDate(e.target.value)} />
+      <div className="bg-white rounded-xl p-6 border border-[#d2d2d7]">
+        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Publish Results</h3>
+        <p className="text-[#86868b] text-xs mb-4">Set a date or publish immediately.</p>
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Publication Date (optional)</label>
+          <input type="datetime-local" value={pubDate} onChange={e => setPubDate(e.target.value)} className={inputCls} />
         </div>
-        <button style={{ ...styles.btn, background: '#16a34a' }} onClick={handlePublish} disabled={publishing}>
-          {publishing ? 'Publishing...' : '🚀 Publish Results Now'}
+        <button onClick={handlePublish} disabled={publishing} className="px-5 py-2 bg-[#10b981] text-white rounded-full text-sm font-semibold disabled:opacity-60">
+          {publishing ? 'Publishing…' : '🚀 Publish Results Now'}
         </button>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  heading: { fontSize: '1.5rem', fontWeight: 700, color: '#1a237e', marginBottom: '24px' },
-  success: { background: '#dcfce7', color: '#166534', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px' },
-  error: { background: '#fef2f2', color: '#dc2626', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px' },
-  validationBox: { background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' },
-  card: { background: 'white', borderRadius: '12px', padding: '24px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  cardTitle: { fontSize: '1.1rem', fontWeight: 700, color: '#374151', marginBottom: '12px' },
-  hint: { color: '#6b7280', fontSize: '0.85rem', marginBottom: '16px' },
-  fileInput: { display: 'block', marginBottom: '12px', fontSize: '0.9rem' },
-  btn: { padding: '10px 24px', background: '#1a237e', color: 'white', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' },
-  field: { marginBottom: '16px' },
-  label: { display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px', color: '#374151' },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '0.95rem' },
-};

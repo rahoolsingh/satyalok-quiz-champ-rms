@@ -27,51 +27,47 @@ export function PublicPortal() {
 
   useEffect(() => { portalApi.getSliderImages().then(r => setImages(r.data)).catch(() => {}); }, []);
 
-  // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={center}>
-        <div style={{ width: 20, height: 20, border: '2px solid #d2d2d7', borderTop: '2px solid #0071e3', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div className="flex items-center justify-center min-h-screen bg-[#fbfbfd]">
+        <div className="w-5 h-5 border-2 border-[#d2d2d7] border-t-[#0071e3] rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error || !status) {
     return (
-      <div style={center}>
-        <p style={{ color: '#86868b', marginBottom: 12 }}>Unable to load portal.</p>
-        <button onClick={refetch} style={{ padding: '10px 22px', background: '#0071e3', color: '#fff', border: 'none', borderRadius: 20, fontWeight: 600, cursor: 'pointer' }}>Retry</button>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#fbfbfd] p-6">
+        <p className="text-[#86868b] mb-3">Unable to load portal.</p>
+        <button onClick={refetch} className="px-5 py-2.5 bg-[#0071e3] text-white rounded-full font-semibold text-sm">Retry</button>
       </div>
     );
   }
 
-  // ── Closed ───────────────────────────────────────────────────────────────
   if (status.state === 'CLOSED') {
     return (
-      <div style={center}>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: 'center', maxWidth: 480 }}>
-          <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0071e3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Quiz Champ 2026</p>
-          <h1 style={{ fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#1d1d1f', marginBottom: 12 }}>Coming Soon</h1>
-          <p style={{ color: '#86868b', lineHeight: 1.6, marginBottom: 32 }}>Registration is currently closed. Stay tuned for updates.</p>
+      <div className="flex items-center justify-center min-h-screen bg-[#fbfbfd] p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-md">
+          <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-3">Quiz Champ 2026</p>
+          <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-[#1d1d1f] mb-3">Coming Soon</h1>
+          <p className="text-[#86868b] leading-relaxed mb-8">Registration is currently closed. Stay tuned for updates.</p>
           <SatyalokBadge variant="footer" />
         </motion.div>
       </div>
     );
   }
 
-  // ── Countdown ────────────────────────────────────────────────────────────
   if (status.state === 'COUNTDOWN') {
     return <CountdownTimer targetDate={status.openingDate} onComplete={refetch} />;
   }
 
-  // ── Registration flow ────────────────────────────────────────────────────
   const flowContent = () => {
     if (step === 'admit-card' && admitCard) {
       return (
         <>
           <AdmitCard data={admitCard} participantId={participantId} />
           {status.resultsPublished && (
-            <motion.div style={{ marginTop: 48, paddingTop: 40, borderTop: '1px solid #d2d2d7' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+            <motion.div className="mt-12 pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
               <ResultChecker />
             </motion.div>
           )}
@@ -90,13 +86,11 @@ export function PublicPortal() {
     return null;
   };
 
-  const isFlow = step !== 'home';
-
   return (
-    <div style={{ minHeight: '100vh', background: '#fbfbfd' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: 'clamp(32px,5vw,64px) 24px' }}>
+    <div className="min-h-screen bg-[#fbfbfd]">
+      <div className="max-w-2xl mx-auto px-6 py-[clamp(32px,5vw,64px)]">
         <AnimatePresence mode="wait">
-          {isFlow ? (
+          {step !== 'home' ? (
             <motion.div key={step} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               {flowContent()}
               <SatyalokBadge variant="footer" />
@@ -104,30 +98,25 @@ export function PublicPortal() {
           ) : (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               {/* Hero */}
-              <motion.div style={{ marginBottom: 40 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0071e3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>Registration Open</p>
-                <h1 style={{ fontSize: 'clamp(2rem,5vw,3.2rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#1d1d1f', marginBottom: 10 }}>
-                  Quiz Champ 2026
-                </h1>
-                <p style={{ color: '#86868b', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 480, marginBottom: 16 }}>
+              <motion.div className="mb-10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2.5">Registration Open</p>
+                <h1 className="text-[clamp(2rem,5vw,3.2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2.5">Quiz Champ 2026</h1>
+                <p className="text-[#86868b] text-base leading-relaxed max-w-lg mb-4">
                   The ultimate knowledge championship for students across all classes.
                 </p>
                 <SatyalokBadge variant="inline" />
               </motion.div>
 
-              {/* Slider */}
               {images.length > 0 && (
-                <motion.div style={{ marginBottom: 48 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                <motion.div className="mb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
                   <ImageSlider images={images} />
                 </motion.div>
               )}
 
-              {/* Batch selector */}
               <BatchSelector onSelect={b => { setBatch(b); setStep('register'); }} />
 
-              {/* Results */}
               {status.resultsPublished && (
-                <motion.div style={{ marginTop: 56, paddingTop: 40, borderTop: '1px solid #d2d2d7' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                <motion.div className="mt-14 pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
                   <ResultChecker />
                 </motion.div>
               )}
@@ -140,5 +129,3 @@ export function PublicPortal() {
     </div>
   );
 }
-
-const center: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#fbfbfd', padding: 24 };

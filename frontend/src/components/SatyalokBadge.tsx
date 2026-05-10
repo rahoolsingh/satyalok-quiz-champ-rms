@@ -1,47 +1,36 @@
 import React from 'react';
 import satyalokLogo from '../assets/satyalok.png';
 
-/**
- * "An Initiative by Satyalok" badge — links to satyalok.in
- * variant="inline"  → small horizontal pill (for hero / headings)
- * variant="footer"  → centered footer row
- */
 export function SatyalokBadge({ variant = 'inline' }: { variant?: 'inline' | 'footer' }) {
   if (variant === 'footer') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 24, borderTop: '1px solid #d2d2d7', marginTop: 40 }}>
-        <p style={{ fontSize: '0.78rem', color: '#86868b', fontWeight: 400 }}>An Initiative by</p>
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-xs text-gray-200">An Initiative by</p>
         <a
           href="https://satyalok.in"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
+          className="flex items-center gap-2 hover:opacity-75 transition-opacity"
           aria-label="Visit Satyalok website"
         >
-          <img src={satyalokLogo} alt="Satyalok logo" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+          <img src={satyalokLogo} alt="Satyalok logo" className="h-7 w-auto object-contain" />
+          <span className="sr-only">Satyalok</span>
         </a>
       </div>
     );
   }
 
-  // inline pill
   return (
     <a
       href="https://satyalok.in"
       target="_blank"
       rel="noopener noreferrer"
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6,
-        padding: '4px 10px 4px 6px',
-        border: '1px solid #d2d2d7', borderRadius: 20,
-        textDecoration: 'none', background: 'transparent',
-        transition: 'border-color 0.15s',
-      }}
+      className="inline-flex items-center gap-1.5 px-3 py-1 border border-[#d2d2d7] rounded-full hover:border-[#0071e3] transition-colors"
       aria-label="An Initiative by Satyalok"
     >
-      <img src={satyalokLogo} alt="Satyalok" style={{ height: 18, width: 'auto', objectFit: 'contain' }} />
-      <span style={{ fontSize: '0.78rem', fontWeight: 500, color: '#86868b', whiteSpace: 'nowrap' }}>
-        An Initiative by <span style={{ color: '#1d1d1f', fontWeight: 600 }}>Satyalok</span>
+      <img src={satyalokLogo} alt="Satyalok" className="h-4 w-auto object-contain" />
+      <span className="text-xs font-medium text-[#86868b] whitespace-nowrap">
+        An Initiative by <span className="text-[#1d1d1f] font-semibold">Satyalok</span>
       </span>
     </a>
   );

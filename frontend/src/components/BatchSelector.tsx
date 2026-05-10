@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BatchType } from '../types';
 
-const batches: { type: BatchType; label: string; sub: string; classes: string; icon: string }[] = [
-  { type: 'JUNIOR', label: 'Junior Batch', sub: 'Classes 1 – 7', classes: 'Primary & Middle School', icon: '🎓' },
-  { type: 'SENIOR', label: 'Senior Batch', sub: 'Classes 8 – 12', classes: 'High School', icon: '🏆' },
+const batches = [
+  { type: 'JUNIOR' as BatchType, label: 'Junior Batch', sub: 'Classes 1 – 7', classes: 'Primary & Middle School', icon: '🎓' },
+  { type: 'SENIOR' as BatchType, label: 'Senior Batch', sub: 'Classes 8 – 12', classes: 'High School', icon: '🏆' },
 ];
 
 export function BatchSelector({ onSelect }: { onSelect: (b: BatchType) => void }) {
@@ -12,14 +12,14 @@ export function BatchSelector({ onSelect }: { onSelect: (b: BatchType) => void }
 
   return (
     <motion.div
+      className="w-full"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-      style={{ width: '100%' }}
     >
-      <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0071e3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>Step 1 of 3</p>
-      <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', fontWeight: 700, letterSpacing: '-0.02em', color: '#1d1d1f', marginBottom: 6 }}>Choose your batch</h2>
-      <p style={{ color: '#86868b', marginBottom: 32, fontSize: '1rem', lineHeight: 1.5 }}>Select the category that matches your class</p>
+      <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2.5">Step 1 of 3</p>
+      <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-1.5">Choose your batch</h2>
+      <p className="text-[#86868b] mb-8 text-base leading-relaxed">Select the category that matches your class</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {batches.map((b) => (
           <motion.button
             key={b.type}
@@ -27,22 +27,17 @@ export function BatchSelector({ onSelect }: { onSelect: (b: BatchType) => void }
             onHoverStart={() => setHovered(b.type)}
             onHoverEnd={() => setHovered(null)}
             whileTap={{ scale: 0.98 }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 16,
-              padding: '20px 24px', borderRadius: 12, cursor: 'pointer',
-              background: 'transparent', textAlign: 'left',
-              border: `${hovered === b.type ? 2 : 1}px solid ${hovered === b.type ? '#0071e3' : '#d2d2d7'}`,
-              transition: 'border-color 0.15s, border-width 0.15s',
-            }}
+            className={`flex items-center gap-4 p-5 rounded-xl text-left bg-transparent transition-all cursor-pointer
+              ${hovered === b.type ? 'border-2 border-[#0071e3]' : 'border border-[#d2d2d7]'}`}
             aria-label={`Register for ${b.label}`}
           >
-            <span style={{ fontSize: '2rem', flexShrink: 0 }}>{b.icon}</span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontWeight: 600, fontSize: '1rem', color: '#1d1d1f', marginBottom: 2 }}>{b.label}</p>
-              <p style={{ fontSize: '0.88rem', color: '#86868b' }}>{b.sub}</p>
-              <p style={{ fontSize: '0.78rem', color: '#86868b', marginTop: 2 }}>{b.classes}</p>
+            <span className="text-4xl shrink-0">{b.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-base text-[#1d1d1f] mb-0.5">{b.label}</p>
+              <p className="text-sm text-[#86868b]">{b.sub}</p>
+              <p className="text-xs text-[#86868b] mt-0.5">{b.classes}</p>
             </div>
-            <span style={{ color: '#0071e3', fontSize: '1.1rem', flexShrink: 0 }}>→</span>
+            <span className="text-[#0071e3] text-lg shrink-0">→</span>
           </motion.button>
         ))}
       </div>

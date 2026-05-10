@@ -1,55 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
 
-:root {
-  --bg: #fbfbfd;
-  --text: #1d1d1f;
-  --text2: #86868b;
-  --accent: #0071e3;
-  --accent2: #0066cc;
-  --border: #d2d2d7;
-  --error: #ef4444;
-  --success: #10b981;
-  --radius: 12px;
-  --radius-pill: 20px;
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    @apply bg-[#fbfbfd] text-[#1d1d1f] min-h-screen;
+  }
+
+  button { cursor: pointer; font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
 }
 
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
+@layer utilities {
+  .skip-nav {
+    @apply absolute -top-10 left-0 bg-[#0071e3] text-white px-4 py-2 z-[10000] rounded-br-lg font-semibold transition-all;
+  }
+  .skip-nav:focus { @apply top-0; }
 }
-
-button { cursor: pointer; border: none; outline: none; font-family: inherit; }
-input, select, textarea { outline: none; font-family: inherit; }
-a { text-decoration: none; color: inherit; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Focus */
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
-}
-
-/* Skip nav */
-.skip-nav {
-  position: absolute; top: -40px; left: 0;
-  background: var(--accent); color: white;
-  padding: 8px 16px; z-index: 10000;
-  border-radius: 0 0 8px 0; font-weight: 600;
-  transition: top 0.2s;
-}
-.skip-nav:focus { top: 0; }
-
-/* Admin responsive */
-@media (max-width: 768px) {
-  .admin-layout { flex-direction: column !important; }
-  .admin-sidebar { width: 100% !important; }
-}

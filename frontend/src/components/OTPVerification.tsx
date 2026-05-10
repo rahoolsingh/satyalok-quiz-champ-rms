@@ -52,28 +52,24 @@ export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNum
   const masked = mobileNumber.replace(/(\d{2})\d{6}(\d{2})/, '$1 xxxxxx $2');
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }} style={{ width: '100%' }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#0066cc', fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', padding: 0, marginBottom: 24 }}>
-        ← Back
-      </button>
+    <motion.div className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
+      <button onClick={onBack} className="text-[#0066cc] text-sm font-medium mb-6 block hover:opacity-75 transition-opacity">← Back</button>
 
-      <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0071e3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Step 2 of 3</p>
-      <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', fontWeight: 700, letterSpacing: '-0.02em', color: '#1d1d1f', marginBottom: 8 }}>Verify your number</h2>
-      <p style={{ color: '#86868b', fontSize: '0.95rem', marginBottom: 32, lineHeight: 1.5 }}>
-        We sent a 6-digit code to <strong style={{ color: '#1d1d1f' }}>{masked}</strong>
+      <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 2 of 3</p>
+      <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Verify your number</h2>
+      <p className="text-[#86868b] text-sm mb-8 leading-relaxed">
+        We sent a 6-digit code to <strong className="text-[#1d1d1f] font-semibold">{masked}</strong>
       </p>
 
       <AnimatePresence>
         {error && (
           <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ color: '#ef4444', fontSize: '0.88rem', marginBottom: 16 }} role="alert">
-            {error}
-          </motion.p>
+            className="text-[#ef4444] text-sm mb-4" role="alert">{error}</motion.p>
         )}
       </AnimatePresence>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 28 }} onPaste={handlePaste}>
+        <div className="flex gap-2.5 mb-7" onPaste={handlePaste}>
           {digits.map((d, i) => (
             <input
               key={i}
@@ -84,34 +80,25 @@ export function OTPVerification({ mobileNumber, onSuccess, onBack }: { mobileNum
               maxLength={1}
               inputMode="numeric"
               aria-label={`OTP digit ${i + 1}`}
-              style={{
-                width: 48, height: 56, textAlign: 'center', fontSize: '1.4rem', fontWeight: 700,
-                background: '#ffffff', color: '#1d1d1f',
-                border: `1px solid ${d ? '#0071e3' : '#d2d2d7'}`,
-                borderRadius: 8,
-                boxShadow: d ? '0 0 0 3px rgba(0,113,227,0.15)' : 'none',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-              }}
+              className={`w-12 h-14 text-center text-2xl font-bold bg-white text-[#1d1d1f] rounded-lg outline-none transition-all
+                ${d ? 'border-2 border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.15)]' : 'border border-[#d2d2d7]'}`}
             />
           ))}
         </div>
 
-        <motion.button
-          type="submit"
-          disabled={loading || otp.length < 6}
-          whileHover={{ opacity: otp.length === 6 ? 0.88 : 1 }}
-          whileTap={{ scale: 0.98 }}
-          style={{ width: '100%', padding: '13px 24px', background: otp.length < 6 ? '#d2d2d7' : '#0071e3', color: otp.length < 6 ? '#86868b' : '#fff', border: 'none', borderRadius: 20, fontSize: '0.95rem', fontWeight: 600, cursor: otp.length < 6 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
-        >
-          {loading && <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />}
+        <motion.button type="submit" disabled={loading || otp.length < 6}
+          whileHover={{ opacity: otp.length === 6 ? 0.88 : 1 }} whileTap={{ scale: 0.98 }}
+          className={`w-full py-3 px-6 rounded-full text-[0.95rem] font-semibold flex items-center justify-center gap-2 transition-colors
+            ${otp.length < 6 ? 'bg-[#d2d2d7] text-[#86868b] cursor-default' : 'bg-[#0071e3] text-white cursor-pointer'}`}>
+          {loading && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
           {loading ? 'Verifying…' : 'Verify & Continue →'}
         </motion.button>
       </form>
 
-      <div style={{ marginTop: 20, textAlign: 'center' }}>
+      <div className="mt-5 text-center">
         {canResend
-          ? <button onClick={() => { setCanResend(false); setTimer(30); }} style={{ background: 'none', border: 'none', color: '#0066cc', fontWeight: 500, cursor: 'pointer', fontSize: '0.9rem' }}>Resend OTP</button>
-          : <p style={{ color: '#86868b', fontSize: '0.88rem' }}>Resend in <span style={{ color: '#1d1d1f', fontWeight: 500 }}>{timer}s</span></p>
+          ? <button onClick={() => { setCanResend(false); setTimer(30); }} className="text-[#0066cc] text-sm font-medium hover:opacity-75 transition-opacity">Resend OTP</button>
+          : <p className="text-[#86868b] text-sm">Resend in <span className="text-[#1d1d1f] font-medium">{timer}s</span></p>
         }
       </div>
     </motion.div>

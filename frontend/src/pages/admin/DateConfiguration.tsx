@@ -10,97 +10,61 @@ export function DateConfiguration() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    portalApi.getStatus().then((res) => {
-      const d = res.data;
-      setOpeningDate(d.openingDate ? d.openingDate.slice(0, 16) : '');
-      setClosingDate(d.closingDate ? d.closingDate.slice(0, 16) : '');
+    portalApi.getStatus().then(r => {
+      setOpeningDate(r.data.openingDate?.slice(0, 16) || '');
+      setClosingDate(r.data.closingDate?.slice(0, 16) || '');
     }).catch(() => {});
   }, []);
 
-  const handleSaveDates = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage('');
-    setError('');
-    try {
-      await adminApi.updateDates(openingDate, closingDate);
-      setMessage('Dates updated successfully');
-    } catch {
-      setError('Failed to update dates');
-    } finally {
-      setSaving(false);
-    }
+  const saveDates = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true); setMessage(''); setError('');
+    try { await adminApi.updateDates(openingDate, closingDate); setMessage('Dates updated successfully'); }
+    catch { setError('Failed to update dates'); } finally { setSaving(false); }
   };
 
-  const handleSaveStatus = async () => {
-    setSaving(true);
-    setMessage('');
-    setError('');
-    try {
-      await adminApi.updateStatus(manualStatus);
-      setMessage('Portal status updated');
-    } catch {
-      setError('Failed to update status');
-    } finally {
-      setSaving(false);
-    }
+  const saveStatus = async () => {
+    setSaving(true); setMessage(''); setError('');
+    try { await adminApi.updateStatus(manualStatus); setMessage('Portal status updated'); }
+    catch { setError('Failed to update status'); } finally { setSaving(false); }
   };
+
+  const inputCls = "w-full px-3.5 py-2.5 bg-white border border-[#d2d2d7] rounded-lg text-sm focus:border-[#0071e3] outline-none transition-all";
 
   return (
     <div>
-      <h2 style={styles.heading}>Portal Date Configuration</h2>
+      <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-6">Portal Date Configuration</h2>
+      {message && <p className="bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-lg text-sm mb-4">{message}</p>}
+      {error && <p className="bg-red-50 border border-red-200 text-[#ef4444] px-4 py-2.5 rounded-lg text-sm mb-4">{error}</p>}
 
-      {message && <div style={styles.success}>{message}</div>}
-      {error && <div style={styles.error}>{error}</div>}
-
-      <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Registration Dates</h3>
-        <form onSubmit={handleSaveDates}>
-          <div style={styles.field}>
-            <label style={styles.label}>Opening Date & Time</label>
-            <input type="datetime-local" style={styles.input} value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} aria-required="true" />
+      <div className="bg-white rounded-xl p-6 mb-4 border border-[#d2d2d7]">
+        <h3 className="font-semibold text-[#1d1d1f] mb-4">Registration Dates</h3>
+        <form onSubmit={saveDates} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Opening Date & Time</label>
+            <input type="datetime-local" value={openingDate} onChange={e => setOpeningDate(e.target.value)} className={inputCls} />
           </div>
-          <div style={styles.field}>
-            <label style={styles.label}>Closing Date & Time</label>
-            <input type="datetime-local" style={styles.input} value={closingDate} onChange={(e) => setClosingDate(e.target.value)} aria-required="true" />
+          <div>
+            <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Closing Date & Time</label>
+            <input type="datetime-local" value={closingDate} onChange={e => setClosingDate(e.target.value)} className={inputCls} />
           </div>
-          <button type="submit" style={styles.btn} disabled={saving}>Save Dates</button>
+          <button type="submit" disabled={saving} className="px-5 py-2 bg-[#0071e3] text-white rounded-full text-sm font-semibold disabled:opacity-60">Save Dates</button>
         </form>
       </div>
 
-      <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Manual Portal Status Override</h3>
-        <p style={styles.hint}>Override the automatic date-based status. Use AUTO to let dates control the portal.</p>
-        <div style={styles.statusRow}>
-          {['AUTO', 'COUNTDOWN', 'OPEN', 'CLOSED'].map((s) => (
-            <button
-              key={s}
-              style={{ ...styles.statusBtn, ...(manualStatus === s ? styles.statusBtnActive : {}) }}
-              onClick={() => setManualStatus(s)}
-              aria-pressed={manualStatus === s}
-            >
+      <div className="bg-white rounded-xl p-6 border border-[#d2d2d7]">
+        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Manual Status Override</h3>
+        <p className="text-[#86868b] text-sm mb-4">Use AUTO to let dates control the portal automatically.</p>
+        <div className="flex gap-2 flex-wrap mb-4">
+          {['AUTO', 'COUNTDOWN', 'OPEN', 'CLOSED'].map(s => (
+            <button key={s} onClick={() => setManualStatus(s)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors
+                ${manualStatus === s ? 'bg-[#0071e3] text-white border-[#0071e3]' : 'bg-white text-[#1d1d1f] border-[#d2d2d7] hover:border-[#0071e3]'}`}>
               {s}
             </button>
           ))}
         </div>
-        <button style={styles.btn} onClick={handleSaveStatus} disabled={saving}>Apply Status</button>
+        <button onClick={saveStatus} disabled={saving} className="px-5 py-2 bg-[#0071e3] text-white rounded-full text-sm font-semibold disabled:opacity-60">Apply Status</button>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  heading: { fontSize: '1.5rem', fontWeight: 700, color: '#1a237e', marginBottom: '24px' },
-  success: { background: '#dcfce7', color: '#166534', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px' },
-  error: { background: '#fef2f2', color: '#dc2626', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px' },
-  card: { background: 'white', borderRadius: '12px', padding: '24px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  cardTitle: { fontSize: '1.1rem', fontWeight: 700, color: '#374151', marginBottom: '16px' },
-  field: { marginBottom: '16px' },
-  label: { display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px', color: '#374151' },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '0.95rem' },
-  btn: { padding: '10px 24px', background: '#1a237e', color: 'white', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', marginTop: '8px' },
-  hint: { color: '#6b7280', fontSize: '0.85rem', marginBottom: '16px' },
-  statusRow: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' },
-  statusBtn: { padding: '8px 20px', border: '2px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontWeight: 600, color: '#374151' },
-  statusBtnActive: { borderColor: '#1a237e', background: '#1a237e', color: 'white' },
-};
