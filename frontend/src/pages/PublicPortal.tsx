@@ -7,13 +7,12 @@ import { BatchSelector } from '../components/BatchSelector';
 import { RegistrationForm } from '../components/RegistrationForm';
 import { OTPVerification } from '../components/OTPVerification';
 import { PaymentGateway } from '../components/PaymentGateway';
-import { AdmitCard } from '../components/AdmitCard';
 import { ResultChecker } from '../components/ResultChecker';
 import { SatyalokBadge } from '../components/SatyalokBadge';
-import { SliderImage, BatchType, PaymentSession, AdmitCardData } from '../types';
+import { SliderImage, BatchType, PaymentSession } from '../types';
 import { portalApi } from '../api/client';
 
-type Step = 'home' | 'register' | 'otp' | 'payment' | 'admit-card';
+type Step = 'home' | 'register' | 'otp' | 'payment';
 
 export function PublicPortal() {
   const { status, loading, error, refetch } = usePortalState();
@@ -22,8 +21,6 @@ export function PublicPortal() {
   const [batch, setBatch] = useState<BatchType | null>(null);
   const [mobile, setMobile] = useState('');
   const [session, setSession] = useState<PaymentSession | null>(null);
-  const [admitCard, setAdmitCard] = useState<AdmitCardData | null>(null);
-  const [participantId, setParticipantId] = useState<string | undefined>();
 
   useEffect(() => { portalApi.getSliderImages().then(r => setImages(r.data)).catch(() => {}); }, []);
 
@@ -62,20 +59,8 @@ export function PublicPortal() {
   }
 
   const flowContent = () => {
-    if (step === 'admit-card' && admitCard) {
-      return (
-        <>
-          <AdmitCard data={admitCard} participantId={participantId} />
-          {status.resultsPublished && (
-            <motion.div className="mt-12 pt-10 border-t border-[#d2d2d7]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-              <ResultChecker />
-            </motion.div>
-          )}
-        </>
-      );
-    }
     if (step === 'payment' && session) {
-      return <PaymentGateway session={session} onSuccess={card => { setAdmitCard(card); setParticipantId(session.participantId); setStep('admit-card'); }} onFailure={msg => alert(msg)} />;
+      return <PaymentGateway session={session} onFailure={msg => alert(msg)} />;
     }
     if (step === 'otp') {
       return <OTPVerification mobileNumber={mobile} onSuccess={s => { setSession(s); setStep('payment'); }} onBack={() => setStep('register')} />;

@@ -1,54 +1,31 @@
-import { v4 as uuidv4 } from 'uuid';
+import { BatchType } from '../types';
 
-export interface PaymentSession {
-  sessionId: string;
-  amount: number;
-  currency: string;
-  participantId: string;
-  provider: string;
-  providerOrderId?: string;
-}
+// ─── Fee table ────────────────────────────────────────────────────────────────
+const REGISTRATION_FEES: Record<BatchType, number> = {
+  JUNIOR: 100,
+  SENIOR: 150,
+};
 
-export interface PaymentConfirmation {
-  success: boolean;
-  paymentId?: string;
-  error?: string;
-}
-
-const REGISTRATION_FEE = 100; // in INR (paise for Razorpay = 10000)
-
-export async function createPaymentSession(participantId: string): Promise<PaymentSession> {
-  const provider = process.env.PAYMENT_PROVIDER || 'mock';
-
-  if (provider === 'mock') {
-    return {
-      sessionId: uuidv4(),
-      amount: REGISTRATION_FEE,
-      currency: 'INR',
-      participantId,
-      provider: 'mock',
-      providerOrderId: `mock_order_${uuidv4()}`,
-    };
+/**
+ * Returns the canonical registration fee for a given batch type.
+ * The fee is derived solely from batchType — never from client input.
+ */
+export function getRegistrationFee(batchType: BatchType): number {
+  const fee = REGISTRATION_FEES[batchType];
+  if (fee === undefined) {
+    throw new Error(`Unknown batchType: ${batchType}`);
   }
-
-  // Razorpay integration would go here
-  throw new Error(`Payment provider ${provider} not implemented`);
+  return fee;
 }
 
-export async function verifyPayment(
-  _sessionId: string,
-  _providerPaymentId: string,
-  _providerSignature: string
-): Promise<PaymentConfirmation> {
-  const provider = process.env.PAYMENT_PROVIDER || 'mock';
+// ─── Merchant Transaction ID ──────────────────────────────────────────────────
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  if (provider === 'mock') {
-    return {
-      success: true,
-      paymentId: `mock_pay_${uuidv4()}`,
-    };
-  }
-
-  // Razorpay signature verification would go here
-  throw new Error(`Payment provider ${provider} not implemented`);
+/**
+ * Generates a unique merchant transaction ID prefixed with QC26.
+ * Format: QC26{timestamp}{randomUpperChar}
+ */
+export function generateMerchantTransactionId(): string {
+  const randomChar = CHARS.charAt(Math.floor(Math.random() * CHARS.length));
+  return `QC26${Date.now()}${randomChar}`;
 }

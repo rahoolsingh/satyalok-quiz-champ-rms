@@ -50,7 +50,9 @@ export interface ResultData {
 }
 
 export interface PaymentSession {
-  sessionId: string;
+  sessionId?: string;
+  redirectUrl: string;
+  merchantTransactionId: string;
   amount: number;
   currency: string;
   participantId: string;

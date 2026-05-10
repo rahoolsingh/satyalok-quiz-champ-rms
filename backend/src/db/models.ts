@@ -83,6 +83,7 @@ export interface IParticipant extends Document {
   paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED';
   paymentId?: string;
   admitCardUrl?: string;
+  merchantTransactionId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,11 +106,13 @@ const ParticipantSchema = new Schema<IParticipant>(
     },
     paymentId: { type: String },
     admitCardUrl: { type: String },
+    merchantTransactionId: { type: String },
   },
   { timestamps: true }
 );
 
 ParticipantSchema.index({ mobileNumber: 1 });
+ParticipantSchema.index({ merchantTransactionId: 1 }, { unique: true, sparse: true });
 ParticipantSchema.index({ batchType: 1 });
 ParticipantSchema.index({ rollNumber: 1 }, { unique: true, sparse: true });
 

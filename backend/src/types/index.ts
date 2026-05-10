@@ -17,6 +17,7 @@ export interface Participant {
   paymentStatus: PaymentStatus;
   paymentId?: string;
   admitCardUrl?: string;
+  merchantTransactionId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
