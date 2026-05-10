@@ -81,7 +81,7 @@ export async function sendOTP(mobileNumber: string, otp: string): Promise<void> 
 
   const response = await axios.post(
     smsApiUrl,
-    { mobileNumber, message },
+    { mobileNumber: `91${mobileNumber}`, message },
     {
       headers: {
         'Content-Type': 'application/json',
