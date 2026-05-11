@@ -188,10 +188,18 @@ export function PublicPortal() {
                 return mobile ? (
                     <OTPVerification
                         mobileNumber={mobile}
-                        onSuccess={(result) => {
+                        onSuccess={async (result) => {
                             const profileData = result.profile;
                             setProfile(profileData);
+                            
                             if (profileData?.paymentStatus === "COMPLETED") {
+                                // Fetch complete profile data including admit card
+                                try {
+                                    const response = await profileApi.getMe();
+                                    setProfile(response.data.profile);
+                                } catch (error) {
+                                    console.error("Failed to fetch complete profile:", error);
+                                }
                                 setStep("profile");
                             } else {
                                 setStep("form");
