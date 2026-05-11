@@ -59,15 +59,6 @@ export function UserProfile({ profile, onLogout, onCompletePayment }: UserProfil
         </div>
       )}
 
-      {/* Help Section */}
-      <div className="mt-6 text-center">
-        <p className="text-[#86868b] text-xs">
-          Need help?{' '}
-          <a href="mailto:support@quizchamp.com" className="text-[#0071e3] font-medium">
-            Contact Support
-          </a>
-        </p>
-      </div>
     </motion.div>
   );
 }

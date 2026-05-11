@@ -125,13 +125,21 @@ export async function generateAdmitCardPDF(
             doc.roundedRect(badgeX, margin + 74, badgeW, 24, 12).fill(
                 colors.brand,
             );
+            // junior or senior hall ticket
             doc.fontSize(10)
                 .fillColor("#ffffff")
                 .font("Helvetica-Bold")
-                .text("HALL TICKET / ADMIT CARD", badgeX, margin + 82, {
-                    width: badgeW,
-                    align: "center",
-                });
+                .text(
+                    data.batchType === "JUNIOR"
+                        ? "JUNIOR ADMIT CARD"
+                        : "SENIOR ADMIT CARD",
+                    badgeX,
+                    margin + 82,
+                    {
+                        width: badgeW,
+                        align: "center",
+                    },
+                );
 
             // ========== PARTICIPANT DETAILS ==========
             let currentY = margin + 115;

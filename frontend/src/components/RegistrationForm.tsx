@@ -1,242 +1,597 @@
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BatchType, RegistrationInput } from '../types';
-import { registrationApi } from '../api/client';
+import React, { useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Cropper from "react-easy-crop";
+import { BatchType, RegistrationInput } from "../types";
+import { registrationApi } from "../api/client";
 
+// --- Types ---
 type Errors = Partial<Record<keyof RegistrationInput, string>>;
 
 interface Draft extends Partial<RegistrationInput> {
-  participantId?: string;
-  photoUrl?: string;
-  paymentStatus?: string;
-  merchantTransactionId?: string;
+    participantId?: string;
+    photoUrl?: string;
+    paymentStatus?: string;
+    merchantTransactionId?: string;
 }
 
 interface Props {
-  batchType: BatchType;
-  mobileNumber: string;
-  sessionToken: string;
-  draft?: Draft | null;
-  onSuccess: (paymentSession: {
-    redirectUrl: string;
-    amount: number;
-    participantId: string;
-    merchantTransactionId: string;
-    currency: string;
-    provider: string;
-  }) => void;
-  onBack: () => void;
+    batchType: BatchType;
+    mobileNumber: string;
+    sessionToken: string;
+    draft?: Draft | null;
+    onSuccess: (paymentSession: {
+        redirectUrl: string;
+        amount: number;
+        participantId: string;
+        merchantTransactionId: string;
+        currency: string;
+        provider: string;
+    }) => void;
+    onBack: () => void;
 }
 
-function validate(d: RegistrationInput): Errors {
-  const e: Errors = {};
-  if (!d.name.trim()) e.name = 'Name is required';
-  else if (d.name.trim().length < 2) e.name = 'Name must be at least 2 characters';
-  if (!d.class.trim()) e.class = 'Class is required';
-  if (!d.guardianName.trim()) e.guardianName = 'Guardian name is required';
-  if (!d.address.trim()) e.address = 'Address is required';
-  if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) e.email = 'Enter a valid email address';
-  return e;
+// --- Canvas Utility for Cropping ---
+const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+        const image = new Image();
+        image.addEventListener("load", () => resolve(image));
+        image.addEventListener("error", (error) => reject(error));
+        image.setAttribute("crossOrigin", "anonymous");
+        image.src = url;
+    });
+
+async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<File> {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) throw new Error("No 2d context");
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        pixelCrop.width,
+        pixelCrop.height,
+    );
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    reject(new Error("Canvas is empty"));
+                    return;
+                }
+                // Convert Blob to File to maintain compatibility with FormData
+                const file = new File([blob], "admit_card_photo.jpg", {
+                    type: "image/jpeg",
+                });
+                resolve(file);
+            },
+            "image/jpeg",
+            0.95,
+        );
+    });
 }
 
-function inputClass(err: boolean, focused: boolean) {
-  return `w-full px-3.5 py-2.5 bg-white text-[#1d1d1f] rounded-lg text-[0.95rem] leading-relaxed transition-all outline-none
-    ${err ? 'border border-[#ef4444]' : focused ? 'border border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.2)]' : 'border border-[#d2d2d7]'}`;
-}
-
-function Field({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: React.ReactNode }) {
-  return (
+// --- UI Components ---
+const FieldWrapper = ({
+    label,
+    error,
+    required,
+    children,
+}: {
+    label: string;
+    error?: string;
+    required?: boolean;
+    children: React.ReactNode;
+}) => (
     <div className="mb-5">
-      <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">
-        {label}{required && <span className="text-[#0071e3] ml-0.5">*</span>}
-      </label>
-      {children}
-      <AnimatePresence>
-        {error && (
-          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="text-[#ef4444] text-xs mt-1.5" role="alert">{error}</motion.p>
-        )}
-      </AnimatePresence>
+        <label className="block text-sm font-semibold text-[#1d1d1f] mb-2">
+            {label}{" "}
+            {required && (
+                <span className="text-red-500" aria-hidden="true">
+                    *
+                </span>
+            )}
+        </label>
+        {children}
+        <AnimatePresence>
+            {error && (
+                <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-red-500 text-sm mt-1.5 font-medium"
+                    role="alert"
+                >
+                    {error}
+                </motion.p>
+            )}
+        </AnimatePresence>
     </div>
-  );
-}
+);
 
-function TInput({ value, onChange, placeholder, type, error, maxLength }: {
-  value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; error?: string; maxLength?: number;
-}) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <input type={type || 'text'} value={value} onChange={e => onChange(e.target.value)}
-      placeholder={placeholder} maxLength={maxLength}
-      onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-      className={inputClass(!!error, focused)} aria-invalid={!!error} />
-  );
-}
-
-function TTextarea({ value, onChange, placeholder, error }: { value: string; onChange: (v: string) => void; placeholder?: string; error?: string }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-      className={`${inputClass(!!error, focused)} h-20 resize-y`} aria-invalid={!!error} />
-  );
-}
-
-function TSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-      className={inputClass(false, focused)}>
-      <option value="">Select an option</option>
-      {['Social Media', 'Friend / Family', 'School', 'Newspaper', 'Other'].map(o => <option key={o}>{o}</option>)}
-    </select>
-  );
-}
-
-export function RegistrationForm({ batchType, mobileNumber, sessionToken, draft, onSuccess, onBack }: Props) {
-  const [form, setForm] = useState<RegistrationInput>({
-    name: draft?.name || '',
-    class: draft?.class || '',
+// --- Main Component ---
+export function RegistrationForm({
     batchType,
-    guardianName: draft?.guardianName || '',
-    address: draft?.address || '',
     mobileNumber,
-    email: draft?.email || '',
-    referralSource: draft?.referralSource || '',
-  });
-  const [errors, setErrors] = useState<Errors>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState('');
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(draft?.photoUrl || null);
-  const [photoError, setPhotoError] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
+    sessionToken,
+    draft,
+    onSuccess,
+    onBack,
+}: Props) {
+    const [form, setForm] = useState<RegistrationInput>({
+        name: draft?.name || "",
+        class: draft?.class || "",
+        batchType,
+        guardianName: draft?.guardianName || "",
+        address: draft?.address || "",
+        mobileNumber,
+        email: draft?.email || "",
+        referralSource: draft?.referralSource || "",
+    });
 
-  const set = (k: keyof RegistrationInput) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+    const [errors, setErrors] = useState<Errors>({});
+    const [submitting, setSubmitting] = useState(false);
+    const [serverError, setServerError] = useState("");
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
-      setPhotoError('Accepted formats: JPEG, PNG, WebP');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setPhotoError('Photo must be under 2 MB');
-      return;
-    }
-    setPhotoError('');
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-  };
+    // Photo & Cropper State
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(
+        draft?.photoUrl || null,
+    );
+    const [photoError, setPhotoError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs = validate(form);
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setErrors({}); setSubmitting(true); setServerError('');
+    // Cropper Modal State
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    try {
-      // Build multipart form data
-      const fd = new FormData();
-      fd.append('name', form.name.trim());
-      fd.append('class', form.class.trim());
-      fd.append('batchType', form.batchType);
-      fd.append('guardianName', form.guardianName.trim());
-      fd.append('address', form.address.trim());
-      fd.append('mobileNumber', mobileNumber);
-      if (form.email) fd.append('email', form.email.trim());
-      if (form.referralSource) fd.append('referralSource', form.referralSource.trim());
-      if (photoFile) fd.append('photo', photoFile);
+    const updateForm = (key: keyof RegistrationInput, value: string) => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+        if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+    };
 
-      await registrationApi.saveDraft(fd, sessionToken);
+    const validate = (): boolean => {
+        const errs: Errors = {};
+        if (!form.name.trim()) errs.name = "Full name is required";
+        if (!form.class.trim()) errs.class = "Class is required";
+        if (!form.guardianName.trim())
+            errs.guardianName = "Guardian name is required";
+        if (!form.address.trim()) errs.address = "Full address is required";
+        if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+            errs.email = "Enter a valid email address";
 
-      // Initiate payment
-      const payRes = await registrationApi.initiatePayment(sessionToken);
-      const { redirectUrl, amount, participantId, merchantTransactionId, currency, provider } = payRes.data;
-      onSuccess({ redirectUrl, amount, participantId, merchantTransactionId, currency, provider });
-    } catch (err: unknown) {
-      setServerError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Submission failed. Please try again.');
-    } finally { setSubmitting(false); }
-  };
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
 
-  return (
-    <motion.div className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
-      <div className="mb-6 sm:mb-8">
-        <button onClick={onBack} className="text-[#0066cc] text-sm font-medium mb-4 block hover:opacity-75 transition-opacity">← Back</button>
-        <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 3 of 3</p>
-        <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-1">Registration details</h2>
-        <p className="text-[#86868b] text-sm">{batchType === 'JUNIOR' ? '🎓 Junior Batch · Classes 1–7' : '🏆 Senior Batch · Classes 8–12'}</p>
-        {draft && <p className="text-xs text-[#0071e3] mt-1.5">✓ Draft loaded — your previous data has been pre-filled</p>}
-      </div>
+    // --- Photo Handlers ---
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-      <AnimatePresence>
-        {serverError && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="bg-red-50 border border-red-200 text-[#ef4444] px-4 py-3 rounded-lg mb-5 text-sm overflow-hidden" role="alert">
-            {serverError}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        if (
+            !["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
+                file.type,
+            )
+        ) {
+            setPhotoError("Accepted formats: JPEG, PNG, WebP");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setPhotoError("Photo must be under 5 MB"); // Increased initial allowance since we will compress it during crop
+            return;
+        }
 
-      <form onSubmit={handleSubmit} noValidate>
-        {/* Photo upload */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Photo for Admit Card</label>
-          <div className="flex items-center gap-3 sm:gap-4">
-            {photoPreview
-              ? <img src={photoPreview} alt="Preview" className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-[#d2d2d7]" />
-              : <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#f5f5f7] border border-[#d2d2d7] flex items-center justify-center text-xl sm:text-2xl">📷</div>
-            }
-            <div className="flex-1 min-w-0">
-              <button type="button" onClick={() => fileRef.current?.click()}
-                className="px-3 sm:px-4 py-1.5 border border-[#d2d2d7] rounded-full text-sm font-medium text-[#1d1d1f] hover:border-[#0071e3] transition-colors">
-                {photoPreview ? 'Change photo' : 'Upload photo'}
-              </button>
-              <p className="text-xs text-[#86868b] mt-1">JPEG, PNG or WebP · max 2 MB · optional</p>
-            </div>
-          </div>
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} className="hidden" />
-          {photoError && <p className="text-[#ef4444] text-xs mt-1.5">{photoError}</p>}
-        </div>
+        setPhotoError("");
+        const reader = new FileReader();
+        reader.onload = () => {
+            setImageToCrop(reader.result as string);
+            setIsCropModalOpen(true);
+        };
+        reader.readAsDataURL(file);
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6">
-          <Field label="Full Name" error={errors.name} required>
-            <TInput value={form.name} onChange={set('name')} placeholder="Your full name" error={errors.name} />
-          </Field>
-          <Field label="Class" error={errors.class} required>
-            <TInput value={form.class} onChange={set('class')} placeholder="e.g. Class 8" error={errors.class} />
-          </Field>
-          <Field label="Guardian Name" error={errors.guardianName} required>
-            <TInput value={form.guardianName} onChange={set('guardianName')} placeholder="Parent / Guardian name" error={errors.guardianName} />
-          </Field>
-          <Field label="Mobile Number">
-            <input value={mobileNumber} disabled className="w-full px-3.5 py-2.5 bg-[#f5f5f7] text-[#86868b] rounded-lg text-[0.95rem] border border-[#d2d2d7] cursor-not-allowed" />
-          </Field>
-        </div>
+        // Reset input so the same file can be selected again if cancelled
+        if (fileRef.current) fileRef.current.value = "";
+    };
 
-        <Field label="Address" error={errors.address} required>
-          <TTextarea value={form.address} onChange={set('address')} placeholder="Your full address" error={errors.address} />
-        </Field>
+    const onCropComplete = useCallback(
+        (_croppedArea: any, croppedAreaPixels: any) => {
+            setCroppedAreaPixels(croppedAreaPixels);
+        },
+        [],
+    );
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6">
-          <Field label="Email Address" error={errors.email}>
-            <TInput value={form.email || ''} onChange={set('email')} placeholder="Optional" type="email" error={errors.email} />
-          </Field>
-          <Field label="Where did you hear about us?">
-            <TSelect value={form.referralSource || ''} onChange={set('referralSource')} />
-          </Field>
-        </div>
+    const handleSaveCrop = async () => {
+        if (!imageToCrop || !croppedAreaPixels) return;
+        try {
+            const croppedFile = await getCroppedImg(
+                imageToCrop,
+                croppedAreaPixels,
+            );
+            setPhotoFile(croppedFile);
+            setPhotoPreview(URL.createObjectURL(croppedFile));
+            setIsCropModalOpen(false);
+            setImageToCrop(null);
+        } catch (e) {
+            setPhotoError("Failed to crop image. Please try again.");
+        }
+    };
 
-        <motion.button type="submit" disabled={submitting}
-          whileHover={{ opacity: 0.88 }} whileTap={{ scale: 0.98 }}
-          className="mt-2 w-full py-3 px-6 bg-[#0071e3] text-white rounded-full text-[0.95rem] font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
-          {submitting && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-          {submitting ? 'Saving & initiating payment…' : 'Save & Proceed to Payment →'}
-        </motion.button>
-      </form>
-    </motion.div>
-  );
+    // --- Submission ---
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!validate()) {
+            // Scroll to top to show errors
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+
+        setSubmitting(true);
+        setServerError("");
+
+        try {
+            const fd = new FormData();
+            fd.append("name", form.name.trim());
+            fd.append("class", form.class.trim());
+            fd.append("batchType", form.batchType);
+            fd.append("guardianName", form.guardianName.trim());
+            fd.append("address", form.address.trim());
+            fd.append("mobileNumber", mobileNumber);
+            if (form.email) fd.append("email", form.email.trim());
+            if (form.referralSource)
+                fd.append("referralSource", form.referralSource.trim());
+            if (photoFile) fd.append("photo", photoFile);
+
+            await registrationApi.saveDraft(fd, sessionToken);
+            const payRes = await registrationApi.initiatePayment(sessionToken);
+            onSuccess(payRes.data);
+        } catch (err: any) {
+            setServerError(
+                err?.response?.data?.error ||
+                    "Registration failed. Please try again or contact support.",
+            );
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <motion.div
+            className="w-full max-w-2xl mx-auto"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.35 }}
+        >
+            <header className="mb-8">
+                <button
+                    type="button"
+                    onClick={onBack}
+                    disabled={submitting}
+                    className="text-[#0071e3] text-sm font-medium mb-6 flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50"
+                >
+                    &larr; Back
+                </button>
+                <p className="text-xs font-semibold text-[#0071e3] tracking-widest uppercase mb-2">
+                    Step 3 of 3
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1d1d1f] mb-2">
+                    Registration details
+                </h2>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3 mt-3">
+                    <span className="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-[#1d1d1f] w-fit">
+                        {batchType === "JUNIOR"
+                            ? "🎓 Junior Batch (1–7)"
+                            : "🏆 Senior Batch (8–12)"}
+                    </span>
+                    {draft && (
+                        <span className="text-sm font-medium text-green-600 flex items-center gap-1">
+                            <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                            Draft loaded
+                        </span>
+                    )}
+                </div>
+            </header>
+
+            <AnimatePresence>
+                {serverError && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm font-medium"
+                        role="alert"
+                    >
+                        {serverError}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+                {/* Photo Upload Section */}
+                <div className="p-5 bg-gray-50 border border-gray-200 rounded-2xl">
+                    <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                        Admit Card Photo
+                    </label>
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="relative shrink-0 w-20 h-24 sm:w-24 sm:h-28 bg-white border-2 border-dashed border-gray-300 rounded-xl overflow-hidden flex items-center justify-center shadow-sm">
+                            {photoPreview ? (
+                                <img
+                                    src={photoPreview}
+                                    alt="Admit Card Preview"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <svg
+                                    className="w-8 h-8 text-gray-400"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <button
+                                type="button"
+                                onClick={() => fileRef.current?.click()}
+                                disabled={submitting}
+                                className="px-5 py-2.5 bg-white border border-gray-300 hover:border-[#0071e3] hover:text-[#0071e3] rounded-xl text-sm font-semibold text-[#1d1d1f] transition-colors shadow-sm disabled:opacity-50"
+                            >
+                                {photoPreview ? "Change Photo" : "Upload Photo"}
+                            </button>
+                            <p className="text-sm text-gray-500 mt-2">
+                                Required for admit card. (Max 5MB)
+                            </p>
+                            {photoError && (
+                                <p className="text-red-500 text-sm mt-1.5 font-medium">
+                                    {photoError}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        aria-hidden="true"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FieldWrapper
+                        label="Full Name"
+                        error={errors.name}
+                        required
+                    >
+                        <input
+                            value={form.name}
+                            onChange={(e) => updateForm("name", e.target.value)}
+                            placeholder="Student's name"
+                            disabled={submitting}
+                            className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.name ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
+                        />
+                    </FieldWrapper>
+                    <FieldWrapper label="Class" error={errors.class} required>
+                        <input
+                            value={form.class}
+                            onChange={(e) =>
+                                updateForm("class", e.target.value)
+                            }
+                            placeholder="e.g. Class 8"
+                            disabled={submitting}
+                            className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.class ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
+                        />
+                    </FieldWrapper>
+                    <FieldWrapper
+                        label="Guardian Name"
+                        error={errors.guardianName}
+                        required
+                    >
+                        <input
+                            value={form.guardianName}
+                            onChange={(e) =>
+                                updateForm("guardianName", e.target.value)
+                            }
+                            placeholder="Parent/Guardian"
+                            disabled={submitting}
+                            className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.guardianName ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
+                        />
+                    </FieldWrapper>
+                    <FieldWrapper label="Mobile Number">
+                        <input
+                            value={mobileNumber}
+                            disabled
+                            className="w-full px-4 py-3 bg-gray-50 text-gray-500 font-medium rounded-xl text-base border border-gray-200 cursor-not-allowed"
+                        />
+                    </FieldWrapper>
+                </div>
+
+                <FieldWrapper label="Address" error={errors.address} required>
+                    <textarea
+                        value={form.address}
+                        onChange={(e) => updateForm("address", e.target.value)}
+                        placeholder="Full residential address"
+                        disabled={submitting}
+                        className={`w-full h-24 px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base resize-y outline-none transition-all border ${errors.address ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
+                    />
+                </FieldWrapper>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FieldWrapper
+                        label="Email Address"
+                        error={errors.email}
+                    >
+                        <input
+                            type="email"
+                            value={form.email}
+                            onChange={(e) =>
+                                updateForm("email", e.target.value)
+                            }
+                            placeholder="For backup communication"
+                            disabled={submitting}
+                            className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.email ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
+                        />
+                    </FieldWrapper>
+                    <FieldWrapper label="How did you hear about us?">
+                        <select
+                            value={form.referralSource}
+                            onChange={(e) =>
+                                updateForm("referralSource", e.target.value)
+                            }
+                            disabled={submitting}
+                            className="w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20 cursor-pointer"
+                        >
+                            <option value="">Select an option</option>
+                            {[
+                                "Social Media",
+                                "Friend / Family",
+                                "School",
+                                "Newspaper",
+                                "Other",
+                            ].map((o) => (
+                                <option key={o} value={o}>
+                                    {o}
+                                </option>
+                            ))}
+                        </select>
+                    </FieldWrapper>
+                </div>
+
+                <div className="pt-4">
+                    <motion.button
+                        type="submit"
+                        disabled={submitting}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full py-4 px-6 bg-[#0071e3] hover:bg-[#005bb5] text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 shadow-md"
+                    >
+                        {submitting ? (
+                            <>
+                                <svg
+                                    className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>{" "}
+                                Saving details...
+                            </>
+                        ) : (
+                            "Save & Proceed to Payment \u2192"
+                        )}
+                    </motion.button>
+                </div>
+            </form>
+
+            {/* --- Cropper Modal Overlay --- */}
+            <AnimatePresence>
+                {isCropModalOpen && imageToCrop && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col"
+                        >
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+                                <div>
+                                    <h3 className="font-bold text-lg text-gray-900">
+                                        Crop Photo
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                        Drag to position, pinch to zoom
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setIsCropModalOpen(false)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+
+                            <div className="relative w-full h-[60vh] sm:h-[400px] bg-gray-900">
+                                <Cropper
+                                    image={imageToCrop}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={100 / 125} // Strict 4:5 aspect ratio enforced here
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
+                                    showGrid={true}
+                                />
+                            </div>
+
+                            <div className="p-5 bg-white z-10 flex gap-3">
+                                <button
+                                    onClick={() => setIsCropModalOpen(false)}
+                                    className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveCrop}
+                                    className="flex-1 py-3 px-4 rounded-xl font-semibold text-white bg-[#0071e3] hover:bg-[#005bb5] transition-colors shadow-md"
+                                >
+                                    Crop & Save
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
 }
