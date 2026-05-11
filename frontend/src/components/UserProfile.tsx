@@ -17,24 +17,6 @@ export function UserProfile({ profile, onLogout, onCompletePayment }: UserProfil
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Header with logout */}
-      <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#d2d2d7]">
-        <div>
-          <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase">
-            My Profile
-          </p>
-          <h1 className="text-[clamp(1.5rem,4vw,2rem)] font-bold tracking-tight text-[#1d1d1f]">
-            {profile.name}
-          </h1>
-        </div>
-        <button
-          onClick={onLogout}
-          className="text-sm text-[#ef4444] hover:opacity-75 transition-opacity font-medium"
-        >
-          Logout
-        </button>
-      </div>
-
       {/* Payment Status Card */}
       <PaymentStatusCard
         status={profile.paymentStatus}

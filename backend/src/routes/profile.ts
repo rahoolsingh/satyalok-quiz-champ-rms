@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { getProfile, checkDuplicateRegistration } from '../services/profile';
+import { Participant } from '../db/models';
+import { generateAdmitCardPDF } from '../services/admitCardPdf';
 
 export const profileRouter = Router();
 
@@ -60,3 +62,72 @@ profileRouter.get('/check-duplicate', async (req: SessionRequest, res: Response)
     return res.status(500).json({ error: 'Failed to check for duplicate registration' });
   }
 });
+
+// GET /api/profile/admit-card/download
+// Download admit card PDF for authenticated user
+// Always generates PDF on-the-fly to ensure latest data
+profileRouter.get(
+  '/admit-card/download',
+  sessionAuthMiddleware,
+  async (req: SessionRequest, res: Response) => {
+    try {
+      const mobile = req.verifiedMobile!;
+
+      // Find participant by mobile number
+      const participant = await Participant.findOne({ mobileNumber: mobile })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      if (!participant) {
+        return res.status(404).json({ error: 'No registration found' });
+      }
+
+      // Validate payment status
+      if (participant.paymentStatus !== 'COMPLETED') {
+        return res.status(403).json({
+          error: 'Payment not completed. Complete payment to download admit card.',
+        });
+      }
+
+      // Validate roll number assignment
+      if (!participant.rollNumber) {
+        return res.status(400).json({
+          error: 'Roll number not yet assigned. Please contact support.',
+        });
+      }
+
+      // Prepare admit card data
+      const admitCardData = {
+        rollNumber: participant.rollNumber,
+        name: participant.name,
+        class: participant.class,
+        batchType: participant.batchType,
+        guardianName: participant.guardianName,
+        mobileNumber: participant.mobileNumber,
+        photoUrl: participant.photoUrl,
+        eventName: 'Quiz Champ 2026 Competition',
+        eventDate: 'To be announced',
+        venue: 'To be announced',
+      };
+
+      // Generate PDF
+      const pdfBuffer = await generateAdmitCardPDF(admitCardData);
+
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="admit-card-${participant.rollNumber}.pdf"`
+      );
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      // Send PDF buffer
+      return res.send(pdfBuffer);
+    } catch (error) {
+      console.error('[profile/admit-card/download] Error:', error);
+      return res.status(500).json({
+        error: 'Failed to generate admit card. Please try again later.',
+      });
+    }
+  }
+);

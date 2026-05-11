@@ -1,130 +1,145 @@
-import React from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AdmitCardData } from '../types';
+import { profileApi } from '../api/client';
 
-export function AdmitCard({ data, participantId }: { data: AdmitCardData; participantId?: string }) {
-  const handleDownload = () => {
-    if (participantId) {
-      window.open(`/api/registration/admit-card/${participantId}/download`, '_blank');
+export function AdmitCard({ data }: { data: AdmitCardData; participantId?: string }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      const response = await profileApi.downloadAdmitCard();
+      
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `admit-card-${data.rollNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error('Download error:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to download admit card';
+      alert(errorMessage);
+    } finally {
+      setDownloading(false);
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <motion.div className="w-full" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <motion.div 
+      className="w-full" 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.3 }}
+    >
       {/* Success Message */}
-      <div className="flex items-center gap-3 mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-        <span className="text-3xl">✅</span>
-        <div className="flex-1">
-          <p className="font-semibold text-[#1d1d1f] text-base">Registration Successful!</p>
-          <p className="text-[#86868b] text-sm">Your admit card has been sent to your email</p>
+      <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-gray-900">Registration Complete!</h2>
+            <p className="text-sm text-gray-600">Your payment was successful</p>
+          </div>
         </div>
       </div>
 
-      {/* Admit Card */}
-      <div id="admit-card" className="border-2 border-[#d2d2d7] rounded-2xl overflow-hidden shadow-sm bg-white">
-        {/* Header with Gradient */}
-        <div className="bg-gradient-to-r from-[#0071e3] to-[#005bb5] px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/80 text-xs font-medium tracking-widest uppercase mb-1">Official Admit Card</p>
-              <h2 className="text-white text-2xl font-bold tracking-tight">{data.eventName}</h2>
-            </div>
-            <div className="text-white text-4xl">🏆</div>
-          </div>
-        </div>
-
-        {/* Photo and Roll Number Section */}
-        <div className="px-6 py-6 border-b-2 border-[#f5f5f7] bg-gradient-to-b from-blue-50/30 to-transparent">
-          <div className="flex items-center gap-6">
-            {data.photoUrl && (
-              <div className="flex-shrink-0">
+      {/* Roll Number Card */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-5">
+        <div className="flex items-center gap-5">
+          {data.photoUrl && (
+            <div className="flex-shrink-0">
+              <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200">
                 <img 
                   src={data.photoUrl} 
                   alt={data.name} 
-                  className="w-24 h-24 rounded-xl object-cover border-2 border-white shadow-md" 
+                  className="w-full h-full object-cover" 
                 />
               </div>
-            )}
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-[#86868b] tracking-widest uppercase mb-2">Roll Number</p>
-              <motion.p
-                className="text-4xl font-bold tracking-wider text-[#0071e3]"
-                initial={{ scale: 0.8, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                transition={{ delay: 0.2 }}
-              >
+            </div>
+          )}
+          <div className="flex-1">
+            <p className="text-xs font-medium text-gray-500 uppercase mb-2">Your Roll Number</p>
+            <div className="bg-blue-50 rounded-lg px-4 py-3 border border-blue-200">
+              <p className="text-3xl font-bold text-[#0071e3] tracking-wide text-center">
                 {data.rollNumber}
-              </motion.p>
+              </p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Details Grid */}
-        <div className="p-6 space-y-4">
-          <DetailRow label="Name" value={data.name} />
-          <DetailRow label="Class" value={data.class} />
-          <DetailRow label="Batch" value={data.batchType === 'JUNIOR' ? 'Junior (Classes 1-7)' : 'Senior (Classes 8-12)'} />
-          <DetailRow label="Guardian" value={data.guardianName} />
-          <DetailRow label="Mobile" value={data.mobileNumber} />
-          <DetailRow 
-            label="Issued On" 
-            value={new Date(data.generatedAt).toLocaleDateString('en-IN', { 
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
-            })} 
+      {/* Personal Information */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-5">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">Personal Information</h3>
+        <div className="space-y-3">
+          <InfoRow label="Name" value={data.name} />
+          <InfoRow label="Class" value={data.class} />
+          <InfoRow 
+            label="Batch" 
+            value={data.batchType === 'JUNIOR' ? 'Junior (Classes 1-7)' : 'Senior (Classes 8-12)'} 
           />
-        </div>
-
-        {/* Instructions */}
-        <div className="px-6 py-4 bg-amber-50 border-t-2 border-amber-200">
-          <p className="text-amber-900 text-xs font-medium mb-2">📋 Important Instructions:</p>
-          <ul className="text-amber-800 text-xs space-y-1 ml-4 list-disc">
-            <li>Bring this admit card on the day of the event</li>
-            <li>Arrive 30 minutes before the scheduled time</li>
-            <li>Carry a valid ID proof along with this admit card</li>
-          </ul>
+          <InfoRow label="Guardian" value={data.guardianName} />
+          <InfoRow label="Mobile" value={`+91 ${data.mobileNumber}`} />
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 mt-6">
-        <button 
-          onClick={handlePrint} 
-          className="flex-1 py-3 px-5 bg-white text-[#0071e3] border-2 border-[#0071e3] rounded-full font-semibold text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-        >
-          <span>🖨️</span>
-          Print
-        </button>
-        {participantId && (
-          <button 
-            onClick={handleDownload} 
-            className="flex-1 py-3 px-5 bg-[#0071e3] text-white rounded-full font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md"
-          >
-            <span>📥</span>
-            Download PDF
-          </button>
+      {/* Event Information */}
+      <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-5">
+        <h3 className="text-sm font-bold text-gray-900 mb-3">Event Information</h3>
+        <div className="space-y-2 text-sm text-gray-700">
+          <p><span className="font-medium">Event:</span> {data.eventName}</p>
+          <p><span className="font-medium">Date:</span> To be announced</p>
+          <p><span className="font-medium">Venue:</span> To be announced</p>
+          <p className="text-xs text-gray-600 mt-3">
+            Check your email and WhatsApp for event updates
+          </p>
+        </div>
+      </div>
+
+      {/* Download Button */}
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        className="w-full py-4 px-6 bg-[#0071e3] text-white rounded-xl font-semibold text-base hover:bg-[#005bb5] active:scale-98 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+      >
+        {downloading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span>Downloading...</span>
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Download Admit Card PDF</span>
+          </>
         )}
-      </div>
+      </button>
 
       {/* Help Text */}
-      <p className="text-center text-[#86868b] text-xs mt-4">
-        Need help? Contact us at <a href="mailto:support@quizchamp.com" className="text-[#0071e3] font-medium">support@quizchamp.com</a>
+      <p className="text-center text-gray-500 text-xs mt-4">
+        Need help?{' '}
+        <a href="mailto:support@quizchamp.com" className="text-[#0071e3] font-medium">
+          Contact Support
+        </a>
       </p>
     </motion.div>
   );
 }
 
-// Helper component for detail rows
-function DetailRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-[#f5f5f7] last:border-0">
-      <span className="text-sm text-[#86868b] font-medium">{label}</span>
-      <span className="text-sm text-[#1d1d1f] font-semibold">{value}</span>
+    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+      <span className="text-sm text-gray-600">{label}</span>
+      <span className="text-sm text-gray-900 font-semibold">{value}</span>
     </div>
   );
 }

@@ -1,74 +1,167 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SliderImage } from '../types';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { SliderImage } from "../types";
 
-export function ImageSlider({ images, autoPlayInterval = 5000 }: { images: SliderImage[]; autoPlayInterval?: number }) {
-  const [current, setCurrent] = useState(0);
-  const [dir, setDir] = useState(1);
+interface Props {
+    images: SliderImage[];
+    autoPlayInterval?: number;
+}
 
-  const next = useCallback(() => { setDir(1); setCurrent(c => (c + 1) % images.length); }, [images.length]);
-  const prev = () => { setDir(-1); setCurrent(c => (c - 1 + images.length) % images.length); };
+export function ImageSlider({ images, autoPlayInterval = 5000 }: Props) {
+    const [current, setCurrent] = useState(0);
+    const [dir, setDir] = useState(1);
+    const [isPaused, setIsPaused] = useState(false);
 
-  useEffect(() => {
-    if (images.length <= 1) return;
-    const t = setInterval(next, autoPlayInterval);
-    return () => clearInterval(t);
-  }, [next, images.length, autoPlayInterval]);
+    const next = useCallback(() => {
+        setDir(1);
+        setCurrent((c) => (c + 1) % images.length);
+    }, [images.length]);
 
-  if (!images.length) return null;
+    const prev = useCallback(() => {
+        setDir(-1);
+        setCurrent((c) => (c - 1 + images.length) % images.length);
+    }, [images.length]);
 
-  const variants = {
-    enter: (d: number) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? '-100%' : '100%', opacity: 0 }),
-  };
+    // Handle Autoplay with Pause on Hover
+    useEffect(() => {
+        if (images.length <= 1 || isPaused) return;
 
-  return (
-    <div className="w-full" role="region" aria-label="Event image slider">
-      <div className="relative rounded-xl overflow-hidden bg-[#f5f5f7]" style={{ height: 'clamp(200px,40vw,440px)' }}>
-        <AnimatePresence custom={dir} mode="popLayout">
-          <motion.img
-            key={current}
-            src={images[current].imageUrl}
-            alt={`Slide ${current + 1}`}
-            custom={dir}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        </AnimatePresence>
+        const timer = setInterval(next, autoPlayInterval);
+        return () => clearInterval(timer);
+    }, [next, images.length, autoPlayInterval, isPaused]);
 
-        {images.length > 1 && (
-          <>
-            <button onClick={prev} aria-label="Previous"
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/85 hover:bg-white border-none rounded-full w-9 h-9 text-base flex items-center justify-center cursor-pointer transition-colors shadow-sm">
-              ‹
-            </button>
-            <button onClick={next} aria-label="Next"
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/85 hover:bg-white border-none rounded-full w-9 h-9 text-base flex items-center justify-center cursor-pointer transition-colors shadow-sm">
-              ›
-            </button>
-          </>
-        )}
-      </div>
+    // Handle Swipe Gestures
+    const handleDragEnd = (
+        e: MouseEvent | TouchEvent | PointerEvent,
+        info: PanInfo,
+    ) => {
+        const swipeThreshold = 50;
+        if (info.offset.x < -swipeThreshold) {
+            next();
+        } else if (info.offset.x > swipeThreshold) {
+            prev();
+        }
+    };
 
-      {images.length > 1 && (
-        <div className="flex gap-1.5 justify-center mt-3">
-          {images.map((_, i) => (
-            <motion.button
-              key={i}
-              onClick={() => { setDir(i > current ? 1 : -1); setCurrent(i); }}
-              animate={{ width: i === current ? 20 : 6, backgroundColor: i === current ? '#0071e3' : '#d2d2d7' }}
-              transition={{ duration: 0.25 }}
-              className="h-1.5 rounded-full border-none cursor-pointer p-0"
-              aria-label={`Slide ${i + 1}`}
-            />
-          ))}
+    if (!images?.length) return null;
+
+    const variants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? "100%" : "-100%",
+            opacity: 0,
+        }),
+        center: {
+            x: 0,
+            opacity: 1,
+        },
+        exit: (direction: number) => ({
+            x: direction > 0 ? "-100%" : "100%",
+            opacity: 0,
+        }),
+    };
+
+    return (
+        <div
+            className="w-full relative group"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Event image slider"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={() => setIsPaused(true)}
+            onTouchEnd={() => setIsPaused(false)}
+        >
+            {/* Aspect Square Container */}
+            <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200/50">
+                <AnimatePresence initial={false} custom={dir} mode="popLayout">
+                    <motion.img
+                        key={current}
+                        src={images[current].imageUrl}
+                        alt={`Slide ${current + 1} of ${images.length}`}
+                        custom={dir}
+                        variants={variants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{
+                            x: { type: "spring", stiffness: 300, damping: 30 },
+                            opacity: { duration: 0.2 },
+                        }}
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={1}
+                        onDragEnd={handleDragEnd}
+                        className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing"
+                    />
+                </AnimatePresence>
+
+                {/* Navigation Buttons - Hidden on mobile, shown on hover for desktop */}
+                {images.length > 1 && (
+                    <>
+                        <button
+                            onClick={prev}
+                            aria-label="Previous slide"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center transition-all shadow-md opacity-0 sm:group-hover:opacity-100 focus:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]"
+                        >
+                            <svg
+                                className="w-5 h-5 pr-0.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2.5}
+                                    d="M15 19l-7-7 7-7"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={next}
+                            aria-label="Next slide"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center transition-all shadow-md opacity-0 sm:group-hover:opacity-100 focus:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]"
+                        >
+                            <svg
+                                className="w-5 h-5 pl-0.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2.5}
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {/* Pagination Indicators */}
+            {images.length > 1 && (
+                <div className="flex gap-2 justify-center mt-4">
+                    {images.map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => {
+                                setDir(i > current ? 1 : -1);
+                                setCurrent(i);
+                            }}
+                            aria-label={`Go to slide ${i + 1}`}
+                            aria-current={i === current}
+                            className="h-2 rounded-full transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3] focus-visible:ring-offset-2"
+                            style={{
+                                width: i === current ? "24px" : "8px",
+                                backgroundColor:
+                                    i === current ? "#0071e3" : "#d2d2d7",
+                            }}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
