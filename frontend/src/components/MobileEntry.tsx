@@ -4,27 +4,23 @@ import { Link } from 'react-router-dom';
 import { BatchType } from '../types';
 import { otpApi } from '../api/client';
 
-const batches = [
-  { type: 'JUNIOR' as BatchType, label: 'Junior Batch', sub: 'Classes 1 – 7', icon: '🎓' },
-  { type: 'SENIOR' as BatchType, label: 'Senior Batch', sub: 'Classes 8 – 12', icon: '🏆' },
-];
-
 interface Props {
-  onSuccess: (mobile: string, batch: BatchType) => void;
+  batchType: BatchType;
+  onSuccess: (mobile: string) => void;
   onBack: () => void;
 }
 
-export function MobileEntry({ onSuccess, onBack }: Props) {
-  const [batch, setBatch] = useState<BatchType | null>(null);
+export function MobileEntry({ batchType, onSuccess, onBack }: Props) {
   const [mobile, setMobile] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [focused, setFocused] = useState(false);
 
+  const batchLabel = batchType === 'JUNIOR' ? '🎓 Junior Batch · Classes 1–7' : '🏆 Senior Batch · Classes 8–12';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!batch) { setError('Please select a batch'); return; }
     if (!/^[6-9]\d{9}$/.test(mobile.trim())) {
       setError('Enter a valid 10-digit mobile number');
       return;
@@ -32,7 +28,7 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
     setError(''); setLoading(true); setAlreadyRegistered(false);
     try {
       await otpApi.send(mobile.trim());
-      onSuccess(mobile.trim(), batch);
+      onSuccess(mobile.trim());
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string; alreadyRegistered?: boolean } } };
       if (e.response?.data?.alreadyRegistered) {
@@ -50,8 +46,9 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
       <button onClick={onBack} className="text-[#0066cc] text-sm font-medium mb-6 block hover:opacity-75 transition-opacity">← Back</button>
 
       <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 1 of 3</p>
-      <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Choose batch & verify</h2>
-      <p className="text-[#86868b] text-sm mb-6 sm:mb-7">Select your batch and enter your mobile number to get started.</p>
+      <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Verify mobile number</h2>
+      <p className="text-[#86868b] text-sm mb-1">Enter your mobile number to receive OTP.</p>
+      <p className="text-sm text-[#1d1d1f] font-medium mb-6">{batchLabel}</p>
 
       <AnimatePresence>
         {alreadyRegistered && (
@@ -68,21 +65,6 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit}>
-        {/* Batch selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-          {batches.map(b => (
-            <button key={b.type} type="button" onClick={() => setBatch(b.type)}
-              className={`flex items-center gap-3 p-4 rounded-xl text-left transition-all
-                ${batch === b.type ? 'border-2 border-[#0071e3] bg-blue-50' : 'border border-[#d2d2d7] bg-white hover:border-[#0071e3]'}`}>
-              <span className="text-2xl">{b.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-[#1d1d1f]">{b.label}</p>
-                <p className="text-xs text-[#86868b]">{b.sub}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-
         {/* Mobile input */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">
@@ -106,11 +88,11 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
           </p>
         </div>
 
-        <motion.button type="submit" disabled={loading || !batch || mobile.length < 10}
-          whileHover={{ opacity: (!loading && batch && mobile.length >= 10) ? 0.88 : 1 }}
+        <motion.button type="submit" disabled={loading || mobile.length < 10}
+          whileHover={{ opacity: (!loading && mobile.length >= 10) ? 0.88 : 1 }}
           whileTap={{ scale: 0.98 }}
           className={`w-full py-3 px-6 rounded-full text-[0.95rem] font-semibold flex items-center justify-center gap-2 transition-colors
-            ${(!batch || mobile.length < 10) ? 'bg-[#d2d2d7] text-[#86868b] cursor-default' : 'bg-[#0071e3] text-white'}`}>
+            ${mobile.length < 10 ? 'bg-[#d2d2d7] text-[#86868b] cursor-default' : 'bg-[#0071e3] text-white'}`}>
           {loading && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
           {loading ? 'Sending OTP…' : 'Send OTP →'}
         </motion.button>

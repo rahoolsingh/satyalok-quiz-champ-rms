@@ -171,9 +171,9 @@ export function PublicPortal() {
     if (step === 'mobile-entry') {
       return (
         <MobileEntry
-          onSuccess={(mobileNumber, selectedBatch) => {
+          batchType={batch!}
+          onSuccess={(mobileNumber) => {
             setMobile(mobileNumber);
-            setBatch(selectedBatch);
             setStep('otp');
           }}
           onBack={handleBackToHome}
