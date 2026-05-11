@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AdmitCard } from '../components/AdmitCard';
@@ -7,6 +7,9 @@ import { profileApi } from '../api/client';
 import { AdmitCardData } from '../types';
 
 type PaymentStatusType = 'checking' | 'success' | 'failed' | 'error';
+
+const MAX_RETRIES = 5; // Maximum 5 retries (15 seconds total)
+const RETRY_DELAY = 3000; // 3 seconds between retries
 
 export function PaymentStatus() {
   const [searchParams] = useSearchParams();
@@ -17,6 +20,8 @@ export function PaymentStatus() {
   const [status, setStatus] = useState<PaymentStatusType>('checking');
   const [admitCard, setAdmitCard] = useState<AdmitCardData | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
@@ -33,14 +38,20 @@ export function PaymentStatus() {
         } else if (profile.paymentStatus === 'FAILED') {
           setStatus('failed');
         } else {
-          // Still pending - show as checking
-          setStatus('checking');
-          setErrorMessage('Payment is being processed. Please wait...');
-          
-          // Retry after 3 seconds
-          setTimeout(() => {
-            window.location.reload();
-          }, 3000);
+          // Still pending
+          if (retryCount < MAX_RETRIES) {
+            setStatus('checking');
+            setErrorMessage(`Payment is being processed. Checking again... (${retryCount + 1}/${MAX_RETRIES})`);
+            
+            // Retry after delay
+            retryTimeoutRef.current = setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+            }, RETRY_DELAY);
+          } else {
+            // Max retries reached - show error with manual retry option
+            setStatus('error');
+            setErrorMessage('Payment verification is taking longer than expected. Your payment may still be processing. Please check back in a few minutes or contact support if the issue persists.');
+          }
         }
       } catch (error: any) {
         console.error('Error checking payment status:', error);
@@ -53,7 +64,14 @@ export function PaymentStatus() {
     };
 
     checkPaymentStatus();
-  }, [participantId, txnId]);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, [participantId, txnId, retryCount]);
 
   // Checking/Loading State
   if (status === 'checking') {
