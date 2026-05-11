@@ -219,6 +219,7 @@ async function generateRollNumber(batchType: string): Promise<string> {
 
   const sequence = (count + 1).toString().padStart(4, '0');
   return `${prefix}${year}${sequence}`;
+  // Example: JR260001, SR260001
 }
 
 /**

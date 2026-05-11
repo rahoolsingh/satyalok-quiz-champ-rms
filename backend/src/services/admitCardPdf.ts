@@ -1,202 +1,552 @@
-import PDFDocument from 'pdfkit';
-import axios from 'axios';
+import PDFDocument from "pdfkit";
+import axios from "axios";
+import QRCode from "qrcode";
+import fs from "fs";
+import path from "path";
 
 interface AdmitCardData {
-  rollNumber: string;
-  name: string;
-  class: string;
-  batchType: string;
-  guardianName: string;
-  mobileNumber: string;
-  photoUrl?: string;
-  eventName?: string;
-  eventDate?: string;
-  venue?: string;
+    rollNumber: string;
+    name: string;
+    class: string;
+    batchType: string;
+    guardianName: string;
+    mobileNumber: string;
+    photoUrl?: string;
+    eventName?: string;
+    eventDate?: string;
+    venue?: string;
+    ipAddress?: string; // ADDED: Pass this from your backend controller
 }
 
-export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // A4 size: 595.28 x 841.89 points (210mm x 297mm)
-      const doc = new PDFDocument({
-        size: 'A4',
-        margins: { top: 50, bottom: 50, left: 50, right: 50 },
-      });
-
-      const buffers: Buffer[] = [];
-      doc.on('data', buffers.push.bind(buffers));
-      doc.on('end', () => resolve(Buffer.concat(buffers)));
-      doc.on('error', reject);
-
-      const pageWidth = 595.28;
-      const pageHeight = 841.89;
-      const margin = 50;
-      const contentWidth = pageWidth - (margin * 2);
-
-      // ========== HEADER SECTION ==========
-      // Blue gradient header background
-      doc.rect(0, 0, pageWidth, 140).fill('#0071e3');
-      
-      // Add decorative top border
-      doc.rect(0, 0, pageWidth, 8).fill('#005bb5');
-      
-      // Main title
-      doc.fontSize(32).fillColor('#ffffff').font('Helvetica-Bold')
-        .text('QUIZ CHAMP 2026', margin, 40, { width: contentWidth, align: 'center' });
-      
-      // Subtitle
-      doc.fontSize(16).fillColor('#ffffff').font('Helvetica')
-        .text('ADMIT CARD', margin, 85, { width: contentWidth, align: 'center' });
-      
-      // Decorative line
-      doc.moveTo(margin + 150, 115).lineTo(pageWidth - margin - 150, 115)
-        .lineWidth(2).strokeColor('#ffffff').stroke();
-
-      // ========== CONTENT SECTION ==========
-      let currentY = 170;
-
-      // Photo section (right side)
-      const photoX = pageWidth - margin - 140;
-      const photoY = currentY;
-      const photoWidth = 130;
-      const photoHeight = 160;
-
-      if (data.photoUrl) {
+export async function generateAdmitCardPDF(
+    data: AdmitCardData,
+): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
         try {
-          const photoResponse = await axios.get(data.photoUrl, { responseType: 'arraybuffer' });
-          const photoBuffer = Buffer.from(photoResponse.data);
-          
-          // Photo border with shadow effect
-          doc.rect(photoX - 2, photoY - 2, photoWidth + 4, photoHeight + 4).fill('#d2d2d7');
-          doc.rect(photoX, photoY, photoWidth, photoHeight).fill('#ffffff');
-          
-          // Add photo
-          doc.image(photoBuffer, photoX + 5, photoY + 5, {
-            width: photoWidth - 10,
-            height: photoHeight - 10,
-            align: 'center',
-          });
-        } catch (err) {
-          console.error('Failed to load photo:', err);
-          // Draw placeholder
-          doc.rect(photoX, photoY, photoWidth, photoHeight).stroke('#d2d2d7');
-          doc.fontSize(12).fillColor('#86868b').font('Helvetica')
-            .text('Photo\nUnavailable', photoX, photoY + 65, { width: photoWidth, align: 'center' });
+            const doc = new PDFDocument({
+                size: "A4",
+                margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                autoFirstPage: true,
+            });
+
+            const buffers: Buffer[] = [];
+            doc.on("data", buffers.push.bind(buffers));
+            doc.on("end", () => resolve(Buffer.concat(buffers)));
+            doc.on("error", reject);
+
+            const pageWidth = 595.28;
+            const pageHeight = 841.89;
+            const margin = 40;
+            const contentWidth = pageWidth - margin * 2;
+
+            // Orange Theme Palette
+            const colors = {
+                brand: "#ea580c", // Orange 600
+                primary: "#1e293b", // Slate 800
+                secondary: "#475569", // Slate 600
+                border: "#fdba74", // Orange 300
+                bgLight: "#fff7ed", // Orange 50
+                accent: "#ffedd5", // Orange 100
+            };
+
+            // Main Outer Boundary
+            doc.roundedRect(margin, margin, contentWidth, 570, 8)
+                .lineWidth(1.5)
+                .strokeColor(colors.brand)
+                .stroke();
+
+            // ========== HEADER SECTION ==========
+            const publicAssetsDir = path.join(
+                process.cwd(),
+                "public",
+                "assets",
+            );
+
+            // Header Background
+            doc.roundedRect(
+                margin + 1.5,
+                margin + 1.5,
+                contentWidth - 3,
+                85,
+                6,
+            ).fill(colors.bgLight);
+            doc.rect(margin + 1.5, margin + 70, contentWidth - 3, 16).fill(
+                colors.bgLight,
+            ); // Flatten bottom
+            doc.moveTo(margin, margin + 86)
+                .lineTo(pageWidth - margin, margin + 86)
+                .lineWidth(1)
+                .strokeColor(colors.border)
+                .stroke();
+
+            // Logos object fill - contain
+            const satyalokLogoPath = path.join(publicAssetsDir, "satyalok.png");
+            if (fs.existsSync(satyalokLogoPath)) {
+                doc.image(satyalokLogoPath, margin + 20, margin + 15, {
+                    height: 55,
+                    width: 80,
+                    fit: [55, 80],
+                    valign: "center",
+                });
+            }
+
+            const competitionLogoPath = path.join(publicAssetsDir, "logo.png");
+            if (fs.existsSync(competitionLogoPath)) {
+                doc.image(
+                    competitionLogoPath,
+                    pageWidth - margin - 75,
+                    margin + 15,
+                    { width: 55, height: 55, fit: [55, 55], valign: "center" },
+                );
+            }
+
+            // Header Text
+            doc.fontSize(18)
+                .fillColor(colors.brand)
+                .font("Helvetica-Bold")
+                .text("SATYALOK - A New Hope", margin, margin + 25, {
+                    width: contentWidth,
+                    align: "center",
+                });
+
+            doc.fontSize(11)
+                .fillColor(colors.primary)
+                .font("Helvetica")
+                .text(
+                    data.eventName || "QUIZ CHAMP 2026",
+                    margin,
+                    margin + 48,
+                    { width: contentWidth, align: "center" },
+                );
+
+            // Badge for Admit Card Type
+            const badgeW = 200;
+            const badgeX = (pageWidth - badgeW) / 2;
+            doc.roundedRect(badgeX, margin + 74, badgeW, 24, 12).fill(
+                colors.brand,
+            );
+            doc.fontSize(10)
+                .fillColor("#ffffff")
+                .font("Helvetica-Bold")
+                .text("HALL TICKET / ADMIT CARD", badgeX, margin + 82, {
+                    width: badgeW,
+                    align: "center",
+                });
+
+            // ========== PARTICIPANT DETAILS ==========
+            let currentY = margin + 115;
+
+            const photoWidth = 100;
+            const photoHeight = 125;
+            const photoX = pageWidth - margin - photoWidth - 20;
+
+            const labelX = margin + 25;
+            const valueX = margin + 140;
+
+            const addDetail = (label: string, value: string, y: number) => {
+                doc.fontSize(9)
+                    .fillColor(colors.secondary)
+                    .font("Helvetica")
+                    .text(label, labelX, y);
+                doc.fontSize(10)
+                    .fillColor(colors.primary)
+                    .font("Helvetica-Bold")
+                    .text(value, valueX, y, { width: photoX - valueX - 10 });
+                doc.moveTo(labelX, y + 18)
+                    .lineTo(photoX - 20, y + 18)
+                    .lineWidth(0.5)
+                    .strokeColor(colors.accent)
+                    .stroke();
+                return y + 26;
+            };
+
+            currentY = addDetail("Roll Number", data.rollNumber, currentY);
+            currentY = addDetail("Candidate Name", data.name, currentY);
+            currentY = addDetail("Class", data.class, currentY);
+            currentY = addDetail(
+                "Batch Category",
+                data.batchType === "JUNIOR"
+                    ? "Junior (Classes 1-7)"
+                    : "Senior (Classes 8-12)",
+                currentY,
+            );
+            currentY = addDetail("Guardian Name", data.guardianName, currentY);
+            currentY = addDetail(
+                "Mobile Number",
+                `+91 ${data.mobileNumber}`,
+                currentY,
+            );
+
+            // Fetch and Cache Photo Buffer
+            let fetchedPhotoBuffer: Buffer | null = null;
+            if (data.photoUrl) {
+                try {
+                    const photoResponse = await axios.get(data.photoUrl, {
+                        responseType: "arraybuffer",
+                    });
+                    fetchedPhotoBuffer = Buffer.from(photoResponse.data);
+                } catch (err) {
+                    console.error("Failed to load candidate image", err);
+                }
+            }
+
+            // Main Photo Box
+            doc.roundedRect(
+                photoX,
+                margin + 115,
+                photoWidth,
+                photoHeight,
+                6,
+            ).fill(colors.bgLight);
+            doc.roundedRect(photoX, margin + 115, photoWidth, photoHeight, 6)
+                .lineWidth(1)
+                .strokeColor(colors.border)
+                .stroke();
+
+            if (fetchedPhotoBuffer) {
+                doc.save();
+                doc.roundedRect(
+                    photoX,
+                    margin + 115,
+                    photoWidth,
+                    photoHeight,
+                    6,
+                ).clip();
+                doc.image(fetchedPhotoBuffer, photoX, margin + 115, {
+                    width: photoWidth,
+                    height: photoHeight,
+                    align: "center",
+                });
+                doc.restore();
+            } else {
+                doc.fontSize(9)
+                    .fillColor(colors.secondary)
+                    .text(
+                        "Paste Recent\nPassport\nPhotograph",
+                        photoX,
+                        margin + 160,
+                        { width: photoWidth, align: "center" },
+                    );
+            }
+
+            // ========== EVENT DETAILS BOX ==========
+            currentY = margin + 270;
+
+            doc.roundedRect(
+                margin + 20,
+                currentY,
+                contentWidth - 40,
+                75,
+                6,
+            ).fill(colors.bgLight);
+            doc.roundedRect(margin + 20, currentY, contentWidth - 40, 75, 6)
+                .lineWidth(1)
+                .strokeColor(colors.border)
+                .stroke();
+
+            doc.roundedRect(
+                margin + 20,
+                currentY,
+                contentWidth - 40,
+                25,
+                6,
+            ).fill(colors.accent);
+            doc.rect(margin + 20, currentY + 15, contentWidth - 40, 10).fill(
+                colors.accent,
+            );
+
+            doc.fontSize(10)
+                .fillColor(colors.brand)
+                .font("Helvetica-Bold")
+                .text("EXAMINATION CENTRE DETAILS", margin + 30, currentY + 8);
+
+            currentY += 35;
+            doc.fontSize(9)
+                .fillColor(colors.secondary)
+                .font("Helvetica")
+                .text("Date & Time:", margin + 30, currentY);
+            doc.fontSize(10)
+                .fillColor(colors.primary)
+                .font("Helvetica-Bold")
+                .text(
+                    data.eventDate || "To be announced",
+                    margin + 100,
+                    currentY,
+                );
+
+            currentY += 20;
+            doc.fontSize(9)
+                .fillColor(colors.secondary)
+                .font("Helvetica")
+                .text("Venue:", margin + 30, currentY);
+            doc.fontSize(10)
+                .fillColor(colors.primary)
+                .font("Helvetica-Bold")
+                .text(data.venue || "To be announced", margin + 100, currentY, {
+                    width: contentWidth - 140,
+                });
+
+            // ========== INSTRUCTIONS SECTION ==========
+            currentY += 50;
+
+            doc.fontSize(11)
+                .fillColor(colors.brand)
+                .font("Helvetica-Bold")
+                .text("Important Instructions", margin + 20, currentY);
+
+            currentY += 20;
+            const instructions = [
+                "The candidate must carry this printed admit card and a valid school ID.",
+                "Report to the venue strictly 30 minutes prior to the examination time.",
+                "Use only Blue/Black ballpoint pen. Pencils are strictly prohibited.",
+                "Electronic devices and calculators are not allowed inside the hall.",
+                "Hand over the bottom tear-off section to the invigilator with the OMR.",
+            ];
+
+            doc.fontSize(9).fillColor(colors.primary).font("Helvetica");
+            instructions.forEach((instruction) => {
+                doc.circle(margin + 25, currentY + 4, 2).fill(colors.brand);
+                doc.text(instruction, margin + 35, currentY, {
+                    width: contentWidth - 55,
+                });
+                currentY += 18;
+            });
+
+            // ========== SIGNATURES ==========
+            const sigY = 590;
+
+            const drawSigLine = (x: number, label: string) => {
+                doc.moveTo(x, sigY)
+                    .lineTo(x + 120, sigY)
+                    .lineWidth(1)
+                    .strokeColor(colors.secondary)
+                    .stroke();
+                doc.fontSize(8)
+                    .fillColor(colors.secondary)
+                    .font("Helvetica")
+                    .text(label, x, sigY + 8, { width: 120, align: "center" });
+            };
+
+            drawSigLine(margin + 30, "Candidate's Signature");
+            drawSigLine(margin + 195, "Invigilator's Signature");
+            drawSigLine(pageWidth - margin - 150, "Authorized Signatory");
+
+            // =========================================================
+            // ========== TEAR-OFF SECTION (BOTTOM OF PAGE) ==========
+            // =========================================================
+            const cutY = 635;
+
+            // Cut Line
+            doc.lineWidth(1).strokeColor(colors.brand);
+            doc.moveTo(20, cutY)
+                .lineTo(pageWidth - 20, cutY)
+                .dash(5, { space: 5 })
+                .stroke();
+            doc.undash();
+
+            doc.fontSize(10).font("Helvetica").fillColor(colors.brand);
+            doc.text("✂", 25, cutY - 4);
+            doc.fontSize(8)
+                .fillColor(colors.secondary)
+                .text(
+                    "Fold and tear along this line. Staple this portion securely with the OMR sheet.",
+                    margin,
+                    cutY + 10,
+                    { width: contentWidth, align: "center" },
+                );
+
+            // Tear off outer box
+            const tearOffMargin = 40;
+            const tearOffBoxHeight = 135;
+
+            doc.roundedRect(
+                tearOffMargin,
+                cutY + 25,
+                contentWidth,
+                tearOffBoxHeight,
+                8,
+            )
+                .lineWidth(1.5)
+                .strokeColor(colors.brand)
+                .stroke();
+
+            // Label
+            doc.roundedRect(tearOffMargin + 1.5, cutY + 26.5, 150, 20, 6).fill(
+                colors.brand,
+            );
+            doc.fontSize(8)
+                .font("Helvetica-Bold")
+                .fillColor("#ffffff")
+                .text("OFFICE COPY / OMR SLIP", tearOffMargin + 10, cutY + 32);
+
+            // Generate QR Code data
+            const qrDataPayload = JSON.stringify({
+                roll: data.rollNumber,
+                name: data.name,
+                class: data.class,
+                batch: data.batchType,
+            });
+
+            const qrDataURI = await QRCode.toDataURL(qrDataPayload, {
+                errorCorrectionLevel: "M",
+                margin: 0,
+                color: { dark: "#000000", light: "#ffffff" },
+            });
+            const qrBuffer = Buffer.from(qrDataURI.split(",")[1], "base64");
+
+            // Place QR Code
+            const qrSize = 80;
+            doc.image(qrBuffer, tearOffMargin + 15, cutY + 60, {
+                width: qrSize,
+                height: qrSize,
+            });
+
+            // Candidate details
+            let tearOffY = cutY + 60;
+            const toX = tearOffMargin + 110;
+
+            const addTearOffDetail = (
+                label: string,
+                value: string,
+                y: number,
+            ) => {
+                doc.fontSize(8)
+                    .font("Helvetica")
+                    .fillColor(colors.secondary)
+                    .text(label, toX, y);
+                doc.fontSize(9)
+                    .font("Helvetica-Bold")
+                    .fillColor(colors.primary)
+                    .text(value, toX + 45, y, { width: 150 });
+                return y + 18;
+            };
+
+            tearOffY = addTearOffDetail("Roll No:", data.rollNumber, tearOffY);
+            tearOffY = addTearOffDetail("Name:", data.name, tearOffY);
+            tearOffY += 8;
+            tearOffY = addTearOffDetail(
+                "Class:",
+                `${data.class} (${data.batchType})`,
+                tearOffY,
+            );
+
+            // ========== MINI PHOTO WITH HOLOGRAM/SKETCHY EFFECT ==========
+            const miniPhotoW = 55;
+            const miniPhotoH = 70;
+            const miniPhotoX = pageWidth - tearOffMargin - miniPhotoW - 120;
+            const miniPhotoY = cutY + 55;
+
+            if (fetchedPhotoBuffer) {
+                doc.save();
+                doc.roundedRect(
+                    miniPhotoX,
+                    miniPhotoY,
+                    miniPhotoW,
+                    miniPhotoH,
+                    4,
+                ).clip();
+
+                // Draw base image
+                doc.image(fetchedPhotoBuffer, miniPhotoX, miniPhotoY, {
+                    width: miniPhotoW,
+                    height: miniPhotoH,
+                });
+
+                // --- HOLOGRAM EFFECT START ---
+                // 1. Semi-transparent golden gradient overlay
+                const holoGradient = doc.linearGradient(
+                    miniPhotoX,
+                    miniPhotoY,
+                    miniPhotoX + miniPhotoW,
+                    miniPhotoY + miniPhotoH,
+                );
+                holoGradient.stop(0, "#fcd34d", 0.4); // Golden with opacity
+                holoGradient.stop(1, "#ea580c", 0.5); // Orange with opacity
+                doc.rect(miniPhotoX, miniPhotoY, miniPhotoW, miniPhotoH).fill(
+                    holoGradient,
+                );
+
+                // 2. Sketchy / Security micro-printing mesh (diagonal lines)
+                doc.lineWidth(0.5).strokeOpacity(0.4);
+                for (let i = 0; i < miniPhotoW + miniPhotoH; i += 3) {
+                    doc.moveTo(miniPhotoX + i, miniPhotoY)
+                        .lineTo(miniPhotoX, miniPhotoY + i)
+                        .strokeColor("#fef3c7")
+                        .stroke();
+                }
+                // --- HOLOGRAM EFFECT END ---
+
+                doc.restore();
+
+                // Reset opacities just in case, then draw border
+                doc.fillOpacity(1).strokeOpacity(1);
+                doc.roundedRect(
+                    miniPhotoX,
+                    miniPhotoY,
+                    miniPhotoW,
+                    miniPhotoH,
+                    4,
+                )
+                    .lineWidth(1)
+                    .strokeColor(colors.brand)
+                    .stroke();
+            } else {
+                doc.roundedRect(
+                    miniPhotoX,
+                    miniPhotoY,
+                    miniPhotoW,
+                    miniPhotoH,
+                    4,
+                )
+                    .lineWidth(1)
+                    .strokeColor(colors.border)
+                    .stroke();
+                doc.fontSize(6)
+                    .fillColor(colors.secondary)
+                    .text("Photo", miniPhotoX, miniPhotoY + 30, {
+                        width: miniPhotoW,
+                        align: "center",
+                    });
+            }
+
+            // Invigilator Signature Box
+            doc.roundedRect(
+                pageWidth - tearOffMargin - 100,
+                cutY + 55,
+                85,
+                70,
+                4,
+            )
+                .lineWidth(1)
+                .strokeColor(colors.border)
+                .stroke();
+            doc.fontSize(7)
+                .font("Helvetica")
+                .fillColor(colors.secondary)
+                .text(
+                    "Invigilator Sign & Stamp",
+                    pageWidth - tearOffMargin - 100,
+                    cutY + 110,
+                    { width: 85, align: "center" },
+                );
+
+            // ========== FOOTER WITH IP ADDRESS ==========
+            const genDate = new Date().toLocaleString();
+            const ipStr = data.ipAddress ? ` | IP: ${data.ipAddress}` : "";
+
+            doc.fontSize(6)
+                .font("Helvetica")
+                .fillColor(colors.secondary)
+                .text(
+                    `Generated on: ${genDate} | System ID: QC26-${data.rollNumber}${ipStr}`,
+                    margin,
+                    790,
+                    { width: contentWidth, align: "right", lineBreak: false },
+                );
+
+            doc.end();
+        } catch (error) {
+            reject(error);
         }
-      } else {
-        // Placeholder
-        doc.rect(photoX, photoY, photoWidth, photoHeight).stroke('#d2d2d7');
-        doc.fontSize(12).fillColor('#86868b').font('Helvetica')
-          .text('Photo\nUnavailable', photoX, photoY + 65, { width: photoWidth, align: 'center' });
-      }
-
-      // ========== PARTICIPANT DETAILS ==========
-      const detailsX = margin;
-      const detailsWidth = contentWidth - photoWidth - 30;
-
-      const addDetailField = (label: string, value: string, y: number) => {
-        // Label
-        doc.fontSize(10).fillColor('#86868b').font('Helvetica')
-          .text(label.toUpperCase(), detailsX, y);
-        
-        // Value
-        doc.fontSize(14).fillColor('#1d1d1f').font('Helvetica-Bold')
-          .text(value, detailsX, y + 16, { width: detailsWidth });
-        
-        // Underline
-        doc.moveTo(detailsX, y + 38).lineTo(detailsX + detailsWidth, y + 38)
-          .lineWidth(1).strokeColor('#e5e5e5').stroke();
-        
-        return y + 50;
-      };
-
-      currentY = addDetailField('Roll Number', data.rollNumber, currentY);
-      currentY = addDetailField('Participant Name', data.name, currentY);
-      currentY = addDetailField('Class', data.class, currentY);
-      currentY = addDetailField('Batch Category', 
-        data.batchType === 'JUNIOR' ? 'Junior Batch (Classes 1-7)' : 'Senior Batch (Classes 8-12)', 
-        currentY);
-      currentY = addDetailField('Guardian Name', data.guardianName, currentY);
-      currentY = addDetailField('Contact Number', `+91 ${data.mobileNumber}`, currentY);
-
-      // ========== EVENT DETAILS BOX ==========
-      currentY = Math.max(currentY, photoY + photoHeight + 30);
-      
-      const boxY = currentY;
-      const boxHeight = 120;
-      
-      // Box with gradient
-      doc.rect(margin, boxY, contentWidth, boxHeight).fill('#f8f9fa');
-      doc.rect(margin, boxY, contentWidth, boxHeight).stroke('#d2d2d7');
-      
-      // Box header
-      doc.rect(margin, boxY, contentWidth, 35).fill('#0071e3');
-      doc.fontSize(14).fillColor('#ffffff').font('Helvetica-Bold')
-        .text('EVENT INFORMATION', margin + 15, boxY + 10);
-      
-      // Event details
-      const eventY = boxY + 50;
-      doc.fontSize(11).fillColor('#1d1d1f').font('Helvetica');
-      
-      doc.font('Helvetica-Bold').text('Event: ', margin + 15, eventY, { continued: true })
-        .font('Helvetica').text(data.eventName || 'Quiz Champ 2026 Competition');
-      
-      doc.font('Helvetica-Bold').text('Date: ', margin + 15, eventY + 20, { continued: true })
-        .font('Helvetica').text(data.eventDate || 'To be announced');
-      
-      doc.font('Helvetica-Bold').text('Venue: ', margin + 15, eventY + 40, { continued: true })
-        .font('Helvetica').text(data.venue || 'To be announced');
-
-      // ========== INSTRUCTIONS SECTION ==========
-      currentY = boxY + boxHeight + 30;
-      
-      doc.fontSize(13).fillColor('#1d1d1f').font('Helvetica-Bold')
-        .text('IMPORTANT INSTRUCTIONS', margin, currentY);
-      
-      currentY += 25;
-      
-      const instructions = [
-        'Carry this admit card and a valid ID proof on the day of the event',
-        'Report to the venue at least 30 minutes before the scheduled time',
-        'Mobile phones and electronic devices are strictly prohibited during the quiz',
-        'Follow all instructions given by the event organizers and invigilators',
-        'Candidates must occupy their assigned seats as per the seating arrangement'
-      ];
-      
-      doc.fontSize(10).fillColor('#1d1d1f').font('Helvetica');
-      instructions.forEach((instruction, index) => {
-        doc.circle(margin + 5, currentY + 5, 2).fill('#0071e3');
-        doc.text(instruction, margin + 15, currentY, { width: contentWidth - 15 });
-        currentY += 22;
-      });
-
-      // ========== FOOTER SECTION ==========
-      const footerY = pageHeight - 120;
-      
-      // Signature section
-      doc.moveTo(pageWidth - margin - 150, footerY).lineTo(pageWidth - margin, footerY)
-        .lineWidth(1).strokeColor('#1d1d1f').stroke();
-      
-      doc.fontSize(9).fillColor('#1d1d1f').font('Helvetica-Bold')
-        .text('Authorized Signature', pageWidth - margin - 150, footerY + 10, { width: 150, align: 'center' });
-
-      // Footer bar
-      const footerBarY = pageHeight - 70;
-      doc.rect(0, footerBarY, pageWidth, 70).fill('#f5f5f7');
-      
-      // Organization info
-      doc.fontSize(11).fillColor('#1d1d1f').font('Helvetica-Bold')
-        .text('Organized by Satyalok Foundation', margin, footerBarY + 15, { width: contentWidth, align: 'center' });
-      
-      doc.fontSize(9).fillColor('#86868b').font('Helvetica')
-        .text('For queries: support@quizchamp.com | www.quizchamp.com', margin, footerBarY + 35, { width: contentWidth, align: 'center' });
-
-      // Bottom decorative border
-      doc.rect(0, pageHeight - 8, pageWidth, 8).fill('#0071e3');
-
-      doc.end();
-    } catch (error) {
-      reject(error);
-    }
-  });
+    });
 }
