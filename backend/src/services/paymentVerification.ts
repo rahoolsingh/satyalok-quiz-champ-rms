@@ -1,9 +1,9 @@
-import axios from 'axios';
 import { Participant } from '../db/models';
 import { generateAdmitCardData } from './admitCard';
 import { sendThankYouMessage } from './whatsapp';
 import { sendEmail, generateAdmitCardEmail } from './email';
 import { generateAdmitCardPDF } from './admitCardPdf';
+import { verifyPhonePePayment, PGSError } from './pgsClient';
 
 export interface PaymentStatus {
   status: 'SUCCESS' | 'FAILED' | 'PENDING';
@@ -18,38 +18,38 @@ export interface PaymentStatus {
 export async function verifyPaymentStatus(
   merchantTransactionId: string
 ): Promise<PaymentStatus> {
-  const pgsBaseUrl = process.env.PGS_BASE_URL;
-  const pgsApiKey = process.env.PGS_API_KEY;
-
-  if (!pgsBaseUrl || !pgsApiKey) {
-    throw new Error('Payment gateway configuration is missing');
-  }
-
   try {
     console.log(`[Payment Verification] Checking status for ${merchantTransactionId}`);
 
-    const response = await axios.get(
-      `${pgsBaseUrl}/api/payment/status/${merchantTransactionId}`,
-      {
-        headers: {
-          'x-api-key': pgsApiKey,
-        },
-        timeout: 10000,
-      }
-    );
+    const response = await verifyPhonePePayment(merchantTransactionId);
 
-    const { status, amount, transactionId, timestamp } = response.data;
+    if (!response.success || !response.data) {
+      console.log(`[Payment Verification] Payment still pending for ${merchantTransactionId}`);
+      return {
+        status: 'PENDING',
+        transactionId: merchantTransactionId,
+        amount: 0,
+        timestamp: new Date(),
+      };
+    }
 
-    console.log(`[Payment Verification] Status: ${status}`);
+    const { state, amount, transactionId } = response.data;
+    const mappedStatus = mapPaymentStatus(state);
+
+    console.log(`[Payment Verification] Status: ${mappedStatus} (gateway state: ${state})`);
 
     return {
-      status: mapPaymentStatus(status),
+      status: mappedStatus,
       transactionId: transactionId || merchantTransactionId,
       amount: amount || 0,
-      timestamp: timestamp ? new Date(timestamp) : new Date(),
+      timestamp: new Date(),
     };
   } catch (error) {
-    console.error('[Payment Verification] Error:', error);
+    if (error instanceof PGSError) {
+      console.error('[Payment Verification] PGS Error:', error.message);
+    } else {
+      console.error('[Payment Verification] Error:', error);
+    }
     
     // If we can't reach the gateway, return PENDING
     return {
