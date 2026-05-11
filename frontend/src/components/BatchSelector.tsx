@@ -13,8 +13,8 @@ const batches = [
     {
         type: "SENIOR" as BatchType,
         label: "Senior Batch",
-        sub: "Classes 12+",
-        classes: "Intermediate, Undergraduate & Beyond",
+        sub: "Classes 10+",
+        classes: "Post-10th, College & Beyond",
         icon: "🏆",
     },
 ];
