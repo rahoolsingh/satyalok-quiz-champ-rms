@@ -11,6 +11,7 @@ import { PaymentGateway } from "../components/PaymentGateway";
 import { ResultChecker } from "../components/ResultChecker";
 import { SatyalokBadge } from "../components/SatyalokBadge";
 import { UserProfile } from "../components/UserProfile";
+import { WhatsAppHelp } from "../components/WhatsAppHelp";
 import { SliderImage, BatchType, PaymentSession, ProfileData } from "../types";
 import { portalApi, otpApi, profileApi } from "../api/client";
 
@@ -341,6 +342,9 @@ export function PublicPortal() {
                     <SatyalokBadge variant="footer" />
                 </footer>
             </main>
+
+            {/* WhatsApp Help Button - Floating */}
+            <WhatsAppHelp />
         </div>
     );
 }

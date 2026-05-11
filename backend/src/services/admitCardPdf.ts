@@ -251,7 +251,13 @@ export async function generateAdmitCardPDF(
                 eventBoxHeight,
                 6,
             ).fill(colors.bgLight);
-            doc.roundedRect(margin + 20, currentY, contentWidth - 40, eventBoxHeight, 6)
+            doc.roundedRect(
+                margin + 20,
+                currentY,
+                contentWidth - 40,
+                eventBoxHeight,
+                6,
+            )
                 .lineWidth(1)
                 .strokeColor(colors.border)
                 .stroke();
@@ -273,12 +279,13 @@ export async function generateAdmitCardPDF(
                 .text("EXAMINATION CENTRE DETAILS", margin + 30, currentY + 8);
 
             currentY += 35;
-            
+
             // Date & Time
-            const eventDateTime = data.eventDate && data.eventTime 
-                ? `${data.eventDate} at ${data.eventTime}`
-                : data.eventDate || "To be announced";
-            
+            const eventDateTime =
+                data.eventDate && data.eventTime
+                    ? `${data.eventDate} at ${data.eventTime}`
+                    : data.eventDate || "To be announced";
+
             doc.fontSize(9)
                 .fillColor(colors.secondary)
                 .font("Helvetica")
@@ -291,15 +298,15 @@ export async function generateAdmitCardPDF(
                 });
 
             currentY += 20;
-            
+
             // Venue with hyperlink
             doc.fontSize(9)
                 .fillColor(colors.secondary)
                 .font("Helvetica")
                 .text("Venue:", margin + 30, currentY);
-            
+
             const venueText = data.venue || "To be announced";
-            
+
             if (data.venueMapUrl && data.venue) {
                 // Make venue text clickable
                 doc.fontSize(10)
@@ -310,7 +317,7 @@ export async function generateAdmitCardPDF(
                         link: data.venueMapUrl,
                         underline: true,
                     });
-                
+
                 // Generate QR code for map URL
                 currentY += 25;
                 const mapQrDataURI = await QRCode.toDataURL(data.venueMapUrl, {
@@ -319,22 +326,22 @@ export async function generateAdmitCardPDF(
                     width: 60,
                     color: { dark: "#000000", light: "#ffffff" },
                 });
-                const mapQrBuffer = Buffer.from(mapQrDataURI.split(",")[1], "base64");
-                
-                // Place map QR code
+                const mapQrBuffer = Buffer.from(
+                    mapQrDataURI.split(",")[1],
+                    "base64",
+                );
+
+                // Place map QR code on right side of event details box and in middle vertically with some padding from the text
                 const qrSize = 60;
-                doc.image(mapQrBuffer, margin + 100, currentY, {
-                    width: qrSize,
-                    height: qrSize,
-                });
-                
-                doc.fontSize(7)
-                    .fillColor(colors.secondary)
-                    .font("Helvetica")
-                    .text("Scan for map", margin + 100, currentY + qrSize + 3, {
+                doc.image(
+                    mapQrBuffer,
+                    pageWidth - margin - qrSize - 30,
+                    currentY - 50,
+                    {
                         width: qrSize,
-                        align: "center",
-                    });
+                        height: qrSize,
+                    },
+                );
             } else {
                 doc.fontSize(10)
                     .fillColor(colors.primary)
