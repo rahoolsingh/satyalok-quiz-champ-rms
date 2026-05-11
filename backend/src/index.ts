@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import path from "path";
 import { connectDB } from "./db/client";
 import { portalRouter } from "./routes/portal";
 import { registrationRouter } from "./routes/registration";
@@ -10,19 +11,28 @@ import { adminRouter } from "./routes/admin";
 import { paymentRouter } from "./routes/payment";
 import { otpRouter } from "./routes/otp";
 import { profileRouter } from "./routes/profile";
+import { testAdmitCardRouter } from "./routes/testAdmitCard";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ 
-    origin: process.env.FRONTEND_URL,
-    credentials: true // Allow cookies
-}));
+app.use(
+    cors({
+        origin: process.env.FRONTEND_URL,
+        credentials: true, // Allow cookies
+    }),
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from public directory (only in development)
+if (process.env.NODE_ENV !== "production") {
+    app.use(express.static(path.join(__dirname, "../public")));
+    console.log("✅ Static files served from /public");
+}
 
 app.use("/api/portal", portalRouter);
 app.use("/api/otp", otpRouter);
@@ -31,6 +41,13 @@ app.use("/api/profile", profileRouter);
 app.use("/api/results", resultsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/payment", paymentRouter);
+
+// Test routes (only in development)
+if (process.env.NODE_ENV !== "production") {
+    app.use("/api/test", testAdmitCardRouter);
+    console.log("✅ Test routes enabled at /api/test");
+    console.log("✅ Test UI available at http://localhost:" + PORT + "/test-admit-card.html");
+}
 
 app.get("/health", (_req, res) =>
     res.json({ status: "ok", timestamp: new Date().toISOString() }),

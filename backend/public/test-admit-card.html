@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admit Card PDF Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f7;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #0071e3;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #86868b;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #1d1d1f;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0071e3;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #0071e3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #005bb5;
+            transform: translateY(-1px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.secondary {
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+        
+        button.secondary:hover {
+            background: #e5e5e7;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #0071e3;
+            margin-bottom: 20px;
+        }
+        
+        .info-box code {
+            background: #e5e5e7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .field-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1d1d1f;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Admit Card PDF Tester</h1>
+        <p class="subtitle">Test and style the Quiz Champ admit card PDF generator</p>
+        
+        <div class="info-box">
+            <strong>📝 Quick Start:</strong> Click "Generate Sample PDF" to create a test admit card, or fill in the form below for custom data.
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="section">
+            <h2>Quick Actions</h2>
+            <div class="button-group">
+                <button onclick="generateSamplePDF()">📄 Generate Sample PDF</button>
+                <button class="secondary" onclick="loadSampleData()">📋 Load Sample Data</button>
+                <button class="secondary" onclick="viewSampleJSON()">👁️ View Sample JSON</button>
+            </div>
+            <div id="quickStatus" class="status"></div>
+        </div>
+        
+        <!-- Custom Form -->
+        <div class="section">
+            <h2>Custom Admit Card Generator</h2>
+            <form id="customForm">
+                <div class="grid">
+                    <div class="field-group">
+                        <label for="rollNumber">Roll Number *</label>
+                        <input type="text" id="rollNumber" required placeholder="QC2026-JR-001" value="QC2026-JR-001">
+                    </div>
+                    <div class="field-group">
+                        <label for="name">Student Name *</label>
+                        <input type="text" id="name" required placeholder="Rahul Kumar" value="Rahul Kumar Sharma">
+                    </div>
+                    <div class="field-group">
+                        <label for="class">Class *</label>
+                        <input type="text" id="class" required placeholder="Class 6" value="Class 6">
+                    </div>
+                    <div class="field-group">
+                        <label for="batchType">Batch Type *</label>
+                        <select id="batchType" required>
+                            <option value="JUNIOR" selected>Junior (Classes 1-7)</option>
+                            <option value="SENIOR">Senior (Classes 8-12)</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label for="guardianName">Guardian Name *</label>
+                        <input type="text" id="guardianName" required placeholder="Mr. Rajesh Kumar" value="Mr. Rajesh Kumar Sharma">
+                    </div>
+                    <div class="field-group">
+                        <label for="mobileNumber">Mobile Number *</label>
+                        <input type="tel" id="mobileNumber" required placeholder="9876543210" pattern="[0-9]{10}" value="9876543210">
+                    </div>
+                </div>
+                
+                <div class="field-group">
+                    <label for="photoUrl">Photo URL (optional)</label>
+                    <input type="url" id="photoUrl" placeholder="https://example.com/photo.jpg" value="https://via.placeholder.com/300x350/0071e3/ffffff?text=Student+Photo">
+                </div>
+                
+                <div class="field-group">
+                    <label for="eventName">Event Name (optional)</label>
+                    <input type="text" id="eventName" placeholder="Quiz Champ 2026 Competition" value="Quiz Champ 2026 - State Level Competition">
+                </div>
+                
+                <div class="field-group">
+                    <label for="eventDate">Event Date (optional)</label>
+                    <input type="text" id="eventDate" placeholder="Saturday, 15th March 2026 at 10:00 AM" value="Saturday, 15th March 2026 at 10:00 AM">
+                </div>
+                
+                <div class="field-group">
+                    <label for="venue">Venue (optional)</label>
+                    <input type="text" id="venue" placeholder="Satyalok Foundation Auditorium" value="Satyalok Foundation Auditorium, New Delhi">
+                </div>
+                
+                <button type="submit">🚀 Generate Custom PDF</button>
+            </form>
+            <div id="formStatus" class="status"></div>
+        </div>
+        
+        <!-- JSON Editor -->
+        <div class="section">
+            <h2>Advanced: JSON Editor</h2>
+            <p style="color: #86868b; margin-bottom: 10px; font-size: 14px;">
+                Edit the JSON directly for advanced testing
+            </p>
+            <textarea id="jsonEditor" placeholder="Paste or edit JSON data here..."></textarea>
+            <div style="margin-top: 10px;">
+                <button onclick="generateFromJSON()">🔧 Generate from JSON</button>
+                <button class="secondary" onclick="validateJSON()">✓ Validate JSON</button>
+            </div>
+            <div id="jsonStatus" class="status"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:3001/api/test';
+        
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `status ${type}`;
+            el.style.display = 'block';
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+        
+        async function generateSamplePDF() {
+            try {
+                showStatus('quickStatus', 'Generating PDF...', 'info');
+                const response = await fetch(`${API_BASE}/admit-card`);
+                if (!response.ok) throw new Error('Failed to generate PDF');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'admit-card-sample.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showStatus('quickStatus', '✓ PDF generated successfully!', 'success');
+            } catch (error) {
+                showStatus('quickStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadSampleData() {
+            try {
+                const response = await fetch(`${API_BASE}/admit-card/sample`);
+                const data = await response.json();
+                
+                document.getElementById('rollNumber').value = data.rollNumber || '';
+                document.getElementById('name').value = data.name || '';
+                document.getElementById('class').value = data.class || '';
+                document.getElementById('batchType').value = data.batchType || 'JUNIOR';
+                document.getElementById('guardianName').value = data.guardianName || '';
+                document.getElementById('mobileNumber').value = data.mobileNumber || '';
+                document.getElementById('photoUrl').value = data.photoUrl || '';
+                document.getElementById('eventName').value = data.eventName || '';
+                document.getElementById('eventDate').value = data.eventDate || '';
+                document.getElementById('venue').value = data.venue || '';
+                
+                showStatus('quickStatus', '✓ Sample data loaded into form', 'success');
+            } catch (error) {
+                showStatus('quickStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function viewSampleJSON() {
+            try {
+                const response = await fetch(`${API_BASE}/admit-card/sample`);
+                const data = await response.json();
+                document.getElementById('jsonEditor').value = JSON.stringify(data, null, 2);
+                showStatus('quickStatus', '✓ Sample JSON loaded into editor', 'success');
+            } catch (error) {
+                showStatus('quickStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        document.getElementById('customForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                rollNumber: document.getElementById('rollNumber').value,
+                name: document.getElementById('name').value,
+                class: document.getElementById('class').value,
+                batchType: document.getElementById('batchType').value,
+                guardianName: document.getElementById('guardianName').value,
+                mobileNumber: document.getElementById('mobileNumber').value,
+                photoUrl: document.getElementById('photoUrl').value || undefined,
+                eventName: document.getElementById('eventName').value || undefined,
+                eventDate: document.getElementById('eventDate').value || undefined,
+                venue: document.getElementById('venue').value || undefined,
+            };
+            
+            try {
+                showStatus('formStatus', 'Generating PDF...', 'info');
+                const response = await fetch(`${API_BASE}/admit-card`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to generate PDF');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `admit-card-${data.rollNumber}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showStatus('formStatus', '✓ Custom PDF generated successfully!', 'success');
+            } catch (error) {
+                showStatus('formStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        });
+        
+        function validateJSON() {
+            try {
+                const json = document.getElementById('jsonEditor').value;
+                JSON.parse(json);
+                showStatus('jsonStatus', '✓ JSON is valid', 'success');
+            } catch (error) {
+                showStatus('jsonStatus', `✗ Invalid JSON: ${error.message}`, 'error');
+            }
+        }
+        
+        async function generateFromJSON() {
+            try {
+                const json = document.getElementById('jsonEditor').value;
+                const data = JSON.parse(json);
+                
+                showStatus('jsonStatus', 'Generating PDF...', 'info');
+                const response = await fetch(`${API_BASE}/admit-card`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to generate PDF');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `admit-card-${data.rollNumber || 'custom'}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showStatus('jsonStatus', '✓ PDF generated from JSON!', 'success');
+            } catch (error) {
+                showStatus('jsonStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
