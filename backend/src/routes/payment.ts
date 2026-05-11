@@ -28,7 +28,7 @@ paymentRouter.get('/callback', async (req: Request, res: Response) => {
 
   // Idempotency: already processed
   if (participant.paymentStatus === 'COMPLETED') {
-    return res.redirect(`${frontendUrl}/payment-success?participantId=${participant._id.toString()}`);
+    return res.redirect(`${frontendUrl}/payment-status?participantId=${participant._id.toString()}`);
   }
 
   try {
@@ -40,17 +40,17 @@ paymentRouter.get('/callback', async (req: Request, res: Response) => {
 
     if (updatedParticipant?.paymentStatus === 'COMPLETED') {
       return res.redirect(
-        `${frontendUrl}/payment-success?participantId=${participant._id.toString()}`
+        `${frontendUrl}/payment-status?participantId=${participant._id.toString()}`
       );
     } else if (updatedParticipant?.paymentStatus === 'FAILED') {
-      return res.redirect(`${frontendUrl}/payment-failed`);
+      return res.redirect(`${frontendUrl}/payment-status?txnId=${merchantTransactionId}`);
     } else {
       // Payment status is still PENDING - schedule background verification
       await scheduleVerificationJob(merchantTransactionId, 0);
       
-      // Redirect to a pending page or success page with a message
+      // Redirect to status page which will show checking state
       return res.redirect(
-        `${frontendUrl}/payment-success?participantId=${participant._id.toString()}&pending=true`
+        `${frontendUrl}/payment-status?participantId=${participant._id.toString()}&pending=true`
       );
     }
   } catch (error) {

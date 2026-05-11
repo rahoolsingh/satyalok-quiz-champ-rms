@@ -3,8 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PublicPortal } from './pages/PublicPortal';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { PaymentSuccess } from './pages/PaymentSuccess';
-import { PaymentFailed } from './pages/PaymentFailed';
+import { PaymentStatus } from './pages/PaymentStatus';
 
 function AdminRoute() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('adminToken'));
@@ -27,8 +26,10 @@ export default function App() {
       <main id="main-content">
         <Routes>
           <Route path="/" element={<PublicPortal />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/payment-failed" element={<PaymentFailed />} />
+          <Route path="/payment-status" element={<PaymentStatus />} />
+          {/* Legacy routes - redirect to unified status page */}
+          <Route path="/payment-success" element={<PaymentStatus />} />
+          <Route path="/payment-failed" element={<PaymentStatus />} />
           <Route path="/admin" element={<AdminRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
