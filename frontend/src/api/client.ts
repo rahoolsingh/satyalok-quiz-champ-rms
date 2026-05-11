@@ -79,4 +79,7 @@ export const adminApi = {
   getFees: () => api.get('/admin/portal/fees'),
   updateFees: (feeJunior: number, feeSenior: number) =>
     api.put('/admin/portal/fees', { feeJunior, feeSenior }),
+  getEventDetails: () => api.get('/admin/portal/event-details'),
+  updateEventDetails: (data: { eventDate?: string; eventTime?: string; venue?: string; venueMapUrl?: string }) =>
+    api.put('/admin/portal/event-details', data),
 };

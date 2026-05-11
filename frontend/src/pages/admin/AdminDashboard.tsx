@@ -4,13 +4,15 @@ import { SliderManager } from './SliderManager';
 import { ResultUploader } from './ResultUploader';
 import { RegistrationList } from './RegistrationList';
 import { FeeConfiguration } from './FeeConfiguration';
+import { EventConfiguration } from './EventConfiguration';
 
-type Tab = 'registrations' | 'dates' | 'fees' | 'slider' | 'results';
+type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results';
 
 const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: 'registrations', label: 'Registrations', icon: '👥' },
   { id: 'dates', label: 'Portal Dates', icon: '📅' },
   { id: 'fees', label: 'Fees', icon: '💰' },
+  { id: 'event', label: 'Event Details', icon: '📍' },
   { id: 'slider', label: 'Slider Images', icon: '🖼️' },
   { id: 'results', label: 'Results', icon: '📊' },
 ];
@@ -48,6 +50,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {active === 'registrations' && <RegistrationList />}
         {active === 'dates' && <DateConfiguration />}
         {active === 'fees' && <FeeConfiguration />}
+        {active === 'event' && <EventConfiguration />}
         {active === 'slider' && <SliderManager />}
         {active === 'results' && <ResultUploader />}
       </main>

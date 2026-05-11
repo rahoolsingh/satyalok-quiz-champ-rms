@@ -1,4 +1,4 @@
-import { Participant } from '../db/models';
+import { Participant, PortalConfig } from '../db/models';
 import { generateAdmitCardData } from './admitCard';
 import { sendThankYouMessage } from './whatsapp';
 import { sendEmail, generateAdmitCardEmail } from './email';
@@ -152,6 +152,17 @@ export async function processPaymentVerification(
         });
 
         if (participant.email) {
+          // Get event details from portal config
+          const portalConfig = await PortalConfig.findOne().lean();
+          
+          const eventDate = portalConfig?.eventDate 
+            ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })
+            : undefined;
+          
           const pdfBuffer = await generateAdmitCardPDF({
             rollNumber: participant.rollNumber!,
             name: participant.name,
@@ -161,6 +172,10 @@ export async function processPaymentVerification(
             mobileNumber: participant.mobileNumber,
             photoUrl: participant.photoUrl,
             eventName: 'Quiz Champ 2026',
+            eventDate,
+            eventTime: portalConfig?.eventTime,
+            venue: portalConfig?.venue,
+            venueMapUrl: portalConfig?.venueMapUrl,
           });
 
           const emailHtml = generateAdmitCardEmail({

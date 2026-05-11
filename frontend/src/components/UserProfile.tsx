@@ -44,51 +44,70 @@ export function UserProfile({ profile, onLogout, onCompletePayment, onProfileUpd
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Payment Status Card */}
-      <PaymentStatusCard
-        status={profile.paymentStatus}
-        amount={profile.paymentAmount}
-        merchantTransactionId={profile.merchantTransactionId}
-        onCompletePayment={onCompletePayment}
-        onCheckPendingPayments={handleCheckPendingPayments}
-        checkingPayment={checkingPayment}
-        checkMessage={checkMessage}
-      />
+      {/* Debug info - remove after testing */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
+          <p>Payment Status: {profile.paymentStatus}</p>
+          <p>Roll Number: {profile.rollNumber || 'Not assigned'}</p>
+          <p>Has Admit Card: {profile.admitCard ? 'Yes' : 'No'}</p>
+        </div>
+      )}
 
-      {/* Admit Card (if completed) */}
-      {profile.paymentStatus === 'COMPLETED' && profile.admitCard && (
-        <div className="mt-6">
+      {/* Admit Card (if completed) - Show this FIRST */}
+      {profile.paymentStatus === 'COMPLETED' && profile.admitCard ? (
+        <div className="mt-0">
           <AdmitCard data={profile.admitCard} participantId={profile.participantId} />
         </div>
-      )}
-
-      {/* Personal Details Section */}
-      {profile.paymentStatus !== 'COMPLETED' && (
-        <div className="mt-6 bg-white border border-[#d2d2d7] rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-[#1d1d1f] mb-4">Personal Details</h2>
-          <div className="space-y-3">
-            <DetailRow label="Name" value={profile.name} />
-            <DetailRow label="Class" value={profile.class} />
-            <DetailRow
-              label="Batch"
-              value={profile.batchType === 'JUNIOR' ? 'Junior (Classes 1-7)' : 'Senior (Classes 8-12)'}
-            />
-            <DetailRow label="Guardian" value={profile.guardianName} />
-            <DetailRow label="Mobile" value={profile.mobileNumber} />
-            {profile.email && <DetailRow label="Email" value={profile.email} />}
-            <DetailRow label="Address" value={profile.address} />
-            <DetailRow
-              label="Registered On"
-              value={new Date(profile.registeredAt).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            />
+      ) : profile.paymentStatus === 'COMPLETED' && !profile.admitCard ? (
+        /* Show success message if completed but no admit card yet */
+        <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">✅</span>
+            <div className="flex-1">
+              <p className="font-bold text-[#1d1d1f] text-lg">Registration Complete!</p>
+              <p className="text-[#86868b] text-sm">Your payment was successful. Your admit card is being generated...</p>
+            </div>
           </div>
         </div>
-      )}
+      ) : (
+        /* Show payment status card for pending/failed */
+        <>
+          <PaymentStatusCard
+            status={profile.paymentStatus}
+            amount={profile.paymentAmount}
+            merchantTransactionId={profile.merchantTransactionId}
+            onCompletePayment={onCompletePayment}
+            onCheckPendingPayments={handleCheckPendingPayments}
+            checkingPayment={checkingPayment}
+            checkMessage={checkMessage}
+          />
 
+          {/* Personal Details Section */}
+          <div className="mt-6 bg-white border border-[#d2d2d7] rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-[#1d1d1f] mb-4">Personal Details</h2>
+            <div className="space-y-3">
+              <DetailRow label="Name" value={profile.name} />
+              <DetailRow label="Class" value={profile.class} />
+              <DetailRow
+                label="Batch"
+                value={profile.batchType === 'JUNIOR' ? 'Junior (Classes 1-7)' : 'Senior (Classes 8-12)'}
+              />
+              <DetailRow label="Guardian" value={profile.guardianName} />
+              <DetailRow label="Mobile" value={profile.mobileNumber} />
+              {profile.email && <DetailRow label="Email" value={profile.email} />}
+              <DetailRow label="Address" value={profile.address} />
+              <DetailRow
+                label="Registered On"
+                value={new Date(profile.registeredAt).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }

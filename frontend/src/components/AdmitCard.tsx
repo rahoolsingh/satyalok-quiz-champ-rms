@@ -35,21 +35,6 @@ export function AdmitCard({ data }: { data: AdmitCardData; participantId?: strin
       animate={{ opacity: 1, y: 0 }} 
       transition={{ duration: 0.3 }}
     >
-      {/* Success Message */}
-      <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-5">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-900">Registration Complete!</h2>
-            <p className="text-sm text-gray-600">Your payment was successful</p>
-          </div>
-        </div>
-      </div>
-
       {/* Roll Number Card */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-5">
         <div className="flex items-center gap-5">

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { v4 as uuidv4 } from 'uuid';
-import { AdminUser, PortalConfig, SliderImage, Participant, Result } from '../db/models';
+import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig } from '../db/models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
@@ -281,6 +281,54 @@ adminRouter.put('/portal/fees', async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to update fees' });
+  }
+});
+
+// GET /api/admin/portal/event-details
+adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response) => {
+  try {
+    const config = await PortalConfig.findOne().lean();
+    return res.json({
+      eventDate: config?.eventDate,
+      eventTime: config?.eventTime,
+      venue: config?.venue,
+      venueMapUrl: config?.venueMapUrl,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to get event details' });
+  }
+});
+
+// PUT /api/admin/portal/event-details
+adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response) => {
+  try {
+    const { eventDate, eventTime, venue, venueMapUrl } = req.body;
+    
+    const updateData: Partial<IPortalConfig> = {};
+    
+    if (eventDate) {
+      const date = new Date(eventDate);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ error: 'Invalid event date format' });
+      }
+      updateData.eventDate = date;
+    }
+    
+    if (eventTime !== undefined) updateData.eventTime = eventTime;
+    if (venue !== undefined) updateData.venue = venue;
+    if (venueMapUrl !== undefined) updateData.venueMapUrl = venueMapUrl;
+    
+    await PortalConfig.findOneAndUpdate(
+      {},
+      updateData,
+      { upsert: true, new: true }
+    );
+    
+    return res.json({ message: 'Event details updated successfully', ...updateData });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update event details' });
   }
 });
 

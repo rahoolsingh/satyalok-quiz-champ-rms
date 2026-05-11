@@ -7,6 +7,10 @@ export interface IPortalConfig extends Document {
   resultPublicationDate?: Date;
   feeJunior: number;
   feeSenior: number;
+  eventDate?: Date;
+  eventTime?: string;
+  venue?: string;
+  venueMapUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +27,10 @@ const PortalConfigSchema = new Schema<IPortalConfig>(
     resultPublicationDate: { type: Date },
     feeJunior: { type: Number, default: 100 },
     feeSenior: { type: Number, default: 150 },
+    eventDate: { type: Date },
+    eventTime: { type: String },
+    venue: { type: String },
+    venueMapUrl: { type: String },
   },
   { timestamps: true }
 );

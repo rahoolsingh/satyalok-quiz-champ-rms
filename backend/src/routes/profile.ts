@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { getProfile, checkDuplicateRegistration } from '../services/profile';
-import { Participant } from '../db/models';
+import { Participant, PortalConfig } from '../db/models';
 import { generateAdmitCardPDF } from '../services/admitCardPdf';
 import { verifyPaymentStatus, processPaymentVerification } from '../services/paymentVerification';
 
@@ -98,6 +98,16 @@ profileRouter.get(
       }
 
       // Prepare admit card data
+      const portalConfig = await PortalConfig.findOne().lean();
+      
+      const eventDate = portalConfig?.eventDate 
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })
+        : undefined;
+      
       const admitCardData = {
         rollNumber: participant.rollNumber,
         name: participant.name,
@@ -107,8 +117,10 @@ profileRouter.get(
         mobileNumber: participant.mobileNumber,
         photoUrl: participant.photoUrl,
         eventName: 'Quiz Champ 2026 Competition',
-        eventDate: 'To be announced',
-        venue: 'To be announced',
+        eventDate,
+        eventTime: portalConfig?.eventTime,
+        venue: portalConfig?.venue,
+        venueMapUrl: portalConfig?.venueMapUrl,
       };
 
       // Generate PDF

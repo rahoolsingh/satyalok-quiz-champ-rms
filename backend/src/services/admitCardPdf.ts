@@ -14,8 +14,10 @@ interface AdmitCardData {
     photoUrl?: string;
     eventName?: string;
     eventDate?: string;
+    eventTime?: string;
     venue?: string;
-    ipAddress?: string; // ADDED: Pass this from your backend controller
+    venueMapUrl?: string;
+    ipAddress?: string;
 }
 
 export async function generateAdmitCardPDF(
@@ -240,14 +242,16 @@ export async function generateAdmitCardPDF(
             // ========== EVENT DETAILS BOX ==========
             currentY = margin + 270;
 
+            const eventBoxHeight = data.venueMapUrl ? 110 : 75;
+
             doc.roundedRect(
                 margin + 20,
                 currentY,
                 contentWidth - 40,
-                75,
+                eventBoxHeight,
                 6,
             ).fill(colors.bgLight);
-            doc.roundedRect(margin + 20, currentY, contentWidth - 40, 75, 6)
+            doc.roundedRect(margin + 20, currentY, contentWidth - 40, eventBoxHeight, 6)
                 .lineWidth(1)
                 .strokeColor(colors.border)
                 .stroke();
@@ -269,6 +273,12 @@ export async function generateAdmitCardPDF(
                 .text("EXAMINATION CENTRE DETAILS", margin + 30, currentY + 8);
 
             currentY += 35;
+            
+            // Date & Time
+            const eventDateTime = data.eventDate && data.eventTime 
+                ? `${data.eventDate} at ${data.eventTime}`
+                : data.eventDate || "To be announced";
+            
             doc.fontSize(9)
                 .fillColor(colors.secondary)
                 .font("Helvetica")
@@ -276,26 +286,66 @@ export async function generateAdmitCardPDF(
             doc.fontSize(10)
                 .fillColor(colors.primary)
                 .font("Helvetica-Bold")
-                .text(
-                    data.eventDate || "To be announced",
-                    margin + 100,
-                    currentY,
-                );
+                .text(eventDateTime, margin + 100, currentY, {
+                    width: contentWidth - 140,
+                });
 
             currentY += 20;
+            
+            // Venue with hyperlink
             doc.fontSize(9)
                 .fillColor(colors.secondary)
                 .font("Helvetica")
                 .text("Venue:", margin + 30, currentY);
-            doc.fontSize(10)
-                .fillColor(colors.primary)
-                .font("Helvetica-Bold")
-                .text(data.venue || "To be announced", margin + 100, currentY, {
-                    width: contentWidth - 140,
+            
+            const venueText = data.venue || "To be announced";
+            
+            if (data.venueMapUrl && data.venue) {
+                // Make venue text clickable
+                doc.fontSize(10)
+                    .fillColor("#0066cc")
+                    .font("Helvetica-Bold")
+                    .text(venueText, margin + 100, currentY, {
+                        width: contentWidth - 220,
+                        link: data.venueMapUrl,
+                        underline: true,
+                    });
+                
+                // Generate QR code for map URL
+                currentY += 25;
+                const mapQrDataURI = await QRCode.toDataURL(data.venueMapUrl, {
+                    errorCorrectionLevel: "M",
+                    margin: 1,
+                    width: 60,
+                    color: { dark: "#000000", light: "#ffffff" },
                 });
+                const mapQrBuffer = Buffer.from(mapQrDataURI.split(",")[1], "base64");
+                
+                // Place map QR code
+                const qrSize = 60;
+                doc.image(mapQrBuffer, margin + 100, currentY, {
+                    width: qrSize,
+                    height: qrSize,
+                });
+                
+                doc.fontSize(7)
+                    .fillColor(colors.secondary)
+                    .font("Helvetica")
+                    .text("Scan for map", margin + 100, currentY + qrSize + 3, {
+                        width: qrSize,
+                        align: "center",
+                    });
+            } else {
+                doc.fontSize(10)
+                    .fillColor(colors.primary)
+                    .font("Helvetica-Bold")
+                    .text(venueText, margin + 100, currentY, {
+                        width: contentWidth - 140,
+                    });
+            }
 
             // ========== INSTRUCTIONS SECTION ==========
-            currentY += 50;
+            currentY = margin + 270 + eventBoxHeight + 20;
 
             doc.fontSize(11)
                 .fillColor(colors.brand)

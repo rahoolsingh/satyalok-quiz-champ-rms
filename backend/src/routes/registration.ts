@@ -6,7 +6,7 @@ import { getRegistrationFee, generateMerchantTransactionId } from '../services/p
 import { initiatePhonePePayment } from '../services/pgsClient';
 import { generateAdmitCardData, generateAdmitCardHtml } from '../services/admitCard';
 import { uploadToS3 } from '../services/storage';
-import { Participant } from '../db/models';
+import { Participant, PortalConfig } from '../db/models';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { validateImageFormat } from '../services/validation';
 import { generateAdmitCardPDF } from '../services/admitCardPdf';
@@ -323,6 +323,17 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
       return res.status(403).json({ error: 'Admit card not available. Payment not completed.' });
     }
 
+    // Get event details from portal config
+    const portalConfig = await PortalConfig.findOne().lean();
+    
+    const eventDate = portalConfig?.eventDate 
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : undefined;
+
     const pdfBuffer = await generateAdmitCardPDF({
       rollNumber: participant.rollNumber ?? 'N/A',
       name: participant.name,
@@ -332,6 +343,10 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
       mobileNumber: participant.mobileNumber,
       photoUrl: participant.photoUrl,
       eventName: 'Quiz Champ 2026',
+      eventDate,
+      eventTime: portalConfig?.eventTime,
+      venue: portalConfig?.venue,
+      venueMapUrl: portalConfig?.venueMapUrl,
     });
 
     res.setHeader('Content-Type', 'application/pdf');

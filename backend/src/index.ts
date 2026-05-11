@@ -28,10 +28,14 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory (only in development)
-if (process.env.NODE_ENV !== "production") {
-    app.use(express.static(path.join(__dirname, "../public")));
-    console.log("✅ Static files served from /public");
+// Serve static assets from public/assets directory (in all environments)
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
+console.log('✅ Static assets served from /assets');
+
+// Serve other static files from public directory (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(express.static(path.join(__dirname, '../public')));
+  console.log('✅ Static files served from /public');
 }
 
 app.use("/api/portal", portalRouter);
