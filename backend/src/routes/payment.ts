@@ -84,7 +84,7 @@ paymentRouter.get('/callback', async (req: Request, res: Response) => {
           });
 
           await sendEmail({
-            to: updatedParticipant.email,
+            to: updatedParticipant.email!,
             subject: 'Quiz Champ 2026 - Your Admit Card',
             html: emailHtml,
             attachments: [{

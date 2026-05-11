@@ -26,7 +26,7 @@ function getTransporter(): Transporter {
     throw new Error('Email configuration missing. Please set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD');
   }
 
-  transporter = nodemailer.createTransporter({
+  transporter = nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
