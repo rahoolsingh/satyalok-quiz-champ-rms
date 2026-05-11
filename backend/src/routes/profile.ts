@@ -4,6 +4,25 @@ import { getProfile, checkDuplicateRegistration } from '../services/profile';
 
 export const profileRouter = Router();
 
+// GET /api/profile/me
+// Returns profile for the currently authenticated user (from cookie)
+profileRouter.get('/me', sessionAuthMiddleware, async (req: SessionRequest, res: Response) => {
+  try {
+    const mobile = req.verifiedMobile!;
+
+    const profile = await getProfile(mobile);
+
+    if (!profile) {
+      return res.status(404).json({ error: 'No registration found' });
+    }
+
+    return res.json({ profile });
+  } catch (err) {
+    console.error('[profile/me GET]', err);
+    return res.status(500).json({ error: 'Failed to retrieve profile' });
+  }
+});
+
 // GET /api/profile
 // Returns complete profile data for the authenticated user
 profileRouter.get('/', sessionAuthMiddleware, async (req: SessionRequest, res: Response) => {

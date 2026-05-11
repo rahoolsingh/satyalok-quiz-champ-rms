@@ -12,7 +12,7 @@ import { ResultChecker } from '../components/ResultChecker';
 import { SatyalokBadge } from '../components/SatyalokBadge';
 import { UserProfile } from '../components/UserProfile';
 import { SliderImage, BatchType, PaymentSession, ProfileData } from '../types';
-import { portalApi, otpApi } from '../api/client';
+import { portalApi, otpApi, profileApi } from '../api/client';
 
 type Step = 'home' | 'mobile-entry' | 'otp' | 'form' | 'payment' | 'profile';
 
@@ -24,8 +24,35 @@ export function PublicPortal() {
   const [mobile, setMobile] = useState('');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [session, setSession] = useState<PaymentSession | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // No need to load session from cookies - backend handles it via HTTP-only cookies
+  // Fetch profile on mount if session cookie exists
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await profileApi.getMe();
+        const profileData = response.data.profile;
+        setProfile(profileData);
+        setMobile(profileData.mobileNumber);
+        setBatch(profileData.batchType as BatchType);
+        
+        // Route based on payment status
+        if (profileData.paymentStatus === 'COMPLETED') {
+          setStep('profile');
+        } else {
+          setStep('form');
+        }
+      } catch (error) {
+        // No session or session expired - stay on home
+        console.log('No active session');
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   useEffect(() => { portalApi.getSliderImages().then(r => setImages(r.data)).catch(() => {}); }, []);
 
   const handleLogout = async () => {
@@ -50,7 +77,7 @@ export function PublicPortal() {
     setStep('home');
   };
 
-  if (loading) {
+  if (loading || loadingProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#fbfbfd]">
         <div className="w-5 h-5 border-2 border-[#d2d2d7] border-t-[#0071e3] rounded-full animate-spin" />

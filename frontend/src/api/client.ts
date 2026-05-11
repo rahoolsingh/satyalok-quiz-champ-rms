@@ -51,6 +51,11 @@ export const resultsApi = {
   getResult: (rollNumber: string) => api.get(`/results/${rollNumber}`),
 };
 
+export const profileApi = {
+  getMe: () => api.get('/profile/me'),
+  checkDuplicate: (mobile: string) => api.get('/profile/check-duplicate', { params: { mobile } }),
+};
+
 export const adminApi = {
   login: (username: string, password: string) =>
     api.post('/admin/login', { username, password }),

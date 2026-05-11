@@ -55,11 +55,11 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
     registeredAt: participant.createdAt,
   };
 
-  // Include admit card data if payment is completed
-  if (participant.paymentStatus === 'COMPLETED') {
+  // Include admit card data if payment is completed AND roll number exists
+  if (participant.paymentStatus === 'COMPLETED' && participant.rollNumber) {
     profile.admitCard = generateAdmitCardData({
       id: participant._id.toString(),
-      rollNumber: participant.rollNumber ?? null,
+      rollNumber: participant.rollNumber,
       name: participant.name,
       class: participant.class,
       batchType: participant.batchType,
