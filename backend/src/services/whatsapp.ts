@@ -32,11 +32,9 @@ export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promis
 
   const whatsappApiUrl = process.env.WHATSAPP_API_URL;
   const whatsappApiKey = process.env.WHATSAPP_API_KEY;
-  const whatsappPhoneNumber = process.env.WHATSAPP_PHONE_NUMBER;
 
   if (!whatsappApiUrl) throw new Error('WHATSAPP_API_URL is not set');
   if (!whatsappApiKey) throw new Error('WHATSAPP_API_KEY is not set');
-  if (!whatsappPhoneNumber) throw new Error('WHATSAPP_PHONE_NUMBER is not set');
 
   const message = otpTemplate(otp);
 
@@ -46,17 +44,13 @@ export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promis
     const response = await axios.post(
       whatsappApiUrl,
       {
-        messaging_product: 'whatsapp',
-        to: `91${mobileNumber}`,
-        type: 'text',
-        text: {
-          body: message,
-        },
+        phone: `91${mobileNumber}`,
+        message: message,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${whatsappApiKey}`,
+          'x-api-key': whatsappApiKey,
         },
         timeout: 10000,
       }
@@ -97,17 +91,13 @@ export async function sendThankYouMessage(
     const response = await axios.post(
       whatsappApiUrl,
       {
-        messaging_product: 'whatsapp',
-        to: `91${mobileNumber}`,
-        type: 'text',
-        text: {
-          body: message,
-        },
+        phone: `91${mobileNumber}`,
+        message: message,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${whatsappApiKey}`,
+          'x-api-key': whatsappApiKey,
         },
         timeout: 10000,
       }
@@ -148,17 +138,13 @@ export async function sendPaymentReminder(
     const response = await axios.post(
       whatsappApiUrl,
       {
-        messaging_product: 'whatsapp',
-        to: `91${mobileNumber}`,
-        type: 'text',
-        text: {
-          body: message,
-        },
+        phone: `91${mobileNumber}`,
+        message: message,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${whatsappApiKey}`,
+          'x-api-key': whatsappApiKey,
         },
         timeout: 10000,
       }

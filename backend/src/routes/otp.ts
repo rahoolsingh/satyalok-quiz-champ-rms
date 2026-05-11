@@ -64,7 +64,7 @@ otpRouter.post('/verify', async (req: Request, res: Response) => {
     res.cookie('sessionToken', sessionToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
     });
@@ -124,7 +124,7 @@ otpRouter.post('/logout', async (_req: Request, res: Response) => {
     res.clearCookie('sessionToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/',
     });
 
