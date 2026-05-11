@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 /**
- * WhatsApp Service for sending OTP and notifications
- * Supports both WhatsApp Business API and mock mode for development
+ * SMS/WhatsApp Service for sending OTP and notifications
+ * Uses SMS API for all messages
  */
 
 export interface ThankYouMessageData {
@@ -20,139 +20,79 @@ export interface ReminderData {
 }
 
 /**
- * Sends OTP via WhatsApp
+ * Sends SMS using the configured SMS API
  */
-export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promise<void> {
-  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+async function sendSMS(mobileNumber: string, message: string): Promise<void> {
+  const smsProvider = process.env.SMS_PROVIDER || 'mock';
 
-  if (provider === 'mock') {
-    console.log(`[MOCK WHATSAPP] OTP ${otp} → ${mobileNumber}`);
+  if (smsProvider === 'mock') {
+    console.log(`[MOCK SMS] Message → ${mobileNumber}`);
+    console.log(`[MOCK SMS] Content: ${message}`);
     return;
   }
 
-  const whatsappApiUrl = process.env.WHATSAPP_API_URL;
-  const whatsappApiKey = process.env.WHATSAPP_API_KEY;
+  const smsApiUrl = process.env.SMS_API_URL;
+  const smsApiKey = process.env.SMS_API_KEY;
 
-  if (!whatsappApiUrl) throw new Error('WHATSAPP_API_URL is not set');
-  if (!whatsappApiKey) throw new Error('WHATSAPP_API_KEY is not set');
+  if (!smsApiUrl) throw new Error('SMS_API_URL is not set');
+  if (!smsApiKey) throw new Error('SMS_API_KEY is not set');
 
-  const message = otpTemplate(otp);
-
-  console.log(`[WhatsApp] Sending OTP to ${mobileNumber}`);
+  console.log(`[SMS] Sending message to ${mobileNumber}`);
 
   try {
     const response = await axios.post(
-      whatsappApiUrl,
+      smsApiUrl,
       {
-        phone: `91${mobileNumber}`,
+        mobileNumber: `91${mobileNumber}`,
         message: message,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': whatsappApiKey,
+          'x-api-key': smsApiKey,
         },
         timeout: 10000,
       }
     );
 
-    console.log('[WhatsApp] OTP sent successfully:', response.data);
+    console.log('[SMS] Message sent successfully:', response.data);
   } catch (error) {
-    console.error('[WhatsApp] Failed to send OTP:', error);
-    throw new Error('Failed to send OTP via WhatsApp');
+    console.error('[SMS] Failed to send message:', error);
+    throw new Error('Failed to send SMS');
   }
 }
 
 /**
- * Sends thank you message after successful payment
+ * Sends OTP via SMS
+ */
+export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promise<void> {
+  const message = otpTemplate(otp);
+  await sendSMS(mobileNumber, message);
+}
+
+/**
+ * Sends thank you message after successful payment via SMS
  */
 export async function sendThankYouMessage(
   mobileNumber: string,
   data: ThankYouMessageData
 ): Promise<void> {
-  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
-
-  if (provider === 'mock') {
-    console.log(`[MOCK WHATSAPP] Thank you message → ${mobileNumber}`, data);
-    return;
-  }
-
-  const whatsappApiUrl = process.env.WHATSAPP_API_URL;
-  const whatsappApiKey = process.env.WHATSAPP_API_KEY;
-
-  if (!whatsappApiUrl) throw new Error('WHATSAPP_API_URL is not set');
-  if (!whatsappApiKey) throw new Error('WHATSAPP_API_KEY is not set');
-
   const message = thankYouTemplate(data);
-
-  console.log(`[WhatsApp] Sending thank you message to ${mobileNumber}`);
-
-  try {
-    const response = await axios.post(
-      whatsappApiUrl,
-      {
-        phone: `91${mobileNumber}`,
-        message: message,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': whatsappApiKey,
-        },
-        timeout: 10000,
-      }
-    );
-
-    console.log('[WhatsApp] Thank you message sent successfully:', response.data);
-  } catch (error) {
-    console.error('[WhatsApp] Failed to send thank you message:', error);
-    throw new Error('Failed to send thank you message via WhatsApp');
-  }
+  await sendSMS(mobileNumber, message);
 }
 
 /**
- * Sends payment reminder
+ * Sends payment reminder via SMS
  */
 export async function sendPaymentReminder(
   mobileNumber: string,
   data: ReminderData
 ): Promise<void> {
-  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
-
-  if (provider === 'mock') {
-    console.log(`[MOCK WHATSAPP] Payment reminder → ${mobileNumber}`, data);
-    return;
-  }
-
-  const whatsappApiUrl = process.env.WHATSAPP_API_URL;
-  const whatsappApiKey = process.env.WHATSAPP_API_KEY;
-
-  if (!whatsappApiUrl) throw new Error('WHATSAPP_API_URL is not set');
-  if (!whatsappApiKey) throw new Error('WHATSAPP_API_KEY is not set');
-
-  const message = paymentReminderTemplate(data);
-
-  console.log(`[WhatsApp] Sending payment reminder to ${mobileNumber}`);
-
   try {
-    const response = await axios.post(
-      whatsappApiUrl,
-      {
-        phone: `91${mobileNumber}`,
-        message: message,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': whatsappApiKey,
-        },
-        timeout: 10000,
-      }
-    );
-
-    console.log('[WhatsApp] Payment reminder sent successfully:', response.data);
+    const message = paymentReminderTemplate(data);
+    await sendSMS(mobileNumber, message);
   } catch (error) {
-    console.error('[WhatsApp] Failed to send payment reminder:', error);
+    console.error('[SMS] Failed to send payment reminder:', error);
     // Don't throw error for reminders - just log it
   }
 }
@@ -171,6 +111,9 @@ Need help? Contact us at support@quizchamp.com`;
 }
 
 function thankYouTemplate(data: ThankYouMessageData): string {
+  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.com';
+  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
+  
   return `🎉 *Registration Successful!*
 
 Dear ${data.name},
@@ -184,10 +127,18 @@ Event Date: ${data.eventDate}
 📥 *Download Admit Card:*
 ${data.admitCardUrl}
 
+🌐 *Portal Access:*
+Login anytime at: ${portalUrl}
+
+📱 *Join WhatsApp Group:*
+Stay updated with quiz information:
+${whatsappGroupUrl}
+
 📌 *Important Instructions:*
 • Bring your admit card on the event day
 • Arrive 30 minutes before the scheduled time
 • Carry a valid ID proof
+• Join our WhatsApp group for updates
 
 ${data.contactInfo}
 
