@@ -60,3 +60,22 @@ export interface PaymentSession {
   provider: string;
   providerOrderId?: string;
 }
+
+export interface ProfileData {
+  participantId: string;
+  name: string;
+  class: string;
+  batchType: BatchType;
+  guardianName: string;
+  address: string;
+  mobileNumber: string;
+  email?: string;
+  referralSource?: string;
+  photoUrl?: string;
+  paymentStatus: PaymentStatus;
+  rollNumber?: string;
+  merchantTransactionId?: string;
+  paymentAmount?: number;
+  registeredAt: string;
+  admitCard?: AdmitCardData;
+}

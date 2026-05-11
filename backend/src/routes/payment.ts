@@ -1,9 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Participant } from '../db/models';
-import { verifyPhonePePayment } from '../services/pgsClient';
-import { generateUniqueRollNumber } from '../services/rollNumber';
-import { sendEmail, generateAdmitCardEmail } from '../services/email';
-import { generateAdmitCardPDF } from '../services/admitCardPdf';
+import { processPaymentVerification, scheduleVerificationJob } from '../services/paymentVerification';
 
 export const paymentRouter = Router();
 
@@ -11,8 +8,8 @@ export const paymentRouter = Router();
  * GET /api/payment/callback?id={merchantTransactionId}
  *
  * Called by the PGS after PhonePe completes a payment.
- * Verifies the payment status, updates the participant record,
- * then redirects the browser to the appropriate frontend page.
+ * Verifies the payment status with the gateway, updates the participant record,
+ * sends WhatsApp and email notifications, then redirects to the frontend.
  */
 paymentRouter.get('/callback', async (req: Request, res: Response) => {
   const merchantTransactionId = req.query.id as string | undefined;
@@ -34,81 +31,36 @@ paymentRouter.get('/callback', async (req: Request, res: Response) => {
     return res.redirect(`${frontendUrl}/payment-success?participantId=${participant._id.toString()}`);
   }
 
-  // Verify with PGS
-  let statusResponse;
   try {
-    statusResponse = await verifyPhonePePayment(merchantTransactionId);
-  } catch (err) {
-    console.error('[payment/callback] PGS status check failed:', err);
-    return res.status(502).json({ error: 'Payment status check failed. Please contact support.' });
-  }
+    // Process payment verification (verifies with gateway, updates status, sends notifications)
+    await processPaymentVerification(merchantTransactionId);
 
-  if (statusResponse.success) {
-    // Assign roll number and mark COMPLETED
-    let rollNumber: string;
-    try {
-      rollNumber = await generateUniqueRollNumber();
-    } catch (err) {
-      console.error('[payment/callback] Roll number generation failed:', err);
-      return res.status(500).json({ error: 'Failed to assign roll number' });
-    }
-
-    await Participant.findByIdAndUpdate(participant._id, {
-      paymentStatus: 'COMPLETED',
-      paymentId: statusResponse.data?.transactionId || merchantTransactionId,
-      rollNumber,
-    });
-
-    // Fetch updated participant
+    // Fetch updated participant to check final status
     const updatedParticipant = await Participant.findById(participant._id);
-    
-    // Send admit card email (async, don't block the redirect)
-    if (updatedParticipant && updatedParticipant.email) {
-      (async () => {
-        try {
-          const pdfBuffer = await generateAdmitCardPDF({
-            rollNumber: updatedParticipant.rollNumber!,
-            name: updatedParticipant.name,
-            class: updatedParticipant.class,
-            batchType: updatedParticipant.batchType,
-            guardianName: updatedParticipant.guardianName,
-            mobileNumber: updatedParticipant.mobileNumber,
-            photoUrl: updatedParticipant.photoUrl,
-            eventName: 'Quiz Champ 2026',
-          });
 
-          const emailHtml = generateAdmitCardEmail({
-            name: updatedParticipant.name,
-            rollNumber: updatedParticipant.rollNumber!,
-            batch: updatedParticipant.batchType,
-          });
-
-          await sendEmail({
-            to: updatedParticipant.email!,
-            subject: 'Quiz Champ 2026 - Your Admit Card',
-            html: emailHtml,
-            attachments: [{
-              filename: `admit-card-${updatedParticipant.rollNumber}.pdf`,
-              content: pdfBuffer,
-            }],
-          });
-
-          console.log(`[payment/callback] Admit card email sent to ${updatedParticipant.email}`);
-        } catch (emailErr) {
-          console.error('[payment/callback] Failed to send admit card email:', emailErr);
-          // Don't fail the payment - email can be resent later
-        }
-      })();
+    if (updatedParticipant?.paymentStatus === 'COMPLETED') {
+      return res.redirect(
+        `${frontendUrl}/payment-success?participantId=${participant._id.toString()}`
+      );
+    } else if (updatedParticipant?.paymentStatus === 'FAILED') {
+      return res.redirect(`${frontendUrl}/payment-failed`);
+    } else {
+      // Payment status is still PENDING - schedule background verification
+      await scheduleVerificationJob(merchantTransactionId, 0);
+      
+      // Redirect to a pending page or success page with a message
+      return res.redirect(
+        `${frontendUrl}/payment-success?participantId=${participant._id.toString()}&pending=true`
+      );
     }
-
-    return res.redirect(
-      `${frontendUrl}/payment-success?participantId=${participant._id.toString()}`
-    );
-  } else {
-    await Participant.findByIdAndUpdate(participant._id, {
-      paymentStatus: 'FAILED',
+  } catch (error) {
+    console.error('[payment/callback] Error processing payment:', error);
+    
+    // Schedule background verification as fallback
+    await scheduleVerificationJob(merchantTransactionId, 0);
+    
+    return res.status(500).json({ 
+      error: 'Payment processing error. Your payment will be verified shortly.' 
     });
-
-    return res.redirect(`${frontendUrl}/payment-failed`);
   }
 });

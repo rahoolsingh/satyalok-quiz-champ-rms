@@ -10,18 +10,11 @@ import { OTPVerification } from '../components/OTPVerification';
 import { PaymentGateway } from '../components/PaymentGateway';
 import { ResultChecker } from '../components/ResultChecker';
 import { SatyalokBadge } from '../components/SatyalokBadge';
-import { SliderImage, BatchType, PaymentSession, RegistrationInput } from '../types';
-import { portalApi } from '../api/client';
-import { sessionCookies } from '../utils/cookies';
+import { UserProfile } from '../components/UserProfile';
+import { SliderImage, BatchType, PaymentSession, ProfileData } from '../types';
+import { portalApi, otpApi } from '../api/client';
 
-type Step = 'home' | 'mobile-entry' | 'otp' | 'form' | 'payment';
-
-interface Draft extends Partial<RegistrationInput> {
-  participantId?: string;
-  photoUrl?: string;
-  paymentStatus?: string;
-  merchantTransactionId?: string;
-}
+type Step = 'home' | 'mobile-entry' | 'otp' | 'form' | 'payment' | 'profile';
 
 export function PublicPortal() {
   const { status, loading, error, refetch } = usePortalState();
@@ -29,32 +22,24 @@ export function PublicPortal() {
   const [step, setStep] = useState<Step>('home');
   const [batch, setBatch] = useState<BatchType | null>(null);
   const [mobile, setMobile] = useState('');
-  const [sessionToken, setSessionToken] = useState<string>('');
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [session, setSession] = useState<PaymentSession | null>(null);
 
-  // Load session from cookies on mount
-  useEffect(() => {
-    const savedSession = sessionCookies.getSession();
-    if (savedSession) {
-      setSessionToken(savedSession.token);
-      setMobile(savedSession.mobile);
-      setBatch(savedSession.batch as BatchType);
-      // If we have a session, we should be on the form step
-      if (step === 'home') {
-        setStep('form');
-      }
-    }
-  }, []);
-
+  // No need to load session from cookies - backend handles it via HTTP-only cookies
   useEffect(() => { portalApi.getSliderImages().then(r => setImages(r.data)).catch(() => {}); }, []);
 
-  const handleLogout = () => {
-    sessionCookies.clearSession();
-    setSessionToken('');
+  const handleLogout = async () => {
+    try {
+      // Call backend logout endpoint to clear HTTP-only cookie
+      await otpApi.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    // Clear component state
     setMobile('');
     setBatch(null);
-    setDraft(null);
+    setProfile(null);
     setSession(null);
     setStep('home');
   };
@@ -103,13 +88,25 @@ export function PublicPortal() {
     if (step === 'payment' && session) {
       return <PaymentGateway session={session} onFailure={msg => alert(msg)} />;
     }
-    if (step === 'form' && batch && mobile && sessionToken) {
+    if (step === 'profile' && profile) {
+      return (
+        <UserProfile
+          profile={profile}
+          onLogout={handleLogout}
+          onCompletePayment={() => {
+            // Resume payment flow
+            setStep('form');
+          }}
+        />
+      );
+    }
+    if (step === 'form' && batch && mobile) {
       return (
         <RegistrationForm
           batchType={batch}
           mobileNumber={mobile}
-          sessionToken={sessionToken}
-          draft={draft}
+          sessionToken="" // Not needed - backend uses HTTP-only cookie
+          draft={profile}
           onSuccess={(paymentSession) => {
             setSession(paymentSession);
             setStep('payment');
@@ -123,11 +120,22 @@ export function PublicPortal() {
         <OTPVerification
           mobileNumber={mobile}
           onSuccess={result => {
-            setSessionToken(result.sessionToken);
-            setDraft(result.draft);
-            // Save to cookies
-            sessionCookies.setSession(result.sessionToken, mobile, batch!);
-            setStep('form');
+            const profileData = result.profile;
+            setProfile(profileData);
+            
+            // Route based on payment status
+            if (profileData) {
+              if (profileData.paymentStatus === 'COMPLETED') {
+                // Show profile with admit card
+                setStep('profile');
+              } else {
+                // Show registration form (PENDING or FAILED)
+                setStep('form');
+              }
+            } else {
+              // New user - show registration form
+              setStep('form');
+            }
           }}
           onBack={() => setStep('mobile-entry')}
         />
@@ -153,7 +161,7 @@ export function PublicPortal() {
       {/* Mobile-first container - centered on desktop except for admin routes */}
       <div className="max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header with logout button */}
-        {sessionToken && step !== 'home' && (
+        {profile && step !== 'home' && (
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#d2d2d7]">
             <div className="text-sm text-[#86868b]">
               <span className="font-medium text-[#1d1d1f]">{mobile}</span>

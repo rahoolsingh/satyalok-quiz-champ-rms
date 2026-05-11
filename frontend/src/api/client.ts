@@ -5,6 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // Enable sending cookies
 });
 
 // Attach admin token if present
@@ -24,6 +25,7 @@ export const portalApi = {
 export const otpApi = {
   send: (mobileNumber: string) => api.post('/otp/send', { mobileNumber }),
   verify: (mobileNumber: string, otp: string) => api.post('/otp/verify', { mobileNumber, otp }),
+  logout: () => api.post('/otp/logout'),
 };
 
 export const registrationApi = {

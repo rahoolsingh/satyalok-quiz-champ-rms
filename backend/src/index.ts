@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectDB } from "./db/client";
 import { portalRouter } from "./routes/portal";
@@ -8,19 +9,25 @@ import { resultsRouter } from "./routes/results";
 import { adminRouter } from "./routes/admin";
 import { paymentRouter } from "./routes/payment";
 import { otpRouter } from "./routes/otp";
+import { profileRouter } from "./routes/profile";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors({ 
+    origin: process.env.FRONTEND_URL,
+    credentials: true // Allow cookies
+}));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/portal", portalRouter);
 app.use("/api/otp", otpRouter);
 app.use("/api/registration", registrationRouter);
+app.use("/api/profile", profileRouter);
 app.use("/api/results", resultsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/payment", paymentRouter);

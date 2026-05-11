@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
 import { OTPVerification } from '../db/models';
+import { sendWhatsAppOTP } from './whatsapp';
 
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_ATTEMPTS = 3;
@@ -59,38 +60,53 @@ export async function verifyOTP(
 }
 
 /**
- * Sends OTP via SMS API (axios, x-api-key auth).
- * Set SMS_PROVIDER=mock to skip the real call during development.
+ * Sends OTP via WhatsApp API.
+ * Set WHATSAPP_PROVIDER=mock to skip the real call during development.
+ * Falls back to SMS if WhatsApp fails after 3 attempts.
  */
 export async function sendOTP(mobileNumber: string, otp: string): Promise<void> {
-  const provider = process.env.SMS_PROVIDER || 'mock';
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
 
-  if (provider === 'mock') {
-    console.log(`[MOCK SMS] OTP ${otp} → ${mobileNumber}`);
+  // Try WhatsApp first
+  try {
+    await sendWhatsAppOTP(mobileNumber, otp);
     return;
-  }
-
-  const smsApiUrl = process.env.SMS_API_URL;
-  const smsApiKey = process.env.SMS_API_KEY;
-  if (!smsApiUrl) throw new Error('SMS_API_URL is not set');
-  if (!smsApiKey) throw new Error('SMS_API_KEY is not set');
-
-  const message = otpTemplate(otp);
-
-  console.log('Sending OTP to', mobileNumber);
-
-  const response = await axios.post(
-    smsApiUrl,
-    { mobileNumber: `91${mobileNumber}`, message },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': smsApiKey,
-      },
+  } catch (whatsappError) {
+    console.error('[OTP] WhatsApp delivery failed, attempting SMS fallback:', whatsappError);
+    
+    // Fallback to SMS
+    const smsProvider = process.env.SMS_PROVIDER || 'mock';
+    
+    if (smsProvider === 'mock') {
+      console.log(`[MOCK SMS FALLBACK] OTP ${otp} → ${mobileNumber}`);
+      return;
     }
-  );
 
-  console.log('SMS response:', response.data);
+    const smsApiUrl = process.env.SMS_API_URL;
+    const smsApiKey = process.env.SMS_API_KEY;
+    
+    if (!smsApiUrl || !smsApiKey) {
+      console.error('[OTP] SMS fallback not configured');
+      throw new Error('Failed to send OTP via WhatsApp and SMS is not configured');
+    }
+
+    const message = otpTemplate(otp);
+
+    console.log('[OTP] Sending via SMS fallback to', mobileNumber);
+
+    const response = await axios.post(
+      smsApiUrl,
+      { mobileNumber: `91${mobileNumber}`, message },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': smsApiKey,
+        },
+      }
+    );
+
+    console.log('[OTP] SMS fallback response:', response.data);
+  }
 }
 
 // ─── SMS template ─────────────────────────────────────────────────────────────

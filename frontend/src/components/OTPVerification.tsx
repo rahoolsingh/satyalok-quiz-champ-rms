@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { otpApi } from '../api/client';
-import { RegistrationInput } from '../types';
+import { ProfileData } from '../types';
 
 interface OTPResult {
   sessionToken: string;
-  draft: (Partial<RegistrationInput> & { participantId?: string; photoUrl?: string; paymentStatus?: string; merchantTransactionId?: string }) | null;
+  profile: ProfileData | null;
 }
 
 export function OTPVerification({
@@ -55,7 +55,7 @@ export function OTPVerification({
     setLoading(true); setError('');
     try {
       const res = await otpApi.verify(mobileNumber, otp);
-      onSuccess({ sessionToken: res.data.sessionToken, draft: res.data.draft });
+      onSuccess({ sessionToken: res.data.sessionToken, profile: res.data.profile });
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Verification failed');
       setDigits(['', '', '', '', '', '']);
@@ -84,8 +84,12 @@ export function OTPVerification({
 
       <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 2 of 3</p>
       <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Verify your number</h2>
-      <p className="text-[#86868b] text-sm mb-6 sm:mb-8 leading-relaxed">
+      <p className="text-[#86868b] text-sm mb-2 leading-relaxed">
         We sent a 6-digit code to <strong className="text-[#1d1d1f] font-semibold">{masked}</strong>
+      </p>
+      <p className="text-xs text-[#86868b] mb-6 sm:mb-8 flex items-center gap-1.5">
+        <span className="text-base">💬</span>
+        Check your WhatsApp messages
       </p>
 
       <AnimatePresence>

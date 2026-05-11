@@ -100,6 +100,10 @@ export function MobileEntry({ onSuccess, onBack }: Props) {
                 ${focused ? 'border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.2)]' : 'border-[#d2d2d7]'}`}
             />
           </div>
+          <p className="text-xs text-[#86868b] mt-2 flex items-center gap-1.5">
+            <span className="text-base">💬</span>
+            You will receive OTP on WhatsApp
+          </p>
         </div>
 
         <motion.button type="submit" disabled={loading || !batch || mobile.length < 10}

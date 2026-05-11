@@ -6,7 +6,7 @@ export interface SessionRequest extends Request {
 }
 
 /**
- * Middleware that validates the short-lived OTP session JWT.
+ * Middleware that validates the session JWT from HTTP-only cookie or Authorization header.
  * Attaches req.verifiedMobile on success; returns 401 otherwise.
  */
 export function sessionAuthMiddleware(
@@ -14,14 +14,21 @@ export function sessionAuthMiddleware(
   res: Response,
   next: NextFunction
 ): void {
-  const authHeader = req.headers.authorization;
+  // Try to get token from cookie first (preferred)
+  let token = req.cookies?.sessionToken;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // Fallback to Authorization header for backward compatibility
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  if (!token) {
     res.status(401).json({ error: 'Session token required' });
     return;
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const payload = verifySessionToken(token);
