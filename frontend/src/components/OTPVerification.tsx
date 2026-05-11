@@ -100,13 +100,13 @@ export function OTPVerification({
       </AnimatePresence>
 
       <form onSubmit={handleSubmit}>
-        <div className="flex gap-2 sm:gap-2.5 mb-6 sm:mb-7" onPaste={handlePaste}>
+        <div className="flex gap-1.5 sm:gap-2.5 mb-6 sm:mb-7 justify-center" onPaste={handlePaste}>
           {digits.map((d, i) => (
             <input key={i} ref={el => { refs.current[i] = el; }} value={d}
               onChange={e => handleChange(i, e.target.value)}
               onKeyDown={e => handleKeyDown(i, e)}
               maxLength={1} inputMode="numeric" aria-label={`OTP digit ${i + 1}`}
-              className={`flex-1 h-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-white text-[#1d1d1f] rounded-lg outline-none transition-all
+              className={`w-10 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-white text-[#1d1d1f] rounded-lg outline-none transition-all
                 ${d ? 'border-2 border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.15)]' : 'border border-[#d2d2d7]'}`}
             />
           ))}
