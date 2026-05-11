@@ -1,15 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ProfileData } from '../types';
 import { AdmitCard } from './AdmitCard';
+import { profileApi } from '../api/client';
 
 interface UserProfileProps {
   profile: ProfileData;
   onLogout: () => void;
   onCompletePayment?: () => void;
+  onProfileUpdate?: (profile: ProfileData) => void;
 }
 
-export function UserProfile({ profile, onLogout, onCompletePayment }: UserProfileProps) {
+export function UserProfile({ profile, onLogout, onCompletePayment, onProfileUpdate }: UserProfileProps) {
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [checkMessage, setCheckMessage] = useState('');
+
+  const handleCheckPendingPayments = async () => {
+    setCheckingPayment(true);
+    setCheckMessage('');
+    try {
+      const response = await profileApi.checkPendingPayments();
+      const { updatedCount, profile: updatedProfile } = response.data;
+      
+      if (updatedCount > 0) {
+        setCheckMessage(`✅ Payment status updated! Found ${updatedCount} completed payment(s).`);
+        if (updatedProfile && onProfileUpdate) {
+          onProfileUpdate(updatedProfile);
+        }
+      } else {
+        setCheckMessage('No payment updates found. Your payment may still be processing.');
+      }
+    } catch (error: any) {
+      setCheckMessage(error.response?.data?.error || 'Failed to check payment status');
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
+
   return (
     <motion.div
       className="w-full"
@@ -23,6 +50,9 @@ export function UserProfile({ profile, onLogout, onCompletePayment }: UserProfil
         amount={profile.paymentAmount}
         merchantTransactionId={profile.merchantTransactionId}
         onCompletePayment={onCompletePayment}
+        onCheckPendingPayments={handleCheckPendingPayments}
+        checkingPayment={checkingPayment}
+        checkMessage={checkMessage}
       />
 
       {/* Admit Card (if completed) */}
@@ -69,11 +99,17 @@ function PaymentStatusCard({
   amount,
   merchantTransactionId,
   onCompletePayment,
+  onCheckPendingPayments,
+  checkingPayment,
+  checkMessage,
 }: {
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   amount?: number;
   merchantTransactionId?: string;
   onCompletePayment?: () => void;
+  onCheckPendingPayments?: () => void;
+  checkingPayment?: boolean;
+  checkMessage?: string;
 }) {
   if (status === 'COMPLETED') {
     return (
@@ -119,14 +155,43 @@ function PaymentStatusCard({
           </p>
         </div>
 
-        {onCompletePayment && (
-          <button
-            onClick={onCompletePayment}
-            className="w-full py-3 px-5 bg-[#0071e3] text-white rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
-            Complete Payment →
-          </button>
+        {checkMessage && (
+          <div className={`rounded-lg p-3 mb-3 text-xs ${
+            checkMessage.includes('✅') 
+              ? 'bg-green-100 border border-green-300 text-green-900' 
+              : 'bg-blue-100 border border-blue-300 text-blue-900'
+          }`}>
+            {checkMessage}
+          </div>
         )}
+
+        <div className="flex flex-col gap-2">
+          {onCompletePayment && (
+            <button
+              onClick={onCompletePayment}
+              className="w-full py-3 px-5 bg-[#0071e3] text-white rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
+            >
+              Complete Payment →
+            </button>
+          )}
+          
+          {onCheckPendingPayments && (
+            <button
+              onClick={onCheckPendingPayments}
+              disabled={checkingPayment}
+              className="w-full py-2.5 px-5 bg-white text-[#0071e3] border-2 border-[#0071e3] rounded-full font-medium text-sm hover:bg-[#0071e3] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {checkingPayment ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-3.5 h-3.5 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+                  Checking...
+                </span>
+              ) : (
+                '🔄 Check Payment Status'
+              )}
+            </button>
+          )}
+        </div>
       </div>
     );
   }

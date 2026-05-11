@@ -55,6 +55,7 @@ export const profileApi = {
   getMe: () => api.get('/profile/me'),
   checkDuplicate: (mobile: string) => api.get('/profile/check-duplicate', { params: { mobile } }),
   downloadAdmitCard: () => api.get('/profile/admit-card/download', { responseType: 'blob' }),
+  checkPendingPayments: () => api.post('/profile/check-pending-payments'),
 };
 
 export const adminApi = {

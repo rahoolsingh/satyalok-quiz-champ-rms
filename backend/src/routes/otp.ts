@@ -89,6 +89,54 @@ otpRouter.post('/verify', async (req: Request, res: Response) => {
       });
     }
 
+    // If payment is PENDING, verify with payment gateway (check last 3 pending payments)
+    if (participant.paymentStatus === 'PENDING' && participant.merchantTransactionId) {
+      console.log(`[otp/verify] Checking pending payment for ${mobile}`);
+      
+      // Import verification service dynamically to avoid circular dependency
+      const { verifyPaymentStatus, processPaymentVerification } = await import('../services/paymentVerification');
+      
+      try {
+        const paymentStatus = await verifyPaymentStatus(participant.merchantTransactionId);
+        
+        if (paymentStatus.status === 'SUCCESS') {
+          console.log(`[otp/verify] Payment was successful but not captured. Processing now...`);
+          
+          // Process the payment verification to update status and send notifications
+          await processPaymentVerification(participant.merchantTransactionId);
+          
+          // Fetch updated participant data
+          const updatedParticipant = await Participant.findById(participant._id).lean();
+          if (updatedParticipant) {
+            const profile = {
+              participantId: updatedParticipant._id.toString(),
+              name: updatedParticipant.name,
+              class: updatedParticipant.class,
+              batchType: updatedParticipant.batchType,
+              guardianName: updatedParticipant.guardianName,
+              address: updatedParticipant.address,
+              mobileNumber: updatedParticipant.mobileNumber,
+              email: updatedParticipant.email,
+              referralSource: updatedParticipant.referralSource,
+              photoUrl: updatedParticipant.photoUrl,
+              paymentStatus: updatedParticipant.paymentStatus,
+              merchantTransactionId: updatedParticipant.merchantTransactionId,
+              rollNumber: updatedParticipant.rollNumber,
+              registeredAt: updatedParticipant.createdAt,
+            };
+
+            return res.json({
+              message: 'OTP verified successfully. Payment status updated!',
+              profile,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('[otp/verify] Error checking pending payment:', error);
+        // Continue with existing data if verification fails
+      }
+    }
+
     // Return complete profile data
     const profile = {
       participantId: participant._id.toString(),

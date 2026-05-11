@@ -166,6 +166,7 @@ export function PublicPortal() {
                         profile={profile}
                         onLogout={handleLogout}
                         onCompletePayment={() => setStep("form")}
+                        onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)}
                     />
                 ) : null;
 

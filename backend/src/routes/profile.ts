@@ -3,6 +3,7 @@ import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth
 import { getProfile, checkDuplicateRegistration } from '../services/profile';
 import { Participant } from '../db/models';
 import { generateAdmitCardPDF } from '../services/admitCardPdf';
+import { verifyPaymentStatus, processPaymentVerification } from '../services/paymentVerification';
 
 export const profileRouter = Router();
 
@@ -131,3 +132,80 @@ profileRouter.get(
     }
   }
 );
+
+// POST /api/profile/check-pending-payments
+// Check and update pending payment status for the authenticated user
+profileRouter.post(
+  '/check-pending-payments',
+  sessionAuthMiddleware,
+  async (req: SessionRequest, res: Response) => {
+    try {
+      const mobile = req.verifiedMobile!;
+
+      // Find last 3 pending payments for this mobile number
+      const pendingParticipants = await Participant.find({
+        mobileNumber: mobile,
+        paymentStatus: 'PENDING',
+        merchantTransactionId: { $exists: true, $ne: null },
+      })
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .lean();
+
+      if (pendingParticipants.length === 0) {
+        return res.json({
+          message: 'No pending payments found',
+          checkedCount: 0,
+          updatedCount: 0,
+        });
+      }
+
+      console.log(`[profile/check-pending-payments] Checking ${pendingParticipants.length} pending payments for ${mobile}`);
+
+      let updatedCount = 0;
+
+      // Check each pending payment with the gateway
+      for (const participant of pendingParticipants) {
+        try {
+          const paymentStatus = await verifyPaymentStatus(participant.merchantTransactionId!);
+
+          if (paymentStatus.status === 'SUCCESS') {
+            console.log(`[profile/check-pending-payments] Found successful payment: ${participant.merchantTransactionId}`);
+            
+            // Process the payment verification
+            await processPaymentVerification(participant.merchantTransactionId!);
+            updatedCount++;
+          } else if (paymentStatus.status === 'FAILED') {
+            console.log(`[profile/check-pending-payments] Found failed payment: ${participant.merchantTransactionId}`);
+            
+            // Update to FAILED status
+            await Participant.findByIdAndUpdate(participant._id, {
+              paymentStatus: 'FAILED',
+              updatedAt: new Date(),
+            });
+            updatedCount++;
+          }
+        } catch (error) {
+          console.error(`[profile/check-pending-payments] Error checking ${participant.merchantTransactionId}:`, error);
+          // Continue checking other payments
+        }
+      }
+
+      // Get updated profile
+      const profile = await getProfile(mobile);
+
+      return res.json({
+        message: `Checked ${pendingParticipants.length} pending payment(s), updated ${updatedCount}`,
+        checkedCount: pendingParticipants.length,
+        updatedCount,
+        profile,
+      });
+    } catch (error) {
+      console.error('[profile/check-pending-payments] Error:', error);
+      return res.status(500).json({
+        error: 'Failed to check pending payments. Please try again later.',
+      });
+    }
+  }
+);
+
