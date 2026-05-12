@@ -12,6 +12,7 @@ import { paymentRouter } from "./routes/payment";
 import { otpRouter } from "./routes/otp";
 import { profileRouter } from "./routes/profile";
 import { testAdmitCardRouter } from "./routes/testAdmitCard";
+import { startPaymentReminderScheduler } from "./services/paymentReminder";
 
 dotenv.config();
 
@@ -72,9 +73,12 @@ app.use(
 if (require.main === module) {
     connectDB()
         .then(() => {
-            app.listen(PORT, () =>
-                console.log(`Quiz Champ API running on port ${PORT}`),
-            );
+            app.listen(PORT, () => {
+                console.log(`Quiz Champ API running on port ${PORT}`);
+                
+                // Start payment reminder scheduler
+                startPaymentReminderScheduler();
+            });
         })
         .catch((err) => {
             console.error("Failed to connect to MongoDB:", err);

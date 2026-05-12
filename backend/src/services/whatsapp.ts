@@ -2,21 +2,61 @@ import axios from 'axios';
 
 /**
  * SMS/WhatsApp Service for sending OTP and notifications
- * Uses SMS API for all messages
+ * Tries WhatsApp first, falls back to SMS if WhatsApp fails
  */
 
 export interface ThankYouMessageData {
   name: string;
   rollNumber: string;
   admitCardUrl: string;
+  portalUrl: string;
   eventDate: string;
-  contactInfo: string;
+  eventTime: string;
+  venue: string;
 }
 
 export interface ReminderData {
   name: string;
   amount: number;
   paymentUrl: string;
+}
+
+/**
+ * Sends message via WhatsApp API
+ */
+async function sendWhatsApp(mobileNumber: string, message: string): Promise<void> {
+  const whatsappProvider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (whatsappProvider === 'mock') {
+    console.log(`[MOCK WHATSAPP] Message → ${mobileNumber}`);
+    console.log(`[MOCK WHATSAPP] Content: ${message}`);
+    return;
+  }
+
+  const whatsappApiUrl = process.env.WHATSAPP_API_URL;
+  const whatsappApiKey = process.env.WHATSAPP_API_KEY;
+
+  if (!whatsappApiUrl) throw new Error('WHATSAPP_API_URL is not set');
+  if (!whatsappApiKey) throw new Error('WHATSAPP_API_KEY is not set');
+
+  console.log(`[WhatsApp] Sending message to ${mobileNumber}`);
+
+  const response = await axios.post(
+    whatsappApiUrl,
+    {
+      mobileNumber: `91${mobileNumber}`,
+      message: message,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': whatsappApiKey,
+      },
+      timeout: 10000,
+    }
+  );
+
+  console.log('[WhatsApp] Message sent successfully:', response.data);
 }
 
 /**
@@ -39,62 +79,74 @@ async function sendSMS(mobileNumber: string, message: string): Promise<void> {
 
   console.log(`[SMS] Sending message to ${mobileNumber}`);
 
-  try {
-    const response = await axios.post(
-      smsApiUrl,
-      {
-        mobileNumber: `91${mobileNumber}`,
-        message: message,
+  const response = await axios.post(
+    smsApiUrl,
+    {
+      mobileNumber: `91${mobileNumber}`,
+      message: message,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': smsApiKey,
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': smsApiKey,
-        },
-        timeout: 10000,
-      }
-    );
+      timeout: 10000,
+    }
+  );
 
-    console.log('[SMS] Message sent successfully:', response.data);
-  } catch (error) {
-    console.error('[SMS] Failed to send message:', error);
-    throw new Error('Failed to send SMS');
+  console.log('[SMS] Message sent successfully:', response.data);
+}
+
+/**
+ * Sends message via WhatsApp with SMS fallback
+ */
+async function sendMessageWithFallback(mobileNumber: string, message: string): Promise<void> {
+  try {
+    // Try WhatsApp first
+    await sendWhatsApp(mobileNumber, message);
+    console.log(`[Message] Successfully sent via WhatsApp to ${mobileNumber}`);
+  } catch (whatsappError) {
+    console.error('[Message] WhatsApp delivery failed, attempting SMS fallback:', whatsappError);
+    
+    try {
+      // Fallback to SMS
+      await sendSMS(mobileNumber, message);
+      console.log(`[Message] Successfully sent via SMS fallback to ${mobileNumber}`);
+    } catch (smsError) {
+      console.error('[Message] SMS fallback also failed:', smsError);
+      throw new Error('Failed to send message via both WhatsApp and SMS');
+    }
   }
 }
 
 /**
- * Sends OTP via SMS
+ * Sends OTP via WhatsApp with SMS fallback
  */
 export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promise<void> {
   const message = otpTemplate(otp);
-  await sendSMS(mobileNumber, message);
+  await sendMessageWithFallback(mobileNumber, message);
 }
 
 /**
- * Sends thank you message after successful payment via SMS
+ * Sends thank you message after successful payment via WhatsApp with SMS fallback
  */
 export async function sendThankYouMessage(
   mobileNumber: string,
   data: ThankYouMessageData
 ): Promise<void> {
   const message = thankYouTemplate(data);
-  await sendSMS(mobileNumber, message);
+  await sendMessageWithFallback(mobileNumber, message);
 }
 
 /**
- * Sends payment reminder via SMS
+ * Sends payment reminder via WhatsApp with SMS fallback
  */
 export async function sendPaymentReminder(
   mobileNumber: string,
   data: ReminderData
 ): Promise<void> {
-  try {
-    const message = paymentReminderTemplate(data);
-    await sendSMS(mobileNumber, message);
-  } catch (error) {
-    console.error('[SMS] Failed to send payment reminder:', error);
-    // Don't throw error for reminders - just log it
-  }
+  const message = paymentReminderTemplate(data);
+  await sendMessageWithFallback(mobileNumber, message);
 }
 
 // ─── Message Templates ────────────────────────────────────────────────────────
@@ -111,40 +163,44 @@ Need help? Contact us at
 Subodh: +916207782702
 
 For more info, visit: www.satyalok.in`;
-`;
 }
 
 function thankYouTemplate(data: ThankYouMessageData): string {
-  const portalUrl = process.env.FRONTEND_URL || 'https://satyalok.in';
   const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
+  const contactNumber = '+916207782702';
   
   return `🎉 *Registration Successful!*
 
-Dear ${data.name},
+Dear *${data.name}*,
 
 Thank you for registering for Quiz Champ 2026! 
 
 📋 *Your Details:*
 Roll Number: *${data.rollNumber}*
-Event Date: ${data.eventDate}
+
+📅 *Event Details:*
+Date: ${data.eventDate}
+Time: ${data.eventTime}
+Venue: ${data.venue}
 
 📥 *Download Admit Card:*
 ${data.admitCardUrl}
 
-🌐 *Portal Access:*
-Login anytime at: ${portalUrl}
+🌐 *Portal Login:*
+${data.portalUrl}
 
-📱 *Join WhatsApp Group:*
-Stay updated with quiz information:
+� *Join WhnatsApp Group:*
 ${whatsappGroupUrl}
 
 📌 *Important Instructions:*
-• Bring your admit card on the event day
-• Arrive 30 minutes before the scheduled time
+• Bring your admit card on event day
+• Arrive 30 minutes before scheduled time
 • Carry a valid ID proof
 • Join our WhatsApp group for updates
 
-${data.contactInfo}
+📞 *Need Help?*
+Contact: ${contactNumber}
+Email: contact@satyalok.in
 
 Best wishes for the competition! 🏆`;
 }

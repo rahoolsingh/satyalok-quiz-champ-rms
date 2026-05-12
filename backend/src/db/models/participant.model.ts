@@ -16,6 +16,8 @@ export interface IParticipant extends Document {
   merchantTransactionId?: string;
   photoUrl?: string;
   otpVerifiedAt?: Date;
+  thankYouMessageSent?: boolean;
+  paymentReminderSent?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +43,8 @@ const ParticipantSchema = new Schema<IParticipant>(
     merchantTransactionId: { type: String },
     photoUrl: { type: String },
     otpVerifiedAt: { type: Date },
+    thankYouMessageSent: { type: Boolean, default: false },
+    paymentReminderSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

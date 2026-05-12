@@ -116,22 +116,47 @@ export async function processPaymentVerification(
 
       console.log(`[Payment Verification] Payment completed for ${participant.name}`);
 
-      // Send WhatsApp thank you message
-      try {
-        const admitCardUrl = `${process.env.FRONTEND_URL}/api/registration/admit-card/${participant._id}`;
-        
-        await sendThankYouMessage(participant.mobileNumber, {
-          name: participant.name,
-          rollNumber: participant.rollNumber!,
-          admitCardUrl,
-          eventDate: 'TBD', // Update with actual event date
-          contactInfo: 'contact@satyalok.in',
-        });
+      // Send WhatsApp thank you message (only once)
+      if (!participant.thankYouMessageSent) {
+        try {
+          // Get event details from portal config
+          const portalConfig = await PortalConfig.findOne().lean();
+          
+          const eventDate = portalConfig?.eventDate 
+            ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })
+            : 'To be announced';
+          
+          const eventTime = portalConfig?.eventTime || 'To be announced';
+          const venue = portalConfig?.venue || 'To be announced';
+          
+          const admitCardUrl = `${process.env.FRONTEND_URL}/api/registration/admit-card/${participant._id}`;
+          const portalUrl = process.env.FRONTEND_URL || 'https://satyalok.in';
+          
+          await sendThankYouMessage(participant.mobileNumber, {
+            name: participant.name,
+            rollNumber: participant.rollNumber!,
+            admitCardUrl,
+            portalUrl,
+            eventDate,
+            eventTime,
+            venue,
+          });
 
-        console.log(`[Payment Verification] WhatsApp thank you message sent to ${participant.mobileNumber}`);
-      } catch (whatsappError) {
-        console.error('[Payment Verification] Failed to send WhatsApp message:', whatsappError);
-        // Don't fail the whole process if WhatsApp fails
+          // Mark as sent
+          participant.thankYouMessageSent = true;
+          await participant.save();
+
+          console.log(`[Payment Verification] Thank you message sent to ${participant.mobileNumber}`);
+        } catch (messageError) {
+          console.error('[Payment Verification] Failed to send thank you message:', messageError);
+          // Don't fail the whole process if message fails
+        }
+      } else {
+        console.log(`[Payment Verification] Thank you message already sent to ${participant.mobileNumber}`);
       }
 
       // Send email with admit card
