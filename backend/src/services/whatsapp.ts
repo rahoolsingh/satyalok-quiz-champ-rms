@@ -108,7 +108,10 @@ Your OTP for registration is: *${otp}*
 🔒 Do not share this code with anyone
 
 Need help? Contact us at 
-Subodh: +916207782702`;
+Subodh: +916207782702
+
+For more info, visit: www.satyalok.in`;
+`;
 }
 
 function thankYouTemplate(data: ThankYouMessageData): string {
