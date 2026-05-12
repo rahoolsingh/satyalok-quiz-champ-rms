@@ -59,12 +59,12 @@ otpRouter.post('/verify', async (req: Request, res: Response) => {
     // Issue session token
     const sessionToken = signSessionToken(mobile);
 
-    // Set secure HTTP-only cookie
+    // Set secure HTTP-only cookie (works on same-domain and some browsers)
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('sessionToken', sessionToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction? 'none' : "strict",
+      sameSite: isProduction ? 'none' : 'strict',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
     });
@@ -85,6 +85,7 @@ otpRouter.post('/verify', async (req: Request, res: Response) => {
       // New user - no profile data
       return res.json({
         message: 'OTP verified successfully',
+        sessionToken,
         profile: null,
       });
     }
@@ -127,6 +128,7 @@ otpRouter.post('/verify', async (req: Request, res: Response) => {
 
             return res.json({
               message: 'OTP verified successfully. Payment status updated!',
+              sessionToken,
               profile,
             });
           }
@@ -157,6 +159,7 @@ otpRouter.post('/verify', async (req: Request, res: Response) => {
 
     return res.json({
       message: 'OTP verified successfully',
+      sessionToken,
       profile,
     });
   } catch (err) {

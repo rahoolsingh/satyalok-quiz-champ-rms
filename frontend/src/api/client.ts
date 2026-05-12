@@ -2,20 +2,43 @@ import axios from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+const SESSION_TOKEN_KEY = 'qc_session_token';
+
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true, // Enable sending cookies
+  withCredentials: true, // Still send cookies as fallback
 });
 
-// Attach admin token if present
+// Attach session token from localStorage (works on all browsers including Safari/Samsung)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Admin token takes priority
+  const adminToken = localStorage.getItem('adminToken');
+  if (adminToken) {
+    config.headers.Authorization = `Bearer ${adminToken}`;
+    return config;
+  }
+
+  // Session token for regular users
+  const sessionToken = localStorage.getItem(SESSION_TOKEN_KEY);
+  if (sessionToken) {
+    config.headers.Authorization = `Bearer ${sessionToken}`;
   }
   return config;
 });
+
+// Helper to store/clear session token
+export function setSessionToken(token: string) {
+  localStorage.setItem(SESSION_TOKEN_KEY, token);
+}
+
+export function clearSessionToken() {
+  localStorage.removeItem(SESSION_TOKEN_KEY);
+}
+
+export function getSessionToken(): string | null {
+  return localStorage.getItem(SESSION_TOKEN_KEY);
+}
 
 export const portalApi = {
   getStatus: () => api.get('/portal/status'),

@@ -13,7 +13,7 @@ import { SatyalokBadge } from "../components/SatyalokBadge";
 import { UserProfile } from "../components/UserProfile";
 import { WhatsAppHelp } from "../components/WhatsAppHelp";
 import { SliderImage, BatchType, PaymentSession, ProfileData } from "../types";
-import { portalApi, otpApi, profileApi } from "../api/client";
+import { portalApi, otpApi, profileApi, setSessionToken, clearSessionToken } from "../api/client";
 
 type Step = "home" | "mobile-entry" | "otp" | "form" | "payment" | "profile";
 
@@ -79,6 +79,7 @@ export function PublicPortal() {
             console.error("Logout error:", error);
         } finally {
             // Always clear state locally even if API fails to prevent ghost sessions
+            clearSessionToken();
             setMobile("");
             setBatch(null);
             setProfile(null);
@@ -191,6 +192,10 @@ export function PublicPortal() {
                     <OTPVerification
                         mobileNumber={mobile}
                         onSuccess={async (result) => {
+                            // Store session token for cross-domain auth (Safari/Samsung fix)
+                            if (result.sessionToken) {
+                                setSessionToken(result.sessionToken);
+                            }
                             const profileData = result.profile;
                             setProfile(profileData);
                             
