@@ -101,7 +101,7 @@ The portal URL is automatically picked from:
 FRONTEND_URL=https://your-domain.com
 ```
 
-If not set, defaults to `https://quizchamp.com`
+If not set, defaults to `https://satyalok.in`
 
 ### WhatsApp Group Link
 Hardcoded in two places:
@@ -233,6 +233,6 @@ Potential improvements:
 ## Support
 
 For group management issues:
-- Contact: support@quizchamp.com
+- Contact: contact@satyalok.in
 - Phone: +91 8210228101
 - WhatsApp: wa.me/918210228101

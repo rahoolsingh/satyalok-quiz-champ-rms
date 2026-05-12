@@ -11,7 +11,7 @@ async function seed() {
     // Seed admin user
     const username = process.env.ADMIN_USERNAME || 'admin';
     const password = process.env.ADMIN_PASSWORD || 'admin123';
-    const email = process.env.ADMIN_EMAIL || 'admin@quizchamp.com';
+    const email = process.env.ADMIN_EMAIL || 'admin@satyalok.in';
     const passwordHash = await bcrypt.hash(password, 12);
 
     await AdminUser.findOneAndUpdate(

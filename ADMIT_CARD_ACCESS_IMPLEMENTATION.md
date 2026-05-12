@@ -176,7 +176,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-EMAIL_FROM=Quiz Champ 2026 <noreply@quizchamp.com>
+EMAIL_FROM=Quiz Champ 2026 <noreply@satyalok.in>
 
 # Payment Gateway
 PGS_BASE_URL=http://localhost:5002

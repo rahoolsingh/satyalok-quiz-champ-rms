@@ -33,7 +33,7 @@ export function PaymentFailed() {
               Try Again
             </Link>
             <a
-              href="mailto:support@quizchamp.com"
+              href="mailto:contact@satyalok.in"
               className="w-full py-3 px-6 bg-transparent text-[#0066cc] border-2 border-[#d2d2d7] rounded-full text-sm font-medium text-center hover:border-[#0071e3] transition-colors"
             >
               Contact Support

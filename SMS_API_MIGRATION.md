@@ -73,7 +73,7 @@ Your OTP for registration is: 123456
 ⏰ Valid for 5 minutes
 🔒 Do not share this code with anyone
 
-Need help? Contact us at support@quizchamp.com
+Need help? Contact us at contact@satyalok.in
 ```
 
 ### 2. Thank You Messages
@@ -134,7 +134,7 @@ Your Quiz Champ 2026 registration is incomplete.
 
 Complete your payment to secure your spot!
 
-Need help? Contact us at support@quizchamp.com
+Need help? Contact us at contact@satyalok.in
 ```
 
 ## Implementation Details

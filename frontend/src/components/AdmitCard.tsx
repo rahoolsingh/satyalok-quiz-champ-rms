@@ -140,7 +140,7 @@ export function AdmitCard({ data }: { data: AdmitCardData; participantId?: strin
       {/* Help Text */}
       <p className="text-center text-gray-500 text-xs mt-4">
         Need help?{' '}
-        <a href="mailto:support@quizchamp.com" className="text-[#0071e3] font-medium">
+        <a href="mailto:contact@satyalok.in" className="text-[#0071e3] font-medium">
           Contact Support
         </a>
       </p>

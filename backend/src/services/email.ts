@@ -38,7 +38,7 @@ function getTransporter(): Transporter {
 
 export async function sendEmail(options: EmailOptions): Promise<void> {
   const transport = getTransporter();
-  const from = process.env.EMAIL_FROM || 'Quiz Champ 2026 <noreply@quizchamp.com>';
+  const from = process.env.EMAIL_FROM || 'Quiz Champ 2026 <noreply@satyalok.in>';
 
   await transport.sendMail({
     from,
@@ -133,7 +133,7 @@ export function generateAdmitCardEmail(data: {
       <p><strong>Quiz Champ 2026</strong></p>
       <p>Organized by Satyalok Foundation</p>
       <p style="margin-top: 16px;">
-        Need help? Contact us at <a href="mailto:support@quizchamp.com">support@quizchamp.com</a>
+        Need help? Contact us at <a href="mailto:contact@satyalok.in">contact@satyalok.in</a>
       </p>
     </div>
   </div>

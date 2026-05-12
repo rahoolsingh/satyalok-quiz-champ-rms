@@ -107,11 +107,12 @@ Your OTP for registration is: *${otp}*
 ⏰ Valid for 5 minutes
 🔒 Do not share this code with anyone
 
-Need help? Contact us at support@quizchamp.com`;
+Need help? Contact us at 
+Subodh: +916207782702`;
 }
 
 function thankYouTemplate(data: ThankYouMessageData): string {
-  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.com';
+  const portalUrl = process.env.FRONTEND_URL || 'https://satyalok.in';
   const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
   
   return `🎉 *Registration Successful!*
@@ -157,5 +158,5 @@ Your Quiz Champ 2026 registration is incomplete.
 
 Complete your payment to secure your spot!
 
-Need help? Contact us at support@quizchamp.com`;
+Need help? Contact us at contact@satyalok.in`;
 }

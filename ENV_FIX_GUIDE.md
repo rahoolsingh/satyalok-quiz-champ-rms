@@ -74,7 +74,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-gmail-app-password
-EMAIL_FROM=Quiz Champ 2026 <noreply@quizchamp.com>
+EMAIL_FROM=Quiz Champ 2026 <noreply@satyalok.in>
 
 # AWS S3
 AWS_REGION=us-east-1
@@ -91,7 +91,7 @@ PGS_API_KEY=your-shared-api-key-here
 # Admin
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
-ADMIN_EMAIL=admin@quizchamp.com
+ADMIN_EMAIL=admin@satyalok.in
 ```
 
 ## Important Notes

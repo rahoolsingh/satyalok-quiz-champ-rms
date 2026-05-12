@@ -125,7 +125,7 @@ export async function processPaymentVerification(
           rollNumber: participant.rollNumber!,
           admitCardUrl,
           eventDate: 'TBD', // Update with actual event date
-          contactInfo: 'support@quizchamp.com',
+          contactInfo: 'contact@satyalok.in',
         });
 
         console.log(`[Payment Verification] WhatsApp thank you message sent to ${participant.mobileNumber}`);

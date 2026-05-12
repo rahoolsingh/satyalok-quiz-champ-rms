@@ -103,7 +103,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
-EMAIL_FROM=Quiz Champ 2026 <noreply@quizchamp.com>
+EMAIL_FROM=Quiz Champ 2026 <noreply@satyalok.in>
 ```
 
 ## Files to Create/Modify
