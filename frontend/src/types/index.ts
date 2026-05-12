@@ -35,6 +35,10 @@ export interface AdmitCardData {
   guardianName: string;
   mobileNumber: string;
   eventName: string;
+  eventDate?: string;
+  eventTime?: string;
+  venue?: string;
+  venueMapUrl?: string;
   generatedAt: string;
   photoUrl?: string;
 }

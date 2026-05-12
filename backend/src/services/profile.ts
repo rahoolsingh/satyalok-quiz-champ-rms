@@ -1,4 +1,4 @@
-import { Participant } from '../db/models';
+import { Participant, PortalConfig } from '../db/models';
 import { generateAdmitCardData } from './admitCard';
 
 export interface ProfileData {
@@ -57,6 +57,17 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
 
   // Include admit card data if payment is completed AND roll number exists
   if (participant.paymentStatus === 'COMPLETED' && participant.rollNumber) {
+    // Fetch event details from portal config
+    const portalConfig = await PortalConfig.findOne().lean();
+    
+    const eventDate = portalConfig?.eventDate 
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : undefined;
+
     profile.admitCard = generateAdmitCardData({
       id: participant._id.toString(),
       rollNumber: participant.rollNumber,
@@ -70,6 +81,11 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
       photoUrl: participant.photoUrl,
       createdAt: participant.createdAt,
       updatedAt: participant.updatedAt,
+    }, {
+      eventDate,
+      eventTime: portalConfig?.eventTime,
+      venue: portalConfig?.venue,
+      venueMapUrl: portalConfig?.venueMapUrl,
     });
   }
 

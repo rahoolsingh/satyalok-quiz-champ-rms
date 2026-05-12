@@ -80,11 +80,24 @@ export function AdmitCard({ data }: { data: AdmitCardData; participantId?: strin
         <h3 className="text-sm font-bold text-gray-900 mb-3">Event Information</h3>
         <div className="space-y-2 text-sm text-gray-700">
           <p><span className="font-medium">Event:</span> {data.eventName}</p>
-          <p><span className="font-medium">Date:</span> To be announced</p>
-          <p><span className="font-medium">Venue:</span> To be announced</p>
-          <p className="text-xs text-gray-600 mt-3">
-            Check your email and WhatsApp for event updates
-          </p>
+          <p><span className="font-medium">Date:</span> {data.eventDate || 'To be announced'}</p>
+          {data.eventTime && <p><span className="font-medium">Time:</span> {data.eventTime}</p>}
+          <p><span className="font-medium">Venue:</span> {data.venue || 'To be announced'}</p>
+          {data.venueMapUrl && (
+            <a
+              href={data.venueMapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#0071e3] text-xs font-medium mt-1 hover:underline"
+            >
+              📍 View on Map
+            </a>
+          )}
+          {(!data.eventDate || !data.venue) && (
+            <p className="text-xs text-gray-600 mt-3">
+              Check your email and WhatsApp for event updates
+            </p>
+          )}
         </div>
       </div>
 
