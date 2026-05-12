@@ -126,6 +126,9 @@ profileRouter.get(
       // Generate PDF
       const pdfBuffer = await generateAdmitCardPDF(admitCardData);
 
+      // Track admit card download
+      await Participant.findByIdAndUpdate(participant._id, { admitCardDownloaded: true });
+
       // Set response headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(

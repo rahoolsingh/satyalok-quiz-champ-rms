@@ -186,6 +186,10 @@ export function MobileEntry({ batchType, onSuccess, onBack }: Props) {
                         </svg>
                         You will receive OTP on WhatsApp
                     </p>
+                    <p className="text-xs text-[#86868b] mt-2 text-center text-red-500">
+                        <span className="font-bold whitespace-nowrap">Note: </span>
+                        One WhatsApp number can only be used for one registration.
+                    </p>
                 </div>
 
                 <motion.button

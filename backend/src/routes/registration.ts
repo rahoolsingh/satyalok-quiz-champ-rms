@@ -351,6 +351,13 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="admit-card-${participant.rollNumber}.pdf"`);
+
+    // Track admit card download
+    if (!participant.admitCardDownloaded) {
+      participant.admitCardDownloaded = true;
+      await participant.save();
+    }
+
     res.send(pdfBuffer);
   } catch (err) {
     console.error('[registration/admit-card/download]', err);

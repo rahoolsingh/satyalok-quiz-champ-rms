@@ -14,6 +14,7 @@ interface Participant {
   photoUrl?: string;
   paymentStatus: string;
   groupInviteSent: boolean;
+  admitCardDownloaded: boolean;
   createdAt: string;
 }
 
@@ -244,6 +245,9 @@ export function RegistrationList() {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor[p.paymentStatus] || ''}`}>
                       {p.paymentStatus}
                     </span>
+                    {p.paymentStatus === 'COMPLETED' && (
+                      <span className={`w-2 h-2 rounded-full ${p.admitCardDownloaded ? 'bg-green-500' : 'bg-red-400'}`} title={p.admitCardDownloaded ? 'Admit card downloaded' : 'Not downloaded'} />
+                    )}
                     <span className="text-[10px] text-[#86868b]">{timeAgo(p.createdAt)}</span>
                   </div>
                 </div>
