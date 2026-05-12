@@ -40,11 +40,11 @@ export function RegistrationList() {
       <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-6">Registrations</h2>
 
       {data && (
-        <div className="flex gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
           {[{ label: 'Junior', val: data.counts.junior }, { label: 'Senior', val: data.counts.senior }, { label: 'Total', val: data.counts.junior + data.counts.senior }].map(c => (
-            <div key={c.label} className="bg-white border border-[#d2d2d7] rounded-xl px-5 py-4 text-center min-w-[90px]">
-              <p className="text-2xl font-bold text-[#1d1d1f]">{c.val}</p>
-              <p className="text-xs text-[#86868b] uppercase tracking-wider mt-0.5">{c.label}</p>
+            <div key={c.label} className="bg-white border border-[#d2d2d7] rounded-xl px-3 sm:px-5 py-3 sm:py-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-[#1d1d1f]">{c.val}</p>
+              <p className="text-[10px] sm:text-xs text-[#86868b] uppercase tracking-wider mt-0.5">{c.label}</p>
             </div>
           ))}
         </div>
@@ -61,39 +61,66 @@ export function RegistrationList() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#d2d2d7] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#d2d2d7] overflow-hidden overflow-x-auto">
         {loading
           ? <p className="p-5 text-[#86868b] text-sm">Loading…</p>
           : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#f5f5f7] border-b border-[#d2d2d7]">
-                  {['Roll #', 'Name', 'Class', 'Batch', 'Mobile', 'Payment', 'Date'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#86868b] uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data?.participants.map(p => (
-                  <tr key={p.id} className="border-b border-[#f5f5f7] hover:bg-[#fafafa]">
-                    <td className="px-4 py-3 text-[#86868b]">{p.rollNumber || '—'}</td>
-                    <td className="px-4 py-3 font-medium text-[#1d1d1f]">{p.name}</td>
-                    <td className="px-4 py-3 text-[#86868b]">{p.class}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.batchType === 'JUNIOR' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{p.batchType}</span>
-                    </td>
-                    <td className="px-4 py-3 text-[#86868b]">{p.mobileNumber}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor[p.paymentStatus] || ''}`}>{p.paymentStatus}</span>
-                    </td>
-                    <td className="px-4 py-3 text-[#86868b]">{new Date(p.createdAt).toLocaleDateString()}</td>
+            <>
+              {/* Desktop table */}
+              <table className="w-full border-collapse text-sm hidden md:table">
+                <thead>
+                  <tr className="bg-[#f5f5f7] border-b border-[#d2d2d7]">
+                    {['Roll #', 'Name', 'Class', 'Batch', 'Mobile', 'Payment', 'Date'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#86868b] uppercase tracking-wider">{h}</th>
+                    ))}
                   </tr>
+                </thead>
+                <tbody>
+                  {data?.participants.map(p => (
+                    <tr key={p.id} className="border-b border-[#f5f5f7] hover:bg-[#fafafa]">
+                      <td className="px-4 py-3 text-[#86868b]">{p.rollNumber || '—'}</td>
+                      <td className="px-4 py-3 font-medium text-[#1d1d1f]">{p.name}</td>
+                      <td className="px-4 py-3 text-[#86868b]">{p.class}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.batchType === 'JUNIOR' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{p.batchType}</span>
+                      </td>
+                      <td className="px-4 py-3 text-[#86868b]">{p.mobileNumber}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor[p.paymentStatus] || ''}`}>{p.paymentStatus}</span>
+                      </td>
+                      <td className="px-4 py-3 text-[#86868b]">{new Date(p.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                  {data?.participants.length === 0 && (
+                    <tr><td colSpan={7} className="px-4 py-6 text-center text-[#86868b] text-sm">No registrations found</td></tr>
+                  )}
+                </tbody>
+              </table>
+
+              {/* Mobile card view */}
+              <div className="md:hidden divide-y divide-[#f5f5f7]">
+                {data?.participants.map(p => (
+                  <div key={p.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[#1d1d1f] text-sm">{p.name}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor[p.paymentStatus] || ''}`}>{p.paymentStatus}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#86868b]">
+                      <span>Roll: {p.rollNumber || '—'}</span>
+                      <span>Class: {p.class}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${p.batchType === 'JUNIOR' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{p.batchType}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#86868b]">
+                      <span>📱 {p.mobileNumber}</span>
+                      <span>📅 {new Date(p.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
                 ))}
                 {data?.participants.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-6 text-center text-[#86868b] text-sm">No registrations found</td></tr>
+                  <p className="px-4 py-6 text-center text-[#86868b] text-sm">No registrations found</p>
                 )}
-              </tbody>
-            </table>
+              </div>
+            </>
           )
         }
       </div>

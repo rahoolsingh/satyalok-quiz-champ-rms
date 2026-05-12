@@ -52,7 +52,7 @@ export function FeeConfiguration() {
           Set the registration fee for each batch. Changes take effect immediately for new registrations.
         </p>
         <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">
                 Junior Batch Fee (₹)
