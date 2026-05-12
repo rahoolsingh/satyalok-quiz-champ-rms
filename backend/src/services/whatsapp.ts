@@ -184,10 +184,7 @@ Time: ${data.eventTime}
 Venue: ${data.venue}
 
 📥 *Download Admit Card:*
-${data.admitCardUrl}
-
-🌐 *Portal Login:*
-${data.portalUrl}
+quizchamp.satyalok.in
 
 � *Join WhnatsApp Group:*
 ${whatsappGroupUrl}
@@ -213,7 +210,7 @@ Dear ${data.name},
 Your Quiz Champ 2026 registration is incomplete.
 
 💰 Amount: ₹${data.amount}
-🔗 Complete Payment: ${data.paymentUrl}
+🔗 Complete Payment: quizchamp.satyalok.in
 
 Complete your payment to secure your spot!
 
