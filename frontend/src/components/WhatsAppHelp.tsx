@@ -58,17 +58,20 @@ export function WhatsAppHelp() {
       <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
         onMouseEnter={() => setIsExpanded(true)}
-        className="w-14 h-14 bg-[#25D366] rounded-full shadow-lg flex items-center justify-center hover:bg-[#20BA5A] transition-colors group"
+        className="w-14 h-14 bg-[#0071e3] rounded-full shadow-lg flex items-center justify-center hover:bg-[#005bb5] transition-colors group"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Technical Support"
       >
-        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+        {/* Headphone support icon */}
+        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 18a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5zM3 18a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5z" />
         </svg>
         
         {/* Pulse animation */}
-        <span className="absolute w-14 h-14 bg-[#25D366] rounded-full animate-ping opacity-20" />
+        <span className="absolute w-14 h-14 bg-[#0071e3] rounded-full animate-ping opacity-20" />
       </motion.button>
 
       {/* Tooltip on hover (desktop only) */}

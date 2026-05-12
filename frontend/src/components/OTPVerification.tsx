@@ -33,7 +33,20 @@ export function OTPVerification({
   }, [timer]);
 
   const handleChange = (i: number, val: string) => {
-    const v = val.replace(/\D/g, '').slice(-1);
+    // Handle Gboard and other keyboards that paste full OTP into a single input
+    const cleaned = val.replace(/\D/g, '');
+    if (cleaned.length > 1) {
+      // Multi-digit input (paste via Gboard or autofill)
+      const next = [...digits];
+      for (let j = 0; j < cleaned.length && (i + j) < 6; j++) {
+        next[i + j] = cleaned[j];
+      }
+      setDigits(next);
+      const focusIdx = Math.min(i + cleaned.length, 5);
+      refs.current[focusIdx]?.focus();
+      return;
+    }
+    const v = cleaned.slice(-1);
     const next = [...digits]; next[i] = v; setDigits(next);
     if (v && i < 5) refs.current[i + 1]?.focus();
   };
@@ -86,8 +99,6 @@ export function OTPVerification({
     } finally { setResending(false); }
   };
 
-  const masked = mobileNumber.replace(/^(\d{2})\d{6}(\d{2})$/, '$1 xxxxxx $2');
-
   return (
     <motion.div className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
       <button onClick={onBack} className="text-[#0066cc] text-sm font-medium mb-6 block hover:opacity-75 transition-opacity">← Back</button>
@@ -95,7 +106,8 @@ export function OTPVerification({
       <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2">Step 2 of 3</p>
       <h2 className="text-[clamp(1.25rem,3vw,2rem)] font-bold tracking-tight text-[#1d1d1f] mb-2">Verify your number</h2>
       <p className="text-[#86868b] text-sm mb-2 leading-relaxed">
-        We sent a 6-digit code to <strong className="text-[#1d1d1f] font-semibold">{masked}</strong>
+        We sent a 6-digit code to <strong className="text-[#1d1d1f] font-semibold">{mobileNumber}</strong>
+        <button onClick={onBack} className="ml-2 text-[#0066cc] text-xs font-medium hover:opacity-75 transition-opacity">Edit</button>
       </p>
       <p className="text-xs text-[#86868b] mb-6 sm:mb-8 flex items-center gap-1.5">
         <span className="text-base">💬</span>
@@ -116,7 +128,7 @@ export function OTPVerification({
               onChange={e => handleChange(i, e.target.value)}
               onKeyDown={e => handleKeyDown(i, e)}
               onPaste={handlePaste}
-              maxLength={1} inputMode="numeric" aria-label={`OTP digit ${i + 1}`}
+              inputMode="numeric" autoComplete="one-time-code" aria-label={`OTP digit ${i + 1}`}
               className={`w-10 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-white text-[#1d1d1f] rounded-lg outline-none transition-all
                 ${d ? 'border-2 border-[#0071e3] shadow-[0_0_0_3px_rgba(0,113,227,0.15)]' : 'border border-[#d2d2d7]'}`}
             />
@@ -128,7 +140,7 @@ export function OTPVerification({
           className={`w-full py-3 px-6 rounded-full text-[0.95rem] font-semibold flex items-center justify-center gap-2 transition-colors
             ${otp.length < 6 ? 'bg-[#d2d2d7] text-[#86868b] cursor-default' : 'bg-[#0071e3] text-white cursor-pointer'}`}>
           {loading && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-          {loading ? 'Verifying…' : 'Verify & Continue →'}
+          {loading ? 'Verifying…' : 'Verify OTP'}
         </motion.button>
       </form>
 
