@@ -18,6 +18,7 @@ export interface IParticipant extends Document {
   otpVerifiedAt?: Date;
   thankYouMessageSent?: boolean;
   paymentReminderSent?: boolean;
+  groupInviteSent?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +46,7 @@ const ParticipantSchema = new Schema<IParticipant>(
     otpVerifiedAt: { type: Date },
     thankYouMessageSent: { type: Boolean, default: false },
     paymentReminderSent: { type: Boolean, default: false },
+    groupInviteSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

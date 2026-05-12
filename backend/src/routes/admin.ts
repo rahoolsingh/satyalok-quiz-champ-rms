@@ -8,6 +8,7 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
+import { sendGroupInvite } from '../services/whatsapp';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
 
@@ -386,6 +387,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         email: p.email,
         photoUrl: p.photoUrl,
         paymentStatus: p.paymentStatus,
+        groupInviteSent: p.groupInviteSent || false,
         createdAt: p.createdAt,
       })),
       total,
@@ -396,5 +398,29 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to get registrations' });
+  }
+});
+
+// POST /api/admin/registrations/:id/send-group-invite
+adminRouter.post('/registrations/:id/send-group-invite', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.groupInviteSent) {
+      return res.status(409).json({ error: 'Group invite already sent to this participant' });
+    }
+
+    await sendGroupInvite(participant.mobileNumber);
+
+    participant.groupInviteSent = true;
+    await participant.save();
+
+    return res.json({ message: 'Group invite sent successfully' });
+  } catch (err) {
+    console.error('[Admin] Failed to send group invite:', err);
+    return res.status(500).json({ error: 'Failed to send group invite' });
   }
 });

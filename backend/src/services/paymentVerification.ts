@@ -1,6 +1,6 @@
 import { Participant, PortalConfig } from '../db/models';
 import { generateAdmitCardData } from './admitCard';
-import { sendThankYouMessage } from './whatsapp';
+import { sendThankYouMessage, sendGroupInvite } from './whatsapp';
 import { sendEmail, generateAdmitCardEmail } from './email';
 import { generateAdmitCardPDF } from './admitCardPdf';
 import { verifyPhonePePayment, PGSError } from './pgsClient';
@@ -151,6 +151,18 @@ export async function processPaymentVerification(
           await participant.save();
 
           console.log(`[Payment Verification] Thank you message sent to ${participant.mobileNumber}`);
+
+          // Send group invite link separately (only once)
+          if (!participant.groupInviteSent) {
+            try {
+              await sendGroupInvite(participant.mobileNumber);
+              participant.groupInviteSent = true;
+              await participant.save();
+              console.log(`[Payment Verification] Group invite sent to ${participant.mobileNumber}`);
+            } catch (inviteError) {
+              console.error('[Payment Verification] Failed to send group invite:', inviteError);
+            }
+          }
         } catch (messageError) {
           console.error('[Payment Verification] Failed to send thank you message:', messageError);
           // Don't fail the whole process if message fails

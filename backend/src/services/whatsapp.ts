@@ -149,6 +149,15 @@ export async function sendPaymentReminder(
   await sendMessageWithFallback(mobileNumber, message);
 }
 
+/**
+ * Sends WhatsApp group invite link via WhatsApp with SMS fallback
+ */
+export async function sendGroupInvite(mobileNumber: string): Promise<void> {
+  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
+  const message = `Join this group: ${whatsappGroupUrl}`;
+  await sendMessageWithFallback(mobileNumber, message);
+}
+
 // ─── Message Templates ────────────────────────────────────────────────────────
 
 function otpTemplate(otp: string): string {

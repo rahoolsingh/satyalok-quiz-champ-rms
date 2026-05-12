@@ -82,4 +82,6 @@ export const adminApi = {
   getEventDetails: () => api.get('/admin/portal/event-details'),
   updateEventDetails: (data: { eventDate?: string; eventTime?: string; venue?: string; venueMapUrl?: string }) =>
     api.put('/admin/portal/event-details', data),
+  sendGroupInvite: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/send-group-invite`),
 };

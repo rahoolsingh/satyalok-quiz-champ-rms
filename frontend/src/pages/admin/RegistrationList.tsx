@@ -13,6 +13,7 @@ interface Participant {
   email: string | null;
   photoUrl?: string;
   paymentStatus: string;
+  groupInviteSent: boolean;
   createdAt: string;
 }
 
@@ -133,6 +134,19 @@ export function RegistrationList() {
 
   const openCall = (mobile: string) => {
     window.open(`tel:+91${mobile}`);
+  };
+
+  const handleSendInvite = async (id: string, name: string) => {
+    try {
+      await adminApi.sendGroupInvite(id);
+      // Update local state to reflect invite sent
+      setParticipants(prev =>
+        prev.map(p => p.id === id ? { ...p, groupInviteSent: true } : p)
+      );
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to send invite';
+      alert(`${name}: ${msg}`);
+    }
   };
 
   return (
@@ -284,6 +298,22 @@ export function RegistrationList() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </button>
+
+                  {/* Send Group Invite */}
+                  {p.paymentStatus === 'COMPLETED' && (
+                    <button
+                      onClick={() => handleSendInvite(p.id, p.name)}
+                      disabled={p.groupInviteSent}
+                      className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                        p.groupInviteSent
+                          ? 'bg-gray-100 text-gray-400 cursor-default'
+                          : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                      }`}
+                      title={p.groupInviteSent ? 'Invite already sent' : 'Send group invite'}
+                    >
+                      {p.groupInviteSent ? '✓ Invited' : '📨 Invite'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
