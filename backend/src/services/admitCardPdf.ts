@@ -176,8 +176,8 @@ export async function generateAdmitCardPDF(
             currentY = addDetail(
                 "Batch Category",
                 data.batchType === "JUNIOR"
-                    ? "Junior (Classes 1-7)"
-                    : "Senior (Classes 8-12)",
+                    ? "Junior (Classes 5-10)"
+                    : "Senior (Classes 10+)",
                 currentY,
             );
             currentY = addDetail("Guardian Name", data.guardianName, currentY);

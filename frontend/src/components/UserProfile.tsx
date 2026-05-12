@@ -90,7 +90,7 @@ export function UserProfile({ profile, onLogout, onCompletePayment, onProfileUpd
               <DetailRow label="Class" value={profile.class} />
               <DetailRow
                 label="Batch"
-                value={profile.batchType === 'JUNIOR' ? 'Junior (Classes 1-7)' : 'Senior (Classes 8-12)'}
+                value={profile.batchType === 'JUNIOR' ? 'Junior (Classes 5-10)' : 'Senior (Classes 10+)'}
               />
               <DetailRow label="Guardian" value={profile.guardianName} />
               <DetailRow label="Mobile" value={profile.mobileNumber} />

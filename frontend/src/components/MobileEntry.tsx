@@ -28,8 +28,8 @@ export function MobileEntry({ batchType, onSuccess, onBack }: Props) {
 
     const batchLabel =
         batchType === "JUNIOR"
-            ? "🎓 Junior Batch · Classes 1–7"
-            : "🏆 Senior Batch · Classes 8–12";
+            ? "🎓 Junior Batch · Classes 5–10"
+            : "🏆 Senior Batch · Classes 10+";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

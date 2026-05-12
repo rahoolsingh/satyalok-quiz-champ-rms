@@ -68,7 +68,7 @@ export function AdmitCard({ data }: { data: AdmitCardData; participantId?: strin
           <InfoRow label="Class" value={data.class} />
           <InfoRow 
             label="Batch" 
-            value={data.batchType === 'JUNIOR' ? 'Junior (Classes 1-7)' : 'Senior (Classes 8-12)'} 
+            value={data.batchType === 'JUNIOR' ? 'Junior (Classes 5-10)' : 'Senior (Classes 10+)'} 
           />
           <InfoRow label="Guardian" value={data.guardianName} />
           <InfoRow label="Mobile" value={`+91 ${data.mobileNumber}`} />
