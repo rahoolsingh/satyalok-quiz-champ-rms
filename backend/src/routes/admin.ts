@@ -335,7 +335,7 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
 // GET /api/admin/registrations
 adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   try {
-    const { batch, search, page = '1', limit = '20' } = req.query;
+    const { batch, search, page = '1', limit = '20', status } = req.query;
     const pageNum = Math.max(1, parseInt(page as string, 10));
     const limitNum = Math.min(100, parseInt(limit as string, 10));
 
@@ -343,12 +343,22 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
     if (batch && ['JUNIOR', 'SENIOR'].includes(batch as string)) {
       filter.batchType = batch;
     }
+    if (status) {
+      const statuses = (status as string).split(',').filter(s => ['COMPLETED', 'PENDING', 'FAILED'].includes(s));
+      if (statuses.length === 1) {
+        filter.paymentStatus = statuses[0];
+      } else if (statuses.length > 1) {
+        filter.paymentStatus = { $in: statuses };
+      }
+    }
     if (search) {
       const s = search as string;
       filter.$or = [
         { name: { $regex: s, $options: 'i' } },
-        { rollNumber: s },
-        { mobileNumber: s },
+        { rollNumber: { $regex: s, $options: 'i' } },
+        { mobileNumber: { $regex: s, $options: 'i' } },
+        { guardianName: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
       ];
     }
 
@@ -359,8 +369,8 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         .limit(limitNum)
         .lean(),
       Participant.countDocuments(filter),
-      Participant.countDocuments({ batchType: 'JUNIOR' }),
-      Participant.countDocuments({ batchType: 'SENIOR' }),
+      Participant.countDocuments({ batchType: 'JUNIOR', paymentStatus: 'COMPLETED' }),
+      Participant.countDocuments({ batchType: 'SENIOR', paymentStatus: 'COMPLETED' }),
     ]);
 
     return res.json({
@@ -371,8 +381,10 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         class: p.class,
         batchType: p.batchType,
         guardianName: p.guardianName,
+        address: p.address,
         mobileNumber: p.mobileNumber,
         email: p.email,
+        photoUrl: p.photoUrl,
         paymentStatus: p.paymentStatus,
         createdAt: p.createdAt,
       })),
