@@ -174,7 +174,7 @@ registrationRouter.post(
           email: participant.email,
           class: participant.class,
         });
-      } catch (pgsErr) {
+      } catch (pgsErr: unknown) {
         console.error('PGS initiation failed:', pgsErr);
         return res.status(502).json({ error: 'Payment gateway unavailable. Please try again.' });
       }
