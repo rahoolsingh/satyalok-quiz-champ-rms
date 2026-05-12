@@ -158,6 +158,15 @@ export async function sendGroupInvite(mobileNumber: string): Promise<void> {
   await sendMessageWithFallback(mobileNumber, message);
 }
 
+/**
+ * Sends admit card download reminder via WhatsApp with SMS fallback
+ */
+export async function sendAdmitCardReminder(mobileNumber: string, name: string): Promise<void> {
+  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.satyalok.in';
+  const message = `Hi ${name}, please download your Quiz Champ 2026 admit card from ${portalUrl}. You will need it on the event day.`;
+  await sendMessageWithFallback(mobileNumber, message);
+}
+
 // ─── Message Templates ────────────────────────────────────────────────────────
 
 function otpTemplate(otp: string): string {

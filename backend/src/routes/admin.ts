@@ -8,7 +8,7 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder } from '../services/whatsapp';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
 
@@ -423,5 +423,38 @@ adminRouter.post('/registrations/:id/send-group-invite', async (req: AuthRequest
   } catch (err) {
     console.error('[Admin] Failed to send group invite:', err);
     return res.status(500).json({ error: 'Failed to send group invite' });
+  }
+});
+
+// POST /api/admin/registrations/:id/remind-admit-card
+adminRouter.post('/registrations/:id/remind-admit-card', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.admitCardDownloaded) {
+      return res.status(409).json({ error: 'Admit card already downloaded' });
+    }
+
+    // Check 24-hour cooldown
+    if (participant.lastAdmitCardReminderAt) {
+      const hoursSinceLast = (Date.now() - new Date(participant.lastAdmitCardReminderAt).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceLast < 24) {
+        const hoursLeft = Math.ceil(24 - hoursSinceLast);
+        return res.status(429).json({ error: `Reminder already sent. Try again in ${hoursLeft}h.` });
+      }
+    }
+
+    await sendAdmitCardReminder(participant.mobileNumber, participant.name);
+
+    participant.lastAdmitCardReminderAt = new Date();
+    await participant.save();
+
+    return res.json({ message: 'Admit card reminder sent' });
+  } catch (err) {
+    console.error('[Admin] Failed to send admit card reminder:', err);
+    return res.status(500).json({ error: 'Failed to send reminder' });
   }
 });

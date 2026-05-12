@@ -20,6 +20,7 @@ export interface IParticipant extends Document {
   paymentReminderSent?: boolean;
   groupInviteSent?: boolean;
   admitCardDownloaded?: boolean;
+  lastAdmitCardReminderAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,6 +50,7 @@ const ParticipantSchema = new Schema<IParticipant>(
     paymentReminderSent: { type: Boolean, default: false },
     groupInviteSent: { type: Boolean, default: false },
     admitCardDownloaded: { type: Boolean, default: false },
+    lastAdmitCardReminderAt: { type: Date },
   },
   { timestamps: true }
 );

@@ -84,4 +84,6 @@ export const adminApi = {
     api.put('/admin/portal/event-details', data),
   sendGroupInvite: (participantId: string) =>
     api.post(`/admin/registrations/${participantId}/send-group-invite`),
+  sendAdmitCardReminder: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/remind-admit-card`),
 };

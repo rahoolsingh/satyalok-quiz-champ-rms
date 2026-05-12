@@ -140,12 +140,21 @@ export function RegistrationList() {
   const handleSendInvite = async (id: string, name: string) => {
     try {
       await adminApi.sendGroupInvite(id);
-      // Update local state to reflect invite sent
       setParticipants(prev =>
         prev.map(p => p.id === id ? { ...p, groupInviteSent: true } : p)
       );
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Failed to send invite';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
+  const handleRemindDownload = async (id: string, name: string) => {
+    try {
+      await adminApi.sendAdmitCardReminder(id);
+      alert(`Reminder sent to ${name}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to send reminder';
       alert(`${name}: ${msg}`);
     }
   };
@@ -245,9 +254,6 @@ export function RegistrationList() {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor[p.paymentStatus] || ''}`}>
                       {p.paymentStatus}
                     </span>
-                    {p.paymentStatus === 'COMPLETED' && (
-                      <span className={`w-2 h-2 rounded-full ${p.admitCardDownloaded ? 'bg-green-500' : 'bg-red-400'}`} title={p.admitCardDownloaded ? 'Admit card downloaded' : 'Not downloaded'} />
-                    )}
                     <span className="text-[10px] text-[#86868b]">{timeAgo(p.createdAt)}</span>
                   </div>
                 </div>
@@ -319,6 +325,24 @@ export function RegistrationList() {
                     </button>
                   )}
                 </div>
+
+                {/* Admit card download status */}
+                {p.paymentStatus === 'COMPLETED' && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className={`inline-flex items-center gap-1 text-[10px] ${p.admitCardDownloaded ? 'text-green-600' : 'text-red-500'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${p.admitCardDownloaded ? 'bg-green-500' : 'bg-red-400'}`} />
+                      {p.admitCardDownloaded ? 'Admit card downloaded' : 'Not downloaded'}
+                    </span>
+                    {!p.admitCardDownloaded && (
+                      <button
+                        onClick={() => handleRemindDownload(p.id, p.name)}
+                        className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors"
+                      >
+                        🔔 Remind
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
