@@ -238,7 +238,7 @@ export function RegistrationList() {
             onChange={e => setShowPending(e.target.checked)}
             disabled={showOnlyPending}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
-            title={showOnlyPending ? 'Disabled when Only Pending Payments is selected' : undefined}
+            title={showOnlyPending ? 'Disabled when Pending Payments Only is selected' : undefined}
           />
           <span className="text-xs text-yellow-700">Pending</span>
         </label>
@@ -249,7 +249,7 @@ export function RegistrationList() {
             onChange={e => setShowFailed(e.target.checked)}
             disabled={showOnlyPending}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
-            title={showOnlyPending ? 'Disabled when Only Pending Payments is selected' : undefined}
+            title={showOnlyPending ? 'Disabled when Pending Payments Only is selected' : undefined}
           />
           <span className="text-xs text-red-700">Failed</span>
         </label>
