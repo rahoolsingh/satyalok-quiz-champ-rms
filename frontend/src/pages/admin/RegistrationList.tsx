@@ -224,23 +224,25 @@ export function RegistrationList() {
           />
           <span className="text-xs text-yellow-700 font-medium">Only Pending Payments</span>
         </label>
-        <label className="flex items-center gap-1.5 cursor-pointer">
+        <label className={`flex items-center gap-1.5 cursor-pointer ${showOnlyPending ? 'opacity-50' : ''}`}>
           <input
             type="checkbox"
             checked={showPending}
             onChange={e => setShowPending(e.target.checked)}
             disabled={showOnlyPending}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
+            title={showOnlyPending ? 'Disabled when Only Pending Payments is selected' : undefined}
           />
           <span className="text-xs text-yellow-700">Pending</span>
         </label>
-        <label className="flex items-center gap-1.5 cursor-pointer">
+        <label className={`flex items-center gap-1.5 cursor-pointer ${showOnlyPending ? 'opacity-50' : ''}`}>
           <input
             type="checkbox"
             checked={showFailed}
             onChange={e => setShowFailed(e.target.checked)}
             disabled={showOnlyPending}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
+            title={showOnlyPending ? 'Disabled when Only Pending Payments is selected' : undefined}
           />
           <span className="text-xs text-red-700">Failed</span>
         </label>
