@@ -6,15 +6,15 @@ const batches = [
     {
         type: "JUNIOR" as BatchType,
         label: "Junior Batch",
-        sub: "Classes 5 – 10",
-        classes: "Standard 5 to Standard 10",
+        sub: "(5-10)",
+        classes: "Junior Batch (5-10)",
         icon: "🎓",
     },
     {
         type: "SENIOR" as BatchType,
         label: "Senior Batch",
-        sub: "Classes 10+",
-        classes: "Post-10th, College & Beyond",
+        sub: "(10+)",
+        classes: "Senior Batch (10+)",
         icon: "🏆",
     },
 ];

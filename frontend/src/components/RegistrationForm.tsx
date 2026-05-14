@@ -294,8 +294,8 @@ export function RegistrationForm({
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3 mt-3">
                     <span className="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-[#1d1d1f] w-fit">
                         {batchType === "JUNIOR"
-                            ? "🎓 Junior Batch (1–7)"
-                            : "🏆 Senior Batch (8–12)"}
+                            ? "🎓 Junior Batch (5-10)"
+                            : "🏆 Senior Batch (10+)"}
                     </span>
                     {draft && (
                         <span className="text-sm font-medium text-green-600 flex items-center gap-1">

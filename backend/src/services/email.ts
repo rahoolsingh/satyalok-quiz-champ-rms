@@ -106,7 +106,7 @@ export function generateAdmitCardEmail(data: {
         </div>
         <div class="detail-row">
           <span class="detail-label">Batch</span>
-          <span class="detail-value">${data.batch === 'JUNIOR' ? 'Junior (Classes 5-10)' : 'Senior (Classes 10+)'}</span>
+          <span class="detail-value">${data.batch === 'JUNIOR' ? 'Junior Batch (5-10)' : 'Senior Batch (10+)'}</span>
         </div>
         ${data.eventDate ? `
         <div class="detail-row">
