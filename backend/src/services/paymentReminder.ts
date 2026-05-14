@@ -1,5 +1,6 @@
 import { Participant } from '../db/models';
 import { sendPaymentReminder } from './whatsapp';
+import { getPortalConfig } from './portalState';
 
 /**
  * Payment Reminder Service
@@ -24,6 +25,7 @@ export async function sendPendingPaymentReminders(): Promise<void> {
       createdAt: { $lt: cutoffTime },
       merchantTransactionId: { $exists: true, $ne: null },
     });
+    const portalConfig = await getPortalConfig();
 
     console.log(`[Payment Reminder] Found ${pendingParticipants.length} participants needing reminders`);
 
@@ -31,8 +33,10 @@ export async function sendPendingPaymentReminders(): Promise<void> {
       try {
         const paymentUrl = `${process.env.FRONTEND_URL}/payment-status?participantId=${participant._id}`;
         
-        // Calculate amount based on batch type (fallback values)
-        const amount = participant.batchType === 'JUNIOR' ? 100 : 150;
+        // Calculate amount based on portal configuration (DB values with fallback)
+        const amount = participant.batchType === 'JUNIOR'
+          ? (portalConfig?.feeJunior ?? 100)
+          : (portalConfig?.feeSenior ?? 150);
 
         await sendPaymentReminder(participant.mobileNumber, {
           name: participant.name,
