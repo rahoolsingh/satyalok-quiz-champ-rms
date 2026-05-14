@@ -159,6 +159,16 @@ export function RegistrationList() {
     }
   };
 
+  const handlePaymentReminder = async (id: string, name: string) => {
+    try {
+      await adminApi.sendPaymentReminder(id);
+      alert(`Payment reminder sent to ${name}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to send payment reminder';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
   return (
     <div>
       <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-4">Registrations</h2>
@@ -289,6 +299,15 @@ export function RegistrationList() {
                     title={p.groupInviteSent ? 'Invite already sent' : 'Send group invite'}
                   >
                     {p.groupInviteSent ? '✓ Invited' : '📨 Invite'}
+                  </button>
+                )}
+                {p.paymentStatus === 'PENDING' && (
+                  <button
+                    onClick={() => handlePaymentReminder(p.id, p.name)}
+                    className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                    title="Send payment reminder"
+                  >
+                    💰 Remind
                   </button>
                 )}
                 {/* Admit card status */}
