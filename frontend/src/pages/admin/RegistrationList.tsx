@@ -224,7 +224,7 @@ export function RegistrationList() {
           />
           <span className="text-xs text-yellow-700 font-medium">Only Pending Payments</span>
         </label>
-        <label className={`flex items-center gap-1.5 cursor-pointer ${showOnlyPending ? 'opacity-50' : ''}`}>
+        <label className={`flex items-center gap-1.5 ${showOnlyPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
           <input
             type="checkbox"
             checked={showPending}
@@ -235,7 +235,7 @@ export function RegistrationList() {
           />
           <span className="text-xs text-yellow-700">Pending</span>
         </label>
-        <label className={`flex items-center gap-1.5 cursor-pointer ${showOnlyPending ? 'opacity-50' : ''}`}>
+        <label className={`flex items-center gap-1.5 ${showOnlyPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
           <input
             type="checkbox"
             checked={showFailed}
