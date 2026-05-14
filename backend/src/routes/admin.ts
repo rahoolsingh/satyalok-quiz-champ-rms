@@ -2,19 +2,33 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { parse } from 'csv-parse/sync';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig } from '../db/models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite, sendAdmitCardReminder } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder } from '../services/whatsapp';
+import { getPortalConfig } from '../services/portalState';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
 
 export const adminRouter = Router();
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB
+const DEFAULT_FEE_JUNIOR = 100;
+const DEFAULT_FEE_SENIOR = 150;
+const DEFAULT_FRONTEND_URL = 'https://quizchamp.satyalok.in';
+
+const manualPaymentReminderLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many payment reminder requests. Please try again later.' },
+  keyGenerator: (req) => (req as AuthRequest).adminId || req.ip || 'unknown',
+});
 
 // POST /api/admin/login
 adminRouter.post('/login', async (req: Request, res: Response) => {
@@ -456,5 +470,45 @@ adminRouter.post('/registrations/:id/remind-admit-card', async (req: AuthRequest
   } catch (err) {
     console.error('[Admin] Failed to send admit card reminder:', err);
     return res.status(500).json({ error: 'Failed to send reminder' });
+  }
+});
+
+// POST /api/admin/registrations/:id/remind-payment
+adminRouter.post('/registrations/:id/remind-payment', manualPaymentReminderLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'PENDING') {
+      return res.status(400).json({ error: 'Payment reminder can only be sent for pending payments' });
+    }
+
+    if (!participant.merchantTransactionId) {
+      return res.status(400).json({ error: 'No pending payment transaction found for this participant' });
+    }
+
+    const portalConfig = await getPortalConfig();
+    const amount = participant.batchType === 'JUNIOR'
+      ? (portalConfig?.feeJunior ?? DEFAULT_FEE_JUNIOR)
+      : (portalConfig?.feeSenior ?? DEFAULT_FEE_SENIOR);
+
+    const frontendUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
+    const paymentUrl = `${frontendUrl}/payment-status?participantId=${participant._id.toString()}`;
+
+    await sendPaymentReminder(participant.mobileNumber, {
+      name: participant.name,
+      amount,
+      paymentUrl,
+    });
+
+    participant.paymentReminderSent = true;
+    await participant.save();
+
+    return res.json({ message: 'Payment reminder sent successfully' });
+  } catch (err) {
+    console.error('[Admin] Failed to send payment reminder:', err);
+    return res.status(500).json({ error: 'Failed to send payment reminder' });
   }
 });
