@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { parse } from 'csv-parse/sync';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig } from '../db/models';
@@ -16,6 +17,18 @@ import { ManualStatus } from '../types';
 export const adminRouter = Router();
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB
+const DEFAULT_FEE_JUNIOR = 100;
+const DEFAULT_FEE_SENIOR = 150;
+const DEFAULT_FRONTEND_URL = 'https://quizchamp.satyalok.in';
+
+const manualPaymentReminderLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many payment reminder requests. Please try again later.' },
+  keyGenerator: (req) => (req as AuthRequest).adminId || req.ip || 'unknown',
+});
 
 // POST /api/admin/login
 adminRouter.post('/login', async (req: Request, res: Response) => {
@@ -461,7 +474,7 @@ adminRouter.post('/registrations/:id/remind-admit-card', async (req: AuthRequest
 });
 
 // POST /api/admin/registrations/:id/remind-payment
-adminRouter.post('/registrations/:id/remind-payment', async (req: AuthRequest, res: Response) => {
+adminRouter.post('/registrations/:id/remind-payment', manualPaymentReminderLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const participant = await Participant.findById(req.params.id);
     if (!participant) {
@@ -478,10 +491,10 @@ adminRouter.post('/registrations/:id/remind-payment', async (req: AuthRequest, r
 
     const portalConfig = await getPortalConfig();
     const amount = participant.batchType === 'JUNIOR'
-      ? (portalConfig?.feeJunior ?? 100)
-      : (portalConfig?.feeSenior ?? 150);
+      ? (portalConfig?.feeJunior ?? DEFAULT_FEE_JUNIOR)
+      : (portalConfig?.feeSenior ?? DEFAULT_FEE_SENIOR);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://quizchamp.satyalok.in';
+    const frontendUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
     const paymentUrl = `${frontendUrl}/payment-status?participantId=${participant._id.toString()}`;
 
     await sendPaymentReminder(participant.mobileNumber, {
