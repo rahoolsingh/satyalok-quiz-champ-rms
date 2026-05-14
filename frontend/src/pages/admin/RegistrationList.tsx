@@ -219,10 +219,17 @@ export function RegistrationList() {
           <input
             type="checkbox"
             checked={showOnlyPending}
-            onChange={e => setShowOnlyPending(e.target.checked)}
+            onChange={e => {
+              const checked = e.target.checked;
+              setShowOnlyPending(checked);
+              if (checked) {
+                setShowPending(false);
+                setShowFailed(false);
+              }
+            }}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
           />
-          <span className="text-xs text-yellow-700 font-medium">Only Pending Payments</span>
+          <span className="text-xs text-yellow-700 font-medium">Pending Payments Only</span>
         </label>
         <label className={`flex items-center gap-1.5 ${showOnlyPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
           <input
