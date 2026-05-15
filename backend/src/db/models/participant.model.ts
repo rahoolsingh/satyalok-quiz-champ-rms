@@ -32,7 +32,7 @@ const ParticipantSchema = new Schema<IParticipant>(
     name: { type: String, required: true },
     class: { type: String, required: true },
     batchType: { type: String, enum: ['JUNIOR', 'SENIOR'], required: true },
-    gender: { type: String, enum: ['MALE', 'FEMALE'] },
+    gender: { type: String, enum: ['MALE', 'FEMALE'], required: true },
     guardianName: { type: String, required: true },
     address: { type: String, required: true },
     mobileNumber: { type: String, required: true },
