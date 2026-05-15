@@ -5,7 +5,8 @@ import { BatchType, RegistrationInput } from "../types";
 import { registrationApi } from "../api/client";
 
 // --- Types ---
-type Errors = Partial<Record<keyof RegistrationInput, string>>;
+type FormState = Omit<RegistrationInput, "gender"> & { gender: RegistrationInput["gender"] | "" };
+type Errors = Partial<Record<keyof FormState, string>>;
 
 interface Draft extends Partial<RegistrationInput> {
     participantId?: string;
@@ -128,11 +129,11 @@ export function RegistrationForm({
     onSuccess,
     onBack,
 }: Props) {
-    const [form, setForm] = useState<RegistrationInput>({
+    const [form, setForm] = useState<FormState>({
         name: draft?.name || "",
         class: draft?.class || "",
         batchType,
-        gender: draft?.gender,
+        gender: draft?.gender || "",
         guardianName: draft?.guardianName || "",
         address: draft?.address || "",
         mobileNumber,
@@ -159,7 +160,7 @@ export function RegistrationForm({
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    const updateForm = (key: keyof RegistrationInput, value: string) => {
+    const updateForm = (key: keyof FormState, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
         if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
     };
@@ -249,7 +250,7 @@ export function RegistrationForm({
             fd.append("name", form.name.trim());
             fd.append("class", form.class.trim());
             fd.append("batchType", form.batchType);
-            if (form.gender) fd.append("gender", form.gender);
+            fd.append("gender", form.gender);
             fd.append("guardianName", form.guardianName.trim());
             fd.append("address", form.address.trim());
             fd.append("mobileNumber", mobileNumber);

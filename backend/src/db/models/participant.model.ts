@@ -5,7 +5,7 @@ export interface IParticipant extends Document {
   name: string;
   class: string;
   batchType: 'JUNIOR' | 'SENIOR';
-  gender?: 'MALE' | 'FEMALE';
+  gender: 'MALE' | 'FEMALE';
   guardianName: string;
   address: string;
   mobileNumber: string;

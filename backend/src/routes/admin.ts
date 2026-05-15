@@ -504,8 +504,8 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       Participant.countDocuments({ paymentStatus: 'PENDING' }),
       Participant.countDocuments({ paymentStatus: 'FAILED' }),
       Participant.countDocuments({ paymentStatus: 'COMPLETED', admitCardDownloaded: false }),
-      Participant.countDocuments({ gender: 'FEMALE' }),
-      Participant.countDocuments({ gender: 'MALE' }),
+      Participant.countDocuments({ paymentStatus: 'COMPLETED', gender: 'FEMALE' }),
+      Participant.countDocuments({ paymentStatus: 'COMPLETED', gender: 'MALE' }),
       Participant.countDocuments({}),
     ]);
 
