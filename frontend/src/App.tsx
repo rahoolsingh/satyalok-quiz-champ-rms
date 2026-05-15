@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PublicPortal } from './pages/PublicPortal';
 import { AdminLogin } from './pages/admin/AdminLogin';
@@ -7,6 +7,23 @@ import { PaymentStatus } from './pages/PaymentStatus';
 
 function AdminRoute() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('adminToken'));
+
+  useEffect(() => {
+    const syncAuthState = () => setIsLoggedIn(!!localStorage.getItem('adminToken'));
+    const handleStorageChange = (event: StorageEvent) => {
+      if (!event.key || event.key === 'adminToken') {
+        syncAuthState();
+      }
+    };
+
+    window.addEventListener('admin-auth-expired', syncAuthState);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('admin-auth-expired', syncAuthState);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogin = () => setIsLoggedIn(true);
   const handleLogout = () => {

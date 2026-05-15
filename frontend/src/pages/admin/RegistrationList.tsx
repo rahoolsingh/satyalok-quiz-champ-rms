@@ -44,9 +44,7 @@ export function RegistrationList() {
   const [counts, setCounts] = useState({ junior: 0, senior: 0 });
   const [search, setSearch] = useState('');
   const [batch, setBatch] = useState('');
-  const [showOnlyPending, setShowOnlyPending] = useState(false);
-  const [showPending, setShowPending] = useState(false);
-  const [showFailed, setShowFailed] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED'>('ALL');
   const [hideSensitiveData, setHideSensitiveData] = useState(false);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -57,14 +55,11 @@ export function RegistrationList() {
   const LIMIT = 20;
 
   const getStatusFilter = useCallback(() => {
-    if (showOnlyPending) {
-      return 'PENDING';
+    if (statusFilter === 'ALL') {
+      return 'COMPLETED,PENDING,FAILED';
     }
-    const statuses = ['COMPLETED'];
-    if (showPending) statuses.push('PENDING');
-    if (showFailed) statuses.push('FAILED');
-    return statuses.join(',');
-  }, [showOnlyPending, showPending, showFailed]);
+    return statusFilter;
+  }, [statusFilter]);
 
   const load = useCallback(async (pageNum: number, append: boolean = false) => {
     setLoading(true);
@@ -213,46 +208,32 @@ export function RegistrationList() {
       </div>
 
       {/* Status toggles */}
-      <div className="flex items-center gap-4 mb-4 text-sm">
-        <span className="text-[#86868b] text-xs">Show:</span>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showOnlyPending}
-            onChange={e => {
-              const checked = e.target.checked;
-              setShowOnlyPending(checked);
-              if (checked) {
-                setShowPending(false);
-                setShowFailed(false);
-              }
-            }}
-            className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
-          />
-          <span className="text-xs text-yellow-700 font-medium">Pending Payments Only</span>
-        </label>
-        <label className={`flex items-center gap-1.5 ${showOnlyPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-          <input
-            type="checkbox"
-            checked={showPending}
-            onChange={e => setShowPending(e.target.checked)}
-            disabled={showOnlyPending}
-            className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
-            title={showOnlyPending ? 'Disabled when Pending Payments Only is selected' : undefined}
-          />
-          <span className="text-xs text-yellow-700">Pending</span>
-        </label>
-        <label className={`flex items-center gap-1.5 ${showOnlyPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-          <input
-            type="checkbox"
-            checked={showFailed}
-            onChange={e => setShowFailed(e.target.checked)}
-            disabled={showOnlyPending}
-            className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
-            title={showOnlyPending ? 'Disabled when Pending Payments Only is selected' : undefined}
-          />
-          <span className="text-xs text-red-700">Failed</span>
-        </label>
+      <div className="mb-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+          <span className="text-[#86868b] text-xs shrink-0">Status:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { key: 'ALL', label: 'All', className: 'text-[#1d1d1f]' },
+              { key: 'COMPLETED', label: 'Completed', className: 'text-green-700' },
+              { key: 'PENDING', label: 'Pending', className: 'text-yellow-700' },
+              { key: 'FAILED', label: 'Failed', className: 'text-red-700' },
+            ].map(item => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setStatusFilter(item.key as 'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED')}
+                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                  statusFilter === item.key
+                    ? 'bg-[#0071e3] border-[#0071e3] text-white'
+                    : `bg-white border-[#d2d2d7] ${item.className} hover:bg-[#f5f5f7]`
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <span className="sm:ml-auto text-xs text-[#86868b]">{total} results</span>
+        </div>
         <label className="flex items-center gap-1.5 cursor-pointer">
           <input
             type="checkbox"
@@ -262,7 +243,6 @@ export function RegistrationList() {
           />
           <span className="text-xs text-[#1d1d1f]">Hide sensitive data (name only)</span>
         </label>
-        <span className="ml-auto text-xs text-[#86868b]">{total} results</span>
       </div>
 
       {/* Participant Cards */}

@@ -1,8 +1,13 @@
 import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const SESSION_TOKEN_KEY = 'qc_session_token';
+
+type AuthTrackingAxiosRequestConfig = InternalAxiosRequestConfig & {
+  usedAdminToken?: boolean;
+};
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -12,10 +17,13 @@ export const api = axios.create({
 
 // Attach session token from localStorage (works on all browsers including Safari/Samsung)
 api.interceptors.request.use((config) => {
+  const requestConfig = config as AuthTrackingAxiosRequestConfig;
+
   // Admin token takes priority
   const adminToken = localStorage.getItem('adminToken');
   if (adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`;
+    requestConfig.usedAdminToken = true;
     return config;
   }
 
@@ -24,8 +32,26 @@ api.interceptors.request.use((config) => {
   if (sessionToken) {
     config.headers.Authorization = `Bearer ${sessionToken}`;
   }
+  requestConfig.usedAdminToken = false;
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const requestConfig = error?.config as AuthTrackingAxiosRequestConfig | undefined;
+    const usedAdminToken = Boolean(requestConfig?.usedAdminToken);
+
+    if (status === 401 && usedAdminToken) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUsername');
+      window.dispatchEvent(new Event('admin-auth-expired'));
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // Helper to store/clear session token
 export function setSessionToken(token: string) {
