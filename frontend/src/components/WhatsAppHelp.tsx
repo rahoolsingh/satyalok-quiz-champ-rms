@@ -61,7 +61,7 @@ export function WhatsAppHelp() {
         className="flex items-center gap-2 whitespace-nowrap rounded-full border border-[#d2d2d7] bg-white/95 px-3.5 py-2.5 text-[#1d1d1f] shadow-lg backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#0071e3]/30 hover:bg-white"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.95 }}
-        aria-label="Help Centre"
+        aria-label="Open Help Centre"
       >
         <span className="text-sm leading-none" aria-hidden="true">✨</span>
         <svg className="h-4 w-4 text-[#0071e3]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
