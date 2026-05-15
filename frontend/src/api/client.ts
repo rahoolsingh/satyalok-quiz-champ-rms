@@ -1,8 +1,13 @@
 import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const SESSION_TOKEN_KEY = 'qc_session_token';
+
+type AuthTrackingAxiosRequestConfig = InternalAxiosRequestConfig & {
+  _usedAdminToken?: boolean;
+};
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -12,7 +17,7 @@ export const api = axios.create({
 
 // Attach session token from localStorage (works on all browsers including Safari/Samsung)
 api.interceptors.request.use((config) => {
-  const requestConfig = config as typeof config & { _usedAdminToken?: boolean };
+  const requestConfig = config as AuthTrackingAxiosRequestConfig;
 
   // Admin token takes priority
   const adminToken = localStorage.getItem('adminToken');
@@ -35,7 +40,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
-    const usedAdminToken = Boolean((error?.config as { _usedAdminToken?: boolean } | undefined)?._usedAdminToken);
+    const requestConfig = error?.config as AuthTrackingAxiosRequestConfig | undefined;
+    const usedAdminToken = Boolean(requestConfig?._usedAdminToken);
 
     if (status === 401 && usedAdminToken) {
       localStorage.removeItem('adminToken');
