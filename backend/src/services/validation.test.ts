@@ -5,6 +5,7 @@ describe('validateRegistration', () => {
     name: 'Arjun Sharma',
     class: 'Class 8',
     batchType: 'SENIOR' as const,
+    gender: 'MALE' as const,
     guardianName: 'Ramesh Sharma',
     address: '123 Main Street, Delhi',
     mobileNumber: '9876543210',
@@ -62,6 +63,12 @@ describe('validateRegistration', () => {
     const result = validateRegistration({ ...validInput, batchType: 'INVALID' as never });
     expect(result.valid).toBe(false);
     expect(result.errors.batchType).toBeDefined();
+  });
+
+  it('rejects invalid gender', () => {
+    const result = validateRegistration({ ...validInput, gender: 'OTHER' as never });
+    expect(result.valid).toBe(false);
+    expect(result.errors.gender).toBeDefined();
   });
 
   it('accepts valid optional email', () => {

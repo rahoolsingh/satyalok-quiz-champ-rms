@@ -5,7 +5,8 @@ import { BatchType, RegistrationInput } from "../types";
 import { registrationApi } from "../api/client";
 
 // --- Types ---
-type Errors = Partial<Record<keyof RegistrationInput, string>>;
+type FormState = Omit<RegistrationInput, "gender"> & { gender: RegistrationInput["gender"] | "" };
+type Errors = Partial<Record<keyof FormState, string>>;
 
 interface Draft extends Partial<RegistrationInput> {
     participantId?: string;
@@ -128,10 +129,11 @@ export function RegistrationForm({
     onSuccess,
     onBack,
 }: Props) {
-    const [form, setForm] = useState<RegistrationInput>({
+    const [form, setForm] = useState<FormState>({
         name: draft?.name || "",
         class: draft?.class || "",
         batchType,
+        gender: draft?.gender || "",
         guardianName: draft?.guardianName || "",
         address: draft?.address || "",
         mobileNumber,
@@ -158,7 +160,7 @@ export function RegistrationForm({
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    const updateForm = (key: keyof RegistrationInput, value: string) => {
+    const updateForm = (key: keyof FormState, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
         if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
     };
@@ -167,6 +169,7 @@ export function RegistrationForm({
         const errs: Errors = {};
         if (!form.name.trim()) errs.name = "Full name is required";
         if (!form.class.trim()) errs.class = "Class is required";
+        if (!form.gender) errs.gender = "Gender is required";
         if (!form.guardianName.trim())
             errs.guardianName = "Guardian name is required";
         if (!form.address.trim()) errs.address = "Full address is required";
@@ -247,6 +250,7 @@ export function RegistrationForm({
             fd.append("name", form.name.trim());
             fd.append("class", form.class.trim());
             fd.append("batchType", form.batchType);
+            fd.append("gender", form.gender);
             fd.append("guardianName", form.guardianName.trim());
             fd.append("address", form.address.trim());
             fd.append("mobileNumber", mobileNumber);
@@ -415,6 +419,18 @@ export function RegistrationForm({
                             disabled={submitting}
                             className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.class ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
                         />
+                    </FieldWrapper>
+                    <FieldWrapper label="Gender" error={errors.gender} required>
+                        <select
+                            value={form.gender || ""}
+                            onChange={(e) => updateForm("gender", e.target.value)}
+                            disabled={submitting}
+                            className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.gender ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20"}`}
+                        >
+                            <option value="">Select gender</option>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                        </select>
                     </FieldWrapper>
                     <FieldWrapper
                         label="Guardian Name"
