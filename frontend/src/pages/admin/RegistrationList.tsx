@@ -245,10 +245,7 @@ export function RegistrationList() {
         {[
           { label: 'Completed', val: metrics.completed, tone: 'text-green-700' },
           { label: 'Pending', val: metrics.pending, tone: 'text-yellow-700' },
-          { label: 'Transaction Failed', val: metrics.failed, tone: 'text-red-700' },
           { label: 'Admit Card Not Downloaded', val: metrics.admitCardNotDownloaded, tone: 'text-orange-700' },
-          { label: 'Female', val: metrics.female, tone: 'text-pink-700' },
-          { label: 'Male', val: metrics.male, tone: 'text-blue-700' },
           { label: 'Forms Filled', val: metrics.formsFilled, tone: 'text-[#1d1d1f]' },
           { label: 'Junior', val: counts.junior, tone: 'text-[#1d1d1f]' },
           { label: 'Senior', val: counts.senior, tone: 'text-[#1d1d1f]' },
