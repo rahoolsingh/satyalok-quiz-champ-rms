@@ -350,7 +350,7 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
 // GET /api/admin/registrations
 adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   try {
-    const { batch, search, page = '1', limit = '20', status } = req.query;
+    const { batch, search, page = '1', limit = '20', status, admitCardDownloaded } = req.query;
     const pageNum = Math.max(1, parseInt(page as string, 10));
     const limitNum = Math.min(100, parseInt(limit as string, 10));
 
@@ -364,6 +364,14 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         filter.paymentStatus = statuses[0];
       } else if (statuses.length > 1) {
         filter.paymentStatus = { $in: statuses };
+      }
+    }
+    if (admitCardDownloaded === 'true') {
+      filter.admitCardDownloaded = true;
+    } else if (admitCardDownloaded === 'false') {
+      filter.admitCardDownloaded = false;
+      if (!filter.paymentStatus) {
+        filter.paymentStatus = 'COMPLETED';
       }
     }
     if (search) {

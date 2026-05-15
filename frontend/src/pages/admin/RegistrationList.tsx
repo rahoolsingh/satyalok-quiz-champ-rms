@@ -38,13 +38,26 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+function maskGuardianName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '***';
+  return trimmed
+    .split(/\s+/)
+    .map((part) => {
+      if (part.length <= 1) return '*';
+      if (part.length === 2) return `${part[0]}*`;
+      return `${part[0]}${'*'.repeat(part.length - 2)}${part[part.length - 1]}`;
+    })
+    .join(' ');
+}
+
 export function RegistrationList() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState({ junior: 0, senior: 0 });
   const [search, setSearch] = useState('');
   const [batch, setBatch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED' | 'NOT_DOWNLOADED'>('ALL');
   const [hideSensitiveData, setHideSensitiveData] = useState(false);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -58,6 +71,9 @@ export function RegistrationList() {
     if (statusFilter === 'ALL') {
       return 'COMPLETED,PENDING,FAILED';
     }
+    if (statusFilter === 'NOT_DOWNLOADED') {
+      return 'COMPLETED';
+    }
     return statusFilter;
   }, [statusFilter]);
 
@@ -68,6 +84,7 @@ export function RegistrationList() {
         search: search || undefined,
         batch: batch || undefined,
         status: getStatusFilter(),
+        admitCardDownloaded: statusFilter === 'NOT_DOWNLOADED' ? 'false' : undefined,
         page: pageNum,
         limit: LIMIT,
       });
@@ -212,19 +229,20 @@ export function RegistrationList() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
           <span className="text-[#86868b] text-xs shrink-0">Status:</span>
           <div className="flex flex-wrap gap-1.5">
-            {[
-              { key: 'ALL', label: 'All', className: 'text-[#1d1d1f]' },
-              { key: 'COMPLETED', label: 'Completed', className: 'text-green-700' },
-              { key: 'PENDING', label: 'Pending', className: 'text-yellow-700' },
-              { key: 'FAILED', label: 'Failed', className: 'text-red-700' },
-            ].map(item => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setStatusFilter(item.key as 'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED')}
-                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                  statusFilter === item.key
-                    ? 'bg-[#0071e3] border-[#0071e3] text-white'
+              {[
+                { key: 'ALL', label: 'All', className: 'text-[#1d1d1f]' },
+                { key: 'COMPLETED', label: 'Completed', className: 'text-green-700' },
+                { key: 'PENDING', label: 'Pending', className: 'text-yellow-700' },
+                { key: 'FAILED', label: 'Failed', className: 'text-red-700' },
+                { key: 'NOT_DOWNLOADED', label: 'Admit Card Not Downloaded', className: 'text-orange-700' },
+              ].map(item => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setStatusFilter(item.key as 'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED' | 'NOT_DOWNLOADED')}
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                    statusFilter === item.key
+                      ? 'bg-[#0071e3] border-[#0071e3] text-white'
                     : `bg-white border-[#d2d2d7] ${item.className} hover:bg-[#f5f5f7]`
                 }`}
               >
@@ -241,7 +259,7 @@ export function RegistrationList() {
             onChange={e => setHideSensitiveData(e.target.checked)}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
           />
-          <span className="text-xs text-[#1d1d1f]">Hide sensitive data (name only)</span>
+          <span className="text-xs text-[#1d1d1f]">Hide sensitive data (keeps photo + masked father name)</span>
         </label>
       </div>
 
@@ -254,8 +272,18 @@ export function RegistrationList() {
 
             <div className="pl-2">
               {hideSensitiveData ? (
-                <div className="py-1">
-                  <span className="font-semibold text-[#1d1d1f] text-[13px] leading-tight">{p.name}</span>
+                <div className="flex items-start gap-2.5 py-1">
+                  {p.photoUrl ? (
+                    <img src={p.photoUrl} alt={p.name} className="w-11 h-11 rounded-lg object-cover border border-[#e5e5e5] shrink-0" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-lg bg-[#f5f5f7] flex items-center justify-center text-base shrink-0">👤</div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#1d1d1f] text-[13px] leading-tight">{p.name}</p>
+                    <p className="text-[11px] text-[#86868b] leading-tight mt-0.5">
+                      S/o {maskGuardianName(p.guardianName)} · Class {p.class} · {p.batchType}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <>
