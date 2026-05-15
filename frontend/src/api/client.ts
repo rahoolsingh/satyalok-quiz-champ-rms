@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const SESSION_TOKEN_KEY = 'qc_session_token';
 
 type AuthTrackingAxiosRequestConfig = InternalAxiosRequestConfig & {
-  _usedAdminToken?: boolean;
+  usedAdminToken?: boolean;
 };
 
 export const api = axios.create({
@@ -23,7 +23,7 @@ api.interceptors.request.use((config) => {
   const adminToken = localStorage.getItem('adminToken');
   if (adminToken) {
     config.headers.Authorization = `Bearer ${adminToken}`;
-    requestConfig._usedAdminToken = true;
+    requestConfig.usedAdminToken = true;
     return config;
   }
 
@@ -32,7 +32,7 @@ api.interceptors.request.use((config) => {
   if (sessionToken) {
     config.headers.Authorization = `Bearer ${sessionToken}`;
   }
-  requestConfig._usedAdminToken = false;
+  requestConfig.usedAdminToken = false;
   return config;
 });
 
@@ -41,7 +41,7 @@ api.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
     const requestConfig = error?.config as AuthTrackingAxiosRequestConfig | undefined;
-    const usedAdminToken = Boolean(requestConfig?._usedAdminToken);
+    const usedAdminToken = Boolean(requestConfig?.usedAdminToken);
 
     if (status === 401 && usedAdminToken) {
       localStorage.removeItem('adminToken');
