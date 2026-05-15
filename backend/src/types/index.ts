@@ -1,5 +1,6 @@
 export type BatchType = 'JUNIOR' | 'SENIOR';
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+export type Gender = 'MALE' | 'FEMALE';
 export type ManualStatus = 'AUTO' | 'COUNTDOWN' | 'OPEN' | 'CLOSED';
 export type PortalState = 'COUNTDOWN' | 'OPEN' | 'CLOSED';
 
@@ -9,6 +10,7 @@ export interface Participant {
   name: string;
   class: string;
   batchType: BatchType;
+  gender?: Gender;
   guardianName: string;
   address: string;
   mobileNumber: string;
@@ -76,6 +78,7 @@ export interface RegistrationInput {
   name: string;
   class: string;
   batchType: BatchType;
+  gender: Gender;
   guardianName: string;
   address: string;
   mobileNumber: string;

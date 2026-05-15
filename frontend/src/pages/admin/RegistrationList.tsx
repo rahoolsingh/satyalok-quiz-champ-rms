@@ -7,6 +7,7 @@ interface Participant {
   name: string;
   class: string;
   batchType: string;
+  gender?: 'MALE' | 'FEMALE';
   guardianName: string;
   address?: string;
   mobileNumber: string;
@@ -16,6 +17,25 @@ interface Participant {
   groupInviteSent: boolean;
   admitCardDownloaded: boolean;
   createdAt: string;
+}
+
+type TrendRange = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'EVENT_START';
+
+interface RegistrationMetrics {
+  completed: number;
+  pending: number;
+  failed: number;
+  admitCardNotDownloaded: number;
+  female: number;
+  male: number;
+  formsFilled: number;
+}
+
+interface RegistrationTrendPoint {
+  key: string;
+  label: string;
+  formsFilled: number;
+  registrationsCompleted: number;
 }
 
 const statusColor: Record<string, string> = {
@@ -55,6 +75,17 @@ export function RegistrationList() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState({ junior: 0, senior: 0 });
+  const [metrics, setMetrics] = useState<RegistrationMetrics>({
+    completed: 0,
+    pending: 0,
+    failed: 0,
+    admitCardNotDownloaded: 0,
+    female: 0,
+    male: 0,
+    formsFilled: 0,
+  });
+  const [trends, setTrends] = useState<RegistrationTrendPoint[]>([]);
+  const [trendRange, setTrendRange] = useState<TrendRange>('EVENT_START');
   const [search, setSearch] = useState('');
   const [batch, setBatch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED' | 'NOT_DOWNLOADED'>('ALL');
@@ -85,6 +116,7 @@ export function RegistrationList() {
         batch: batch || undefined,
         status: getStatusFilter(),
         admitCardDownloaded: statusFilter === 'NOT_DOWNLOADED' ? 'false' : undefined,
+        trendRange,
         page: pageNum,
         limit: LIMIT,
       });
@@ -96,13 +128,15 @@ export function RegistrationList() {
       }
       setTotal(data.total);
       setCounts(data.counts);
+      setMetrics(data.metrics);
+      setTrends(data.trends || []);
       setHasMore(data.participants.length === LIMIT);
     } catch {
       /* ignore */
     } finally {
       setLoading(false);
     }
-  }, [search, batch, getStatusFilter]);
+  }, [search, batch, getStatusFilter, trendRange]);
 
   // Reset and reload when filters change
   useEffect(() => {
@@ -186,22 +220,84 @@ export function RegistrationList() {
     }
   };
 
+  const chartWidth = 100;
+  const chartHeight = 42;
+  const maxY = Math.max(
+    1,
+    ...trends.map((point) => Math.max(point.formsFilled, point.registrationsCompleted))
+  );
+
+  const toPath = (key: 'formsFilled' | 'registrationsCompleted') =>
+    trends
+      .map((point, index) => {
+        const x = trends.length > 1 ? (index / (trends.length - 1)) * chartWidth : chartWidth / 2;
+        const y = chartHeight - (point[key] / maxY) * chartHeight;
+        return `${index === 0 ? 'M' : 'L'}${x},${y}`;
+      })
+      .join(' ');
+
   return (
     <div>
       <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-4">Registrations</h2>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mb-3">
         {[
-          { label: 'Junior', val: counts.junior },
-          { label: 'Senior', val: counts.senior },
-          { label: 'Total', val: counts.junior + counts.senior },
+          { label: 'Completed', val: metrics.completed, tone: 'text-green-700' },
+          { label: 'Pending', val: metrics.pending, tone: 'text-yellow-700' },
+          { label: 'Transaction Failed', val: metrics.failed, tone: 'text-red-700' },
+          { label: 'Admit Card Not Downloaded', val: metrics.admitCardNotDownloaded, tone: 'text-orange-700' },
+          { label: 'Female', val: metrics.female, tone: 'text-pink-700' },
+          { label: 'Male', val: metrics.male, tone: 'text-blue-700' },
+          { label: 'Forms Filled', val: metrics.formsFilled, tone: 'text-[#1d1d1f]' },
+          { label: 'Registered', val: metrics.completed, tone: 'text-[#1d1d1f]' },
+          { label: 'Junior', val: counts.junior, tone: 'text-[#1d1d1f]' },
+          { label: 'Senior', val: counts.senior, tone: 'text-[#1d1d1f]' },
         ].map(c => (
-          <div key={c.label} className="bg-white border border-[#d2d2d7] rounded-xl px-3 sm:px-5 py-3 sm:py-4 text-center">
-            <p className="text-xl sm:text-2xl font-bold text-[#1d1d1f]">{c.val}</p>
-            <p className="text-[10px] sm:text-xs text-[#86868b] uppercase tracking-wider mt-0.5">{c.label}</p>
+          <div key={c.label} className="bg-white border border-[#d2d2d7] rounded-xl px-3 py-2.5">
+            <p className={`text-lg sm:text-xl font-bold ${c.tone}`}>{c.val}</p>
+            <p className="text-[10px] text-[#86868b] uppercase tracking-wide mt-0.5">{c.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Trend */}
+      <div className="bg-white border border-[#d2d2d7] rounded-xl px-3 py-3 mb-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wide">Registration Trend</p>
+          <select
+            value={trendRange}
+            onChange={(e) => setTrendRange(e.target.value as TrendRange)}
+            className="px-2 py-1 bg-white border border-[#d2d2d7] rounded-lg text-xs focus:border-[#0071e3] outline-none"
+            aria-label="Select trend range"
+          >
+            <option value="DAILY">Daily</option>
+            <option value="WEEKLY">Weekly</option>
+            <option value="MONTHLY">Monthly</option>
+            <option value="EVENT_START">From Event Start</option>
+          </select>
+        </div>
+
+        {trends.length > 0 ? (
+          <>
+            <div className="w-full overflow-hidden rounded-lg bg-[#f8f8fa] border border-[#ededf0] p-2">
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-28">
+                <path d={toPath('formsFilled')} fill="none" stroke="#0071e3" strokeWidth="1.8" />
+                <path d={toPath('registrationsCompleted')} fill="none" stroke="#16a34a" strokeWidth="1.8" />
+              </svg>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#86868b]">
+              <span>{trends[0]?.label}</span>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#0071e3]" />Forms Filled</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-600" />Registered</span>
+              </div>
+              <span>{trends[trends.length - 1]?.label}</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-[#86868b]">No trend data available.</p>
+        )}
       </div>
 
       {/* Filters */}

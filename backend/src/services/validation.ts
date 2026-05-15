@@ -22,6 +22,10 @@ export function validateRegistration(input: Partial<RegistrationInput>): Validat
     errors.batchType = 'Batch type must be JUNIOR or SENIOR';
   }
 
+  if (!input.gender || !['MALE', 'FEMALE'].includes(input.gender)) {
+    errors.gender = 'Gender must be MALE or FEMALE';
+  }
+
   if (!input.guardianName || input.guardianName.trim().length === 0) {
     errors.guardianName = 'Guardian name is required';
   }

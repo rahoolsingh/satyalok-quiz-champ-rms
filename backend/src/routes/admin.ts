@@ -21,6 +21,109 @@ const DEFAULT_FEE_JUNIOR = 100;
 const DEFAULT_FEE_SENIOR = 150;
 const DEFAULT_FRONTEND_URL = 'https://quizchamp.satyalok.in';
 const escapeRegex = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+type TrendRange = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'EVENT_START';
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * ONE_HOUR_MS;
+
+const startOfUtcDay = (date: Date): Date =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+
+const startOfUtcHour = (date: Date): Date =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours()));
+
+const startOfUtcIsoWeek = (date: Date): Date => {
+  const dayStart = startOfUtcDay(date);
+  const day = dayStart.getUTCDay() || 7; // Sunday -> 7
+  return new Date(dayStart.getTime() - (day - 1) * ONE_DAY_MS);
+};
+
+const formatTrendKey = (date: Date, range: TrendRange): string => {
+  if (range === 'DAILY') {
+    return `${date.toISOString().slice(0, 13)}:00Z`;
+  }
+  if (range === 'EVENT_START') {
+    const weekStart = startOfUtcIsoWeek(date);
+    const isoThursday = new Date(weekStart.getTime() + 3 * ONE_DAY_MS);
+    const isoYear = isoThursday.getUTCFullYear();
+    const yearStart = startOfUtcIsoWeek(new Date(Date.UTC(isoYear, 0, 4)));
+    const weekNo = Math.floor((weekStart.getTime() - yearStart.getTime()) / (7 * ONE_DAY_MS)) + 1;
+    return `${isoYear}-W${String(weekNo).padStart(2, '0')}`;
+  }
+  return date.toISOString().slice(0, 10);
+};
+
+const formatTrendLabel = (date: Date, range: TrendRange): string => {
+  if (range === 'DAILY') {
+    return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+  }
+  if (range === 'EVENT_START') {
+    const weekEnd = new Date(date.getTime() + 6 * ONE_DAY_MS);
+    return `${date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' })} - ${weekEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`;
+  }
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+};
+
+const getTrendSetup = (range: TrendRange, eventStart?: Date | null) => {
+  const now = new Date();
+  const buckets: Array<{ key: string; label: string; start: Date }> = [];
+  let startDate: Date;
+
+  if (range === 'DAILY') {
+    startDate = startOfUtcHour(new Date(now.getTime() - 23 * ONE_HOUR_MS));
+    for (let i = 0; i < 24; i += 1) {
+      const bucketDate = new Date(startDate.getTime() + i * ONE_HOUR_MS);
+      buckets.push({ key: formatTrendKey(bucketDate, range), label: formatTrendLabel(bucketDate, range), start: bucketDate });
+    }
+  } else if (range === 'WEEKLY') {
+    startDate = startOfUtcDay(new Date(now.getTime() - 6 * ONE_DAY_MS));
+    for (let i = 0; i < 7; i += 1) {
+      const bucketDate = new Date(startDate.getTime() + i * ONE_DAY_MS);
+      buckets.push({ key: formatTrendKey(bucketDate, range), label: formatTrendLabel(bucketDate, range), start: bucketDate });
+    }
+  } else if (range === 'MONTHLY') {
+    startDate = startOfUtcDay(new Date(now.getTime() - 29 * ONE_DAY_MS));
+    for (let i = 0; i < 30; i += 1) {
+      const bucketDate = new Date(startDate.getTime() + i * ONE_DAY_MS);
+      buckets.push({ key: formatTrendKey(bucketDate, range), label: formatTrendLabel(bucketDate, range), start: bucketDate });
+    }
+  } else {
+    const openingStart = eventStart ? startOfUtcIsoWeek(eventStart) : startOfUtcIsoWeek(new Date(now.getTime() - 8 * 7 * ONE_DAY_MS));
+    const currentWeekStart = startOfUtcIsoWeek(now);
+    startDate = openingStart;
+    for (let t = openingStart.getTime(); t <= currentWeekStart.getTime(); t += 7 * ONE_DAY_MS) {
+      const bucketDate = new Date(t);
+      buckets.push({ key: formatTrendKey(bucketDate, range), label: formatTrendLabel(bucketDate, range), start: bucketDate });
+    }
+    if (buckets.length === 0) {
+      buckets.push({ key: formatTrendKey(currentWeekStart, range), label: formatTrendLabel(currentWeekStart, range), start: currentWeekStart });
+    }
+  }
+
+  return { startDate, buckets };
+};
+
+const getTrendKeyExpression = (range: TrendRange) => {
+  if (range === 'DAILY') {
+    return { $dateToString: { format: '%Y-%m-%dT%H:00Z', date: '$createdAt', timezone: 'UTC' } };
+  }
+  if (range === 'EVENT_START') {
+    return {
+      $concat: [
+        { $toString: { $isoWeekYear: '$createdAt' } },
+        '-W',
+        {
+          $cond: [
+            { $lt: [{ $isoWeek: '$createdAt' }, 10] },
+            { $concat: ['0', { $toString: { $isoWeek: '$createdAt' } }] },
+            { $toString: { $isoWeek: '$createdAt' } },
+          ],
+        },
+      ],
+    };
+  }
+  return { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'UTC' } };
+};
 
 const manualPaymentReminderLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -351,9 +454,12 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
 // GET /api/admin/registrations
 adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   try {
-    const { batch, search, page = '1', limit = '20', status, admitCardDownloaded } = req.query;
+    const { batch, search, page = '1', limit = '20', status, admitCardDownloaded, trendRange = 'EVENT_START' } = req.query;
     const pageNum = Math.max(1, parseInt(page as string, 10));
     const limitNum = Math.min(100, parseInt(limit as string, 10));
+    const normalizedTrendRange: TrendRange = (['DAILY', 'WEEKLY', 'MONTHLY', 'EVENT_START'].includes(trendRange as string)
+      ? trendRange
+      : 'EVENT_START') as TrendRange;
 
     const filter: Record<string, unknown> = {};
     if (batch && ['JUNIOR', 'SENIOR'].includes(batch as string)) {
@@ -383,7 +489,9 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       ];
     }
 
-    const [participants, total, juniorCount, seniorCount] = await Promise.all([
+    const [portalConfig, earliestParticipant, participants, total, juniorCount, seniorCount, completedCount, pendingCount, failedCount, notDownloadedCount, femaleCount, maleCount, formsFilledCount] = await Promise.all([
+      PortalConfig.findOne({}, { openingDate: 1 }).lean(),
+      Participant.findOne({}, { createdAt: 1 }).sort({ createdAt: 1 }).lean(),
       Participant.find(filter)
         .sort({ createdAt: -1 })
         .skip((pageNum - 1) * limitNum)
@@ -392,7 +500,37 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       Participant.countDocuments(filter),
       Participant.countDocuments({ batchType: 'JUNIOR', paymentStatus: 'COMPLETED' }),
       Participant.countDocuments({ batchType: 'SENIOR', paymentStatus: 'COMPLETED' }),
+      Participant.countDocuments({ paymentStatus: 'COMPLETED' }),
+      Participant.countDocuments({ paymentStatus: 'PENDING' }),
+      Participant.countDocuments({ paymentStatus: 'FAILED' }),
+      Participant.countDocuments({ paymentStatus: 'COMPLETED', admitCardDownloaded: false }),
+      Participant.countDocuments({ gender: 'FEMALE' }),
+      Participant.countDocuments({ gender: 'MALE' }),
+      Participant.countDocuments({}),
     ]);
+
+    const eventStart = portalConfig?.openingDate || earliestParticipant?.createdAt || undefined;
+    const trendSetup = getTrendSetup(normalizedTrendRange, eventStart);
+    const trendKeyExpression = getTrendKeyExpression(normalizedTrendRange);
+    const trendRows = await Participant.aggregate([
+      { $match: { createdAt: { $gte: trendSetup.startDate } } },
+      {
+        $group: {
+          _id: trendKeyExpression,
+          formsFilled: { $sum: 1 },
+          registrationsCompleted: {
+            $sum: { $cond: [{ $eq: ['$paymentStatus', 'COMPLETED'] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
+    const trendMap = new Map(
+      trendRows.map((row: { _id: string; formsFilled: number; registrationsCompleted: number }) => [
+        row._id,
+        { formsFilled: row.formsFilled, registrationsCompleted: row.registrationsCompleted },
+      ])
+    );
 
     return res.json({
       participants: participants.map((p) => ({
@@ -401,6 +539,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         name: p.name,
         class: p.class,
         batchType: p.batchType,
+        gender: p.gender,
         guardianName: p.guardianName,
         address: p.address,
         mobileNumber: p.mobileNumber,
@@ -415,6 +554,22 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       page: pageNum,
       limit: limitNum,
       counts: { junior: juniorCount, senior: seniorCount },
+      metrics: {
+        completed: completedCount,
+        pending: pendingCount,
+        failed: failedCount,
+        admitCardNotDownloaded: notDownloadedCount,
+        female: femaleCount,
+        male: maleCount,
+        formsFilled: formsFilledCount,
+      },
+      trendRange: normalizedTrendRange,
+      trends: trendSetup.buckets.map((bucket) => ({
+        key: bucket.key,
+        label: bucket.label,
+        formsFilled: trendMap.get(bucket.key)?.formsFilled || 0,
+        registrationsCompleted: trendMap.get(bucket.key)?.registrationsCompleted || 0,
+      })),
     });
   } catch (err) {
     console.error(err);
