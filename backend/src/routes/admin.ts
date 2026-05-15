@@ -20,6 +20,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 const DEFAULT_FEE_JUNIOR = 100;
 const DEFAULT_FEE_SENIOR = 150;
 const DEFAULT_FRONTEND_URL = 'https://quizchamp.satyalok.in';
+const escapeRegex = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const manualPaymentReminderLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -370,12 +371,9 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       filter.admitCardDownloaded = true;
     } else if (admitCardDownloaded === 'false') {
       filter.admitCardDownloaded = false;
-      if (!filter.paymentStatus) {
-        filter.paymentStatus = 'COMPLETED';
-      }
     }
     if (search) {
-      const s = search as string;
+      const s = escapeRegex(search as string);
       filter.$or = [
         { name: { $regex: s, $options: 'i' } },
         { rollNumber: { $regex: s, $options: 'i' } },

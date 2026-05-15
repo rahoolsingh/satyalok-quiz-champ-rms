@@ -38,8 +38,8 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-function maskGuardianName(name: string): string {
-  const trimmed = name.trim();
+function maskGuardianName(name?: string | null): string {
+  const trimmed = (name ?? '').trim();
   if (!trimmed) return '***';
   return trimmed
     .split(/\s+/)
@@ -259,7 +259,7 @@ export function RegistrationList() {
             onChange={e => setHideSensitiveData(e.target.checked)}
             className="w-4 h-4 rounded border-[#d2d2d7] text-[#0071e3] focus:ring-[#0071e3]"
           />
-          <span className="text-xs text-[#1d1d1f]">Hide sensitive data (keeps photo + masked father name)</span>
+          <span className="text-xs text-[#1d1d1f]">Hide sensitive data (keeps photo + masked Father/guardian name)</span>
         </label>
       </div>
 
@@ -274,14 +274,14 @@ export function RegistrationList() {
               {hideSensitiveData ? (
                 <div className="flex items-start gap-2.5 py-1">
                   {p.photoUrl ? (
-                    <img src={p.photoUrl} alt={p.name} className="w-11 h-11 rounded-lg object-cover border border-[#e5e5e5] shrink-0" />
+                    <img src={p.photoUrl} alt="Candidate photo" className="w-11 h-11 rounded-lg object-cover border border-[#e5e5e5] shrink-0" />
                   ) : (
                     <div className="w-11 h-11 rounded-lg bg-[#f5f5f7] flex items-center justify-center text-base shrink-0">👤</div>
                   )}
                   <div className="min-w-0">
                     <p className="font-semibold text-[#1d1d1f] text-[13px] leading-tight">{p.name}</p>
                     <p className="text-[11px] text-[#86868b] leading-tight mt-0.5">
-                      S/o {maskGuardianName(p.guardianName)} · Class {p.class} · {p.batchType}
+                      Guardian: {maskGuardianName(p.guardianName)} · Class {p.class} · {p.batchType}
                     </p>
                   </div>
                 </div>
