@@ -16,7 +16,7 @@ export function WhatsAppHelp() {
             animate={{ opacity: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, x: 20, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 mb-2"
+            className="absolute bottom-full right-0 mb-3"
           >
             <div className="bg-white rounded-2xl shadow-lg border border-[#d2d2d7] p-4 w-64">
               <div className="flex items-start gap-3 mb-3">
@@ -54,35 +54,23 @@ export function WhatsAppHelp() {
         )}
       </AnimatePresence>
 
-      {/* Floating Button */}
       <motion.button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         onMouseEnter={() => setIsExpanded(true)}
-        className="w-14 h-14 bg-[#0071e3] rounded-full shadow-lg flex items-center justify-center hover:bg-[#005bb5] transition-colors group"
-        whileHover={{ scale: 1.05 }}
+        className="flex items-center gap-2 whitespace-nowrap rounded-full border border-[#d2d2d7] bg-white/95 px-3.5 py-2.5 text-[#1d1d1f] shadow-lg backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[#0071e3]/30 hover:bg-white"
+        whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.95 }}
-        aria-label="Technical Support"
+        aria-label="Open Help Centre"
       >
-        {/* Headphone support icon */}
-        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <span className="text-sm leading-none" aria-hidden="true">✨</span>
+        <svg className="h-4 w-4 text-[#0071e3]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 18a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5zM3 18a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5z" />
         </svg>
-        
-        {/* Pulse animation */}
-        <span className="absolute w-14 h-14 bg-[#0071e3] rounded-full animate-ping opacity-20" />
+        <span className="whitespace-nowrap text-sm font-semibold tracking-tight">Help Centre</span>
       </motion.button>
-
-      {/* Tooltip on hover (desktop only) */}
-      {!isExpanded && (
-        <div className="hidden md:block absolute bottom-full right-0 mb-2 pointer-events-none">
-          <div className="bg-[#1d1d1f] text-white text-xs py-2 px-3 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-            Technical Support
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#1d1d1f]" />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
