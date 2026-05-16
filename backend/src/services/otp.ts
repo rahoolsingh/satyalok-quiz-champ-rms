@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import axios from 'axios';
 import { OTPVerification } from '../db/models';
 import { sendWhatsAppOTP } from './whatsapp';
 
@@ -60,57 +59,9 @@ export async function verifyOTP(
 }
 
 /**
- * Sends OTP via WhatsApp API.
+ * Sends OTP via Meta WhatsApp Cloud API (template-based).
  * Set WHATSAPP_PROVIDER=mock to skip the real call during development.
- * Falls back to SMS if WhatsApp fails after 3 attempts.
  */
 export async function sendOTP(mobileNumber: string, otp: string): Promise<void> {
-  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
-
-  // Try WhatsApp first
-  try {
-    await sendWhatsAppOTP(mobileNumber, otp);
-    return;
-  } catch (whatsappError) {
-    console.error('[OTP] WhatsApp delivery failed, attempting SMS fallback:', whatsappError);
-    
-    // Fallback to SMS
-    const smsProvider = process.env.SMS_PROVIDER || 'mock';
-    
-    if (smsProvider === 'mock') {
-      console.log(`[MOCK SMS FALLBACK] OTP ${otp} → ${mobileNumber}`);
-      return;
-    }
-
-    const smsApiUrl = process.env.SMS_API_URL;
-    const smsApiKey = process.env.SMS_API_KEY;
-    
-    if (!smsApiUrl || !smsApiKey) {
-      console.error('[OTP] SMS fallback not configured');
-      throw new Error('Failed to send OTP via WhatsApp and SMS is not configured');
-    }
-
-    const message = otpTemplate(otp);
-
-    console.log('[OTP] Sending via SMS fallback to', mobileNumber);
-
-    const response = await axios.post(
-      smsApiUrl,
-      { mobileNumber: `91${mobileNumber}`, message },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': smsApiKey,
-        },
-      }
-    );
-
-    console.log('[OTP] SMS fallback response:', response.data);
-  }
-}
-
-// ─── SMS template ─────────────────────────────────────────────────────────────
-
-function otpTemplate(otp: string): string {
-  return `Your Quiz Champ 2026 OTP is: ${otp}. Valid for 5 minutes. Do not share this with anyone.`;
+  await sendWhatsAppOTP(mobileNumber, otp);
 }

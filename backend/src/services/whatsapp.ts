@@ -1,9 +1,12 @@
 import axios from 'axios';
 
 /**
- * SMS/WhatsApp Service for sending OTP and notifications
- * Tries WhatsApp first, falls back to SMS if WhatsApp fails
+ * WhatsApp Service using Meta Cloud API
+ * Sends messages via official WhatsApp Business Platform
  */
+
+const META_API_VERSION = 'v21.0';
+const META_API_BASE = `https://graph.facebook.com/${META_API_VERSION}`;
 
 export interface ThankYouMessageData {
   name: string;
@@ -22,176 +25,129 @@ export interface ReminderData {
 }
 
 /**
- * Sends message via WhatsApp API
+ * Returns Meta API config from environment
  */
-async function sendWhatsApp(mobileNumber: string, message: string): Promise<void> {
-  const whatsappProvider = process.env.WHATSAPP_PROVIDER || 'mock';
+function getMetaConfig() {
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN;
 
-  if (whatsappProvider === 'mock') {
-    console.log(`[MOCK WHATSAPP] Message → ${mobileNumber}`);
-    console.log(`[MOCK WHATSAPP] Content: ${message}`);
-    return;
-  }
+  if (!phoneNumberId) throw new Error('META_WHATSAPP_PHONE_NUMBER_ID is not set');
+  if (!accessToken) throw new Error('META_WHATSAPP_ACCESS_TOKEN is not set');
 
-  const whatsappApiUrl = process.env.WHATSAPP_API_URL;
-  const whatsappApiKey = process.env.WHATSAPP_API_KEY;
+  return { phoneNumberId, accessToken };
+}
 
-  if (!whatsappApiUrl) throw new Error('WHATSAPP_API_URL is not set');
-  if (!whatsappApiKey) throw new Error('WHATSAPP_API_KEY is not set');
+/**
+ * Sends a template message via Meta WhatsApp Cloud API
+ */
+async function sendMetaTemplate(
+  mobileNumber: string,
+  templateName: string,
+  languageCode: string,
+  components: any[]
+): Promise<void> {
+  const { phoneNumberId, accessToken } = getMetaConfig();
 
-  console.log(`[WhatsApp] Sending message to ${mobileNumber}`);
+  const url = `${META_API_BASE}/${phoneNumberId}/messages`;
 
-  const response = await axios.post(
-    whatsappApiUrl,
-    {
-      mobileNumber: `91${mobileNumber}`,
-      message: message,
+  const payload: any = {
+    messaging_product: 'whatsapp',
+    to: `91${mobileNumber}`,
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: languageCode },
     },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': whatsappApiKey,
-      },
-      timeout: 10000,
-    }
-  );
+  };
 
-  console.log('[WhatsApp] Message sent successfully:', response.data);
-}
-
-/**
- * Sends SMS using the configured SMS API
- */
-async function sendSMS(mobileNumber: string, message: string): Promise<void> {
-  const smsProvider = process.env.SMS_PROVIDER || 'mock';
-
-  if (smsProvider === 'mock') {
-    console.log(`[MOCK SMS] Message → ${mobileNumber}`);
-    console.log(`[MOCK SMS] Content: ${message}`);
-    return;
+  if (components.length > 0) {
+    payload.template.components = components;
   }
 
-  const smsApiUrl = process.env.SMS_API_URL;
-  const smsApiKey = process.env.SMS_API_KEY;
+  console.log(`[Meta WhatsApp] Sending template "${templateName}" to 91${mobileNumber}`);
 
-  if (!smsApiUrl) throw new Error('SMS_API_URL is not set');
-  if (!smsApiKey) throw new Error('SMS_API_KEY is not set');
-
-  console.log(`[SMS] Sending message to ${mobileNumber}`);
-
-  const response = await axios.post(
-    smsApiUrl,
-    {
-      mobileNumber: `91${mobileNumber}`,
-      message: message,
+  const response = await axios.post(url, payload, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
     },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': smsApiKey,
-      },
-      timeout: 10000,
-    }
-  );
+    timeout: 15000,
+  });
 
-  console.log('[SMS] Message sent successfully:', response.data);
+  console.log('[Meta WhatsApp] Response:', JSON.stringify(response.data));
 }
 
 /**
- * Sends message via WhatsApp with SMS fallback
+ * Sends a free-form text message via Meta WhatsApp Cloud API
+ * Note: Only works within 24-hour customer service window
  */
-async function sendMessageWithFallback(mobileNumber: string, message: string): Promise<void> {
-  try {
-    // Try WhatsApp first
-    await sendWhatsApp(mobileNumber, message);
-    console.log(`[Message] Successfully sent via WhatsApp to ${mobileNumber}`);
-  } catch (whatsappError) {
-    console.error('[Message] WhatsApp delivery failed, attempting SMS fallback:', whatsappError);
-    
-    try {
-      // Fallback to SMS
-      await sendSMS(mobileNumber, message);
-      console.log(`[Message] Successfully sent via SMS fallback to ${mobileNumber}`);
-    } catch (smsError) {
-      console.error('[Message] SMS fallback also failed:', smsError);
-      throw new Error('Failed to send message via both WhatsApp and SMS');
-    }
-  }
+async function sendMetaTextMessage(mobileNumber: string, message: string): Promise<void> {
+  const { phoneNumberId, accessToken } = getMetaConfig();
+
+  const url = `${META_API_BASE}/${phoneNumberId}/messages`;
+
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: `91${mobileNumber}`,
+    type: 'text',
+    text: { body: message },
+  };
+
+  console.log(`[Meta WhatsApp] Sending text message to 91${mobileNumber}`);
+
+  const response = await axios.post(url, payload, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 15000,
+  });
+
+  console.log('[Meta WhatsApp] Response:', JSON.stringify(response.data));
 }
 
 /**
- * Sends OTP via WhatsApp with SMS fallback
+ * Sends OTP via Meta WhatsApp template
+ * Template: quizchampverification
+ * Structure: {{1}} is your verification code. For your security, do not share this code.
  */
 export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promise<void> {
-  const message = otpTemplate(otp);
-  await sendMessageWithFallback(mobileNumber, message);
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] OTP ${otp} → ${mobileNumber}`);
+    return;
+  }
+
+  await sendMetaTemplate(mobileNumber, 'quizchampverification', 'en', [
+    {
+      type: 'body',
+      parameters: [{ type: 'text', text: otp }],
+    },
+  ]);
 }
 
+
 /**
- * Sends thank you message after successful payment via WhatsApp with SMS fallback
+ * Sends thank you message after successful payment
+ * Uses free-form text (within 24h window) since user just interacted
  */
 export async function sendThankYouMessage(
   mobileNumber: string,
   data: ThankYouMessageData
 ): Promise<void> {
-  const message = thankYouTemplate(data);
-  await sendMessageWithFallback(mobileNumber, message);
-}
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
 
-/**
- * Sends payment reminder via WhatsApp with SMS fallback
- */
-export async function sendPaymentReminder(
-  mobileNumber: string,
-  data: ReminderData
-): Promise<void> {
-  const message = paymentReminderTemplate(data);
-  await sendMessageWithFallback(mobileNumber, message);
-}
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Thank you message → ${mobileNumber}`);
+    return;
+  }
 
-/**
- * Sends WhatsApp group invite link via WhatsApp with SMS fallback
- */
-export async function sendGroupInvite(mobileNumber: string): Promise<void> {
-  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
-  const message = `Join this group: ${whatsappGroupUrl}`;
-  await sendMessageWithFallback(mobileNumber, message);
-}
-
-/**
- * Sends admit card download reminder via WhatsApp with SMS fallback
- */
-export async function sendAdmitCardReminder(mobileNumber: string, name: string): Promise<void> {
-  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.satyalok.in';
-  const message = `Hi ${name}, please download your Quiz Champ 2026 admit card from ${portalUrl}. You will need it on the event day.`;
-  await sendMessageWithFallback(mobileNumber, message);
-}
-
-// ─── Message Templates ────────────────────────────────────────────────────────
-
-function otpTemplate(otp: string): string {
-  return `🎓 *Quiz Champ 2026*
-
-Your OTP for registration is: *${otp}*
-
-⏰ Valid for 5 minutes
-🔒 Do not share this code with anyone
-
-Need help? Contact us at 
-Subodh: +916207782702
-
-For more info, visit: www.satyalok.in`;
-}
-
-function thankYouTemplate(data: ThankYouMessageData): string {
-  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
-  const contactNumber = '+916207782702';
-  
-  return `🎉 *Registration Successful!*
+  const message = `🎉 *Registration Successful!*
 
 Dear *${data.name}*,
 
-Thank you for registering for Quiz Champ 2026! 
+Thank you for registering for Quiz Champ 2026!
 
 📋 *Your Details:*
 Roll Number: *${data.rollNumber}*
@@ -202,35 +158,81 @@ Time: ${data.eventTime}
 Venue: ${data.venue}
 
 📥 *Download Admit Card:*
-quizchamp.satyalok.in
-
-� *Join WhnatsApp Group:*
-${whatsappGroupUrl}
+${data.portalUrl}
 
 📌 *Important Instructions:*
 • Bring your admit card on event day
 • Arrive 30 minutes before scheduled time
 • Carry a valid ID proof
-• Join our WhatsApp group for updates
 
 📞 *Need Help?*
-Contact: ${contactNumber}
-Email: contact@satyalok.in
+Contact: +916207782702
 
 Best wishes for the competition! 🏆`;
+
+  await sendMetaTextMessage(mobileNumber, message);
 }
 
-function paymentReminderTemplate(data: ReminderData): string {
-  return `📢 *Payment Pending*
+/**
+ * Sends payment reminder
+ */
+export async function sendPaymentReminder(
+  mobileNumber: string,
+  data: ReminderData
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Payment reminder → ${mobileNumber}`);
+    return;
+  }
+
+  const message = `📢 *Payment Pending*
 
 Dear ${data.name},
 
 Your Quiz Champ 2026 registration is incomplete.
 
 💰 Amount: ₹${data.amount}
-🔗 Complete Payment: quizchamp.satyalok.in
+🔗 Complete Payment: ${data.paymentUrl}
 
 Complete your payment to secure your spot!
 
 Need help? Contact us at contact@satyalok.in`;
+
+  await sendMetaTextMessage(mobileNumber, message);
+}
+
+/**
+ * Sends WhatsApp group invite link
+ */
+export async function sendGroupInvite(mobileNumber: string): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Group invite → ${mobileNumber}`);
+    return;
+  }
+
+  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
+  const message = `🎓 *Quiz Champ 2026*\n\nJoin our official WhatsApp group for updates:\n${whatsappGroupUrl}`;
+
+  await sendMetaTextMessage(mobileNumber, message);
+}
+
+/**
+ * Sends admit card download reminder
+ */
+export async function sendAdmitCardReminder(mobileNumber: string, name: string): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Admit card reminder → ${mobileNumber}`);
+    return;
+  }
+
+  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.satyalok.in';
+  const message = `Hi ${name}, please download your Quiz Champ 2026 admit card from ${portalUrl}. You will need it on the event day.`;
+
+  await sendMetaTextMessage(mobileNumber, message);
 }
