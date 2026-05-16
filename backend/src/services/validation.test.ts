@@ -71,6 +71,12 @@ describe('validateRegistration', () => {
     expect(result.errors.gender).toBeDefined();
   });
 
+  it('accepts missing gender', () => {
+    const result = validateRegistration({ ...validInput, gender: undefined });
+    expect(result.valid).toBe(true);
+    expect(result.errors.gender).toBeUndefined();
+  });
+
   it('accepts valid optional email', () => {
     const result = validateRegistration({ ...validInput, email: 'test@example.com' });
     expect(result.valid).toBe(true);
