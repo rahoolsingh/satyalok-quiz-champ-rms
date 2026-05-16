@@ -78,7 +78,7 @@ export interface RegistrationInput {
   name: string;
   class: string;
   batchType: BatchType;
-  gender: Gender;
+  gender?: Gender;
   guardianName: string;
   address: string;
   mobileNumber: string;
