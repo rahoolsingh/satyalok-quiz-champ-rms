@@ -65,16 +65,24 @@ async function sendMetaTemplate(
   }
 
   console.log(`[Meta WhatsApp] Sending template "${templateName}" to 91${mobileNumber}`);
+  console.log(`[Meta WhatsApp] Payload:`, JSON.stringify(payload, null, 2));
 
-  const response = await axios.post(url, payload, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    timeout: 15000,
-  });
+  try {
+    const response = await axios.post(url, payload, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    });
 
-  console.log('[Meta WhatsApp] Response:', JSON.stringify(response.data));
+    console.log('[Meta WhatsApp] Response:', JSON.stringify(response.data));
+  } catch (error: any) {
+    if (error.response) {
+      console.error('[Meta WhatsApp] API Error:', JSON.stringify(error.response.data));
+    }
+    throw error;
+  }
 }
 
 /**
