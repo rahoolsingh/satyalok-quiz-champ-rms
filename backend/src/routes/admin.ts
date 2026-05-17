@@ -9,7 +9,7 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
@@ -671,5 +671,70 @@ adminRouter.post('/registrations/:id/remind-payment', manualPaymentReminderLimit
   } catch (err) {
     console.error('[Admin] Failed to send payment reminder:', err);
     return res.status(500).json({ error: 'Failed to send payment reminder' });
+  }
+});
+
+// ─── GOD MODE: Resend endpoints (no rate limits, no cooldowns) ────────────────
+
+// POST /api/admin/registrations/:id/resend-payment-confirmation
+adminRouter.post('/registrations/:id/resend-payment-confirmation', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Can only resend confirmation for completed payments' });
+    }
+
+    const portalConfig = await PortalConfig.findOne().lean();
+    const amount = participant.batchType === 'JUNIOR'
+      ? (portalConfig?.feeJunior ?? DEFAULT_FEE_JUNIOR)
+      : (portalConfig?.feeSenior ?? DEFAULT_FEE_SENIOR);
+
+    const eventDate = portalConfig?.eventDate
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'To be announced';
+    const eventTime = portalConfig?.eventTime || 'To be announced';
+    const venue = portalConfig?.venue || 'To be announced';
+    const portalUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
+
+    await sendThankYouMessage(participant.mobileNumber, {
+      name: participant.name,
+      rollNumber: participant.rollNumber || '',
+      admitCardUrl: `${portalUrl}/api/registration/admit-card/${participant._id}`,
+      portalUrl,
+      eventDate,
+      eventTime,
+      venue,
+      amount,
+    });
+
+    return res.json({ message: 'Payment confirmation resent successfully' });
+  } catch (err) {
+    console.error('[Admin GodMode] Failed to resend payment confirmation:', err);
+    return res.status(500).json({ error: 'Failed to resend payment confirmation' });
+  }
+});
+
+// POST /api/admin/registrations/:id/resend-group-invite
+adminRouter.post('/registrations/:id/resend-group-invite', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Can only send group invite for completed registrations' });
+    }
+
+    await sendGroupInvite(participant.mobileNumber);
+
+    return res.json({ message: 'Group invite resent successfully' });
+  } catch (err) {
+    console.error('[Admin GodMode] Failed to resend group invite:', err);
+    return res.status(500).json({ error: 'Failed to resend group invite' });
   }
 });

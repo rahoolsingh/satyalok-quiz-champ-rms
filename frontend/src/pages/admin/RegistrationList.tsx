@@ -90,6 +90,7 @@ export function RegistrationList() {
   const [batch, setBatch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED' | 'NOT_DOWNLOADED'>('ALL');
   const [hideSensitiveData, setHideSensitiveData] = useState(false);
+  const [godMode, setGodMode] = useState(false);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -216,6 +217,26 @@ export function RegistrationList() {
       alert(`Payment reminder sent to ${name}`);
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Failed to send payment reminder';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
+  const handleResendConfirmation = async (id: string, name: string) => {
+    try {
+      await adminApi.resendPaymentConfirmation(id);
+      alert(`Payment confirmation resent to ${name}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to resend confirmation';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
+  const handleResendGroupInvite = async (id: string, name: string) => {
+    try {
+      await adminApi.resendGroupInvite(id);
+      alert(`Group invite resent to ${name}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to resend group invite';
       alert(`${name}: ${msg}`);
     }
   };
@@ -356,6 +377,15 @@ export function RegistrationList() {
           />
           <span className="text-xs text-[#1d1d1f]">Hide sensitive data (keeps photo + masked Father/guardian name)</span>
         </label>
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={godMode}
+            onChange={e => setGodMode(e.target.checked)}
+            className="w-4 h-4 rounded border-[#d2d2d7] text-red-500 focus:ring-red-500 accent-red-500"
+          />
+          <span className="text-xs text-red-600 font-medium">⚡ God Mode (resend messages without limits)</span>
+        </label>
       </div>
 
       {/* Participant Cards */}
@@ -443,6 +473,25 @@ export function RegistrationList() {
                       >
                         {p.groupInviteSent ? '✓ Invited' : '📨 Invite'}
                       </button>
+                    )}
+                    {/* God Mode: Resend buttons */}
+                    {godMode && p.paymentStatus === 'COMPLETED' && (
+                      <>
+                        <button
+                          onClick={() => handleResendConfirmation(p.id, p.name)}
+                          className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                          title="Resend payment confirmation (no limit)"
+                        >
+                          🔄 Confirmation
+                        </button>
+                        <button
+                          onClick={() => handleResendGroupInvite(p.id, p.name)}
+                          className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                          title="Resend group invite (no limit)"
+                        >
+                          🔄 Group Invite
+                        </button>
+                      </>
                     )}
                     {p.paymentStatus === 'PENDING' && (
                       <button
