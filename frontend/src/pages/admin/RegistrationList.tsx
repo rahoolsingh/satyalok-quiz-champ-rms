@@ -242,6 +242,26 @@ export function RegistrationList() {
     }
   };
 
+  const handleResendAdmitCardReminder = async (id: string, name: string) => {
+    try {
+      await adminApi.resendAdmitCardReminder(id);
+      alert(`Admit card reminder resent to ${name}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to resend admit card reminder';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
+  const handleResendPaymentReminder = async (id: string, name: string) => {
+    try {
+      await adminApi.resendPaymentReminder(id);
+      alert(`Payment reminder resent to ${name}`);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to resend payment reminder';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
   const chartWidth = 100;
   const chartHeight = 42;
   const maxY = Math.max(
@@ -475,24 +495,47 @@ export function RegistrationList() {
                         {p.groupJoined ? '✓ Joined' : p.groupInviteSent ? '✓ Invited' : '📨 Invite'}
                       </button>
                     )}
-                    {/* God Mode: Resend buttons */}
-                    {godMode && p.paymentStatus === 'COMPLETED' && (
-                      <>
-                        <button
-                          onClick={() => handleResendConfirmation(p.id, p.name)}
-                          className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-                          title="Resend payment confirmation (no limit)"
-                        >
-                          🔄 Confirmation
-                        </button>
-                        <button
-                          onClick={() => handleResendGroupInvite(p.id, p.name)}
-                          className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-                          title="Resend group invite (no limit)"
-                        >
-                          🔄 Group Invite
-                        </button>
-                      </>
+                    {/* God Mode: Full controls section */}
+                    {godMode && (
+                      <div className="w-full mt-2 pt-2 border-t border-red-100">
+                        <p className="text-[9px] text-red-400 font-medium uppercase tracking-wide mb-1.5">⚡ God Mode</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {p.paymentStatus === 'COMPLETED' && (
+                            <>
+                              <button
+                                onClick={() => handleResendConfirmation(p.id, p.name)}
+                                className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                title="Resend payment confirmation"
+                              >
+                                🔄 Confirmation
+                              </button>
+                              <button
+                                onClick={() => handleResendGroupInvite(p.id, p.name)}
+                                className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                title="Resend group invite"
+                              >
+                                🔄 Group Invite
+                              </button>
+                              <button
+                                onClick={() => handleResendAdmitCardReminder(p.id, p.name)}
+                                className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                title="Resend admit card reminder (no 24h limit)"
+                              >
+                                🔄 Admit Card
+                              </button>
+                            </>
+                          )}
+                          {p.paymentStatus === 'PENDING' && (
+                            <button
+                              onClick={() => handleResendPaymentReminder(p.id, p.name)}
+                              className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                              title="Resend payment reminder (no limit)"
+                            >
+                              🔄 Payment Reminder
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
                     {p.paymentStatus === 'PENDING' && (
                       <button

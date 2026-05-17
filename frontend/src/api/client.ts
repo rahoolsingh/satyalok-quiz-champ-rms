@@ -141,4 +141,8 @@ export const adminApi = {
     api.post(`/admin/registrations/${participantId}/resend-payment-confirmation`),
   resendGroupInvite: (participantId: string) =>
     api.post(`/admin/registrations/${participantId}/resend-group-invite`),
+  resendAdmitCardReminder: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/resend-admit-card-reminder`),
+  resendPaymentReminder: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/resend-payment-reminder`),
 };

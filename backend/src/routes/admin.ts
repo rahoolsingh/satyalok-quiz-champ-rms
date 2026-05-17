@@ -749,3 +749,63 @@ adminRouter.post('/registrations/:id/resend-group-invite', async (req: AuthReque
     return res.status(500).json({ error: 'Failed to resend group invite' });
   }
 });
+
+// POST /api/admin/registrations/:id/resend-admit-card-reminder — no cooldown (god mode)
+adminRouter.post('/registrations/:id/resend-admit-card-reminder', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Can only send admit card reminder for completed registrations' });
+    }
+
+    const portalConfig = await PortalConfig.findOne().lean();
+
+    await sendAdmitCardReminder(participant.mobileNumber, {
+      name: participant.name,
+      rollNumber: participant.rollNumber || '',
+      batchType: participant.batchType,
+      eventDate: portalConfig?.eventDate
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : 'To be announced',
+    });
+
+    return res.json({ message: 'Admit card reminder resent successfully' });
+  } catch (err) {
+    console.error('[Admin GodMode] Failed to resend admit card reminder:', err);
+    return res.status(500).json({ error: 'Failed to resend admit card reminder' });
+  }
+});
+
+// POST /api/admin/registrations/:id/resend-payment-reminder — no cooldown (god mode)
+adminRouter.post('/registrations/:id/resend-payment-reminder', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    const portalConfig = await getPortalConfig();
+    const amount = participant.batchType === 'JUNIOR'
+      ? (portalConfig?.feeJunior ?? DEFAULT_FEE_JUNIOR)
+      : (portalConfig?.feeSenior ?? DEFAULT_FEE_SENIOR);
+
+    const frontendUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
+    const paymentUrl = `${frontendUrl}/payment-status?participantId=${participant._id.toString()}`;
+
+    await sendPaymentReminder(participant.mobileNumber, {
+      name: participant.name,
+      amount,
+      paymentUrl,
+      batchType: participant.batchType,
+    });
+
+    return res.json({ message: 'Payment reminder resent successfully' });
+  } catch (err) {
+    console.error('[Admin GodMode] Failed to resend payment reminder:', err);
+    return res.status(500).json({ error: 'Failed to resend payment reminder' });
+  }
+});
