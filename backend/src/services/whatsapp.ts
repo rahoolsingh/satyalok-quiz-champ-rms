@@ -99,7 +99,7 @@ async function sendMetaTextMessage(mobileNumber: string, message: string): Promi
     messaging_product: 'whatsapp',
     to: `91${mobileNumber}`,
     type: 'text',
-    text: { body: message },
+    text: { preview_url: true, body: message },
   };
 
   console.log(`[Meta WhatsApp] Sending text message to 91${mobileNumber}`);
