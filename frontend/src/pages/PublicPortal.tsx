@@ -238,19 +238,19 @@ export function PublicPortal() {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.25 }}
                     >
-                        <header className="mb-8">
-                            <motion.p
+                        <header className="mb-7">
+                            <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-2"
+                                className="mb-3"
                             >
-                                Registration Open
-                            </motion.p>
+                                <SatyalokBadge variant="inline" />
+                            </motion.div>
                             <motion.h1
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.05 }}
-                                className="text-[clamp(1.75rem,5vw,2.5rem)] font-bold tracking-tight text-[#1d1d1f] mb-2"
+                                className="text-[clamp(1.75rem,6vw,2.5rem)] font-bold tracking-tight text-[#1d1d1f] leading-[1.1] mb-2"
                             >
                                 Quiz Champ 2026
                             </motion.h1>
@@ -258,26 +258,19 @@ export function PublicPortal() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="text-[#86868b] text-sm leading-relaxed mb-4"
+                                className="text-[15px] text-[#86868b] leading-relaxed"
                             >
                                 The ultimate knowledge championship for students
                                 across all classes.
                             </motion.p>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.15 }}
-                            >
-                                <SatyalokBadge variant="inline" />
-                            </motion.div>
                         </header>
 
                         {images.length > 0 && (
                             <motion.div
-                                className="mb-8 rounded-2xl overflow-hidden shadow-sm"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
+                                className="mb-8"
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
                             >
                                 <ImageSlider images={images} />
                             </motion.div>
@@ -292,7 +285,7 @@ export function PublicPortal() {
 
                         {status.resultsPublished && (
                             <motion.div
-                                className="mt-10 pt-8 border-t border-[#d2d2d7]"
+                                className="mt-10 pt-8 border-t border-[#e8e8ed]"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.4 }}
@@ -306,20 +299,19 @@ export function PublicPortal() {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-white text-[#1d1d1f] selection:bg-[#0071e3]/20">
-            {/* Mobile-first main container setup with a flex-col so the footer can be pushed to the bottom */}
-            <main className="max-w-md mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col min-h-[100dvh]">
-                {/* Global Authenticated Header */}
+        <div className="min-h-[100dvh] bg-[#fbfbfd] text-[#1d1d1f] selection:bg-[#0071e3]/20">
+            <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
+                {/* Authenticated Header */}
                 {profile && step !== "home" && (
-                    <header className="flex justify-between items-center mb-6 pb-4 border-b border-[#d2d2d7]">
-                        <div className="text-sm">
+                    <header className="flex justify-between items-center mb-7 pb-4 border-b border-[#e8e8ed]">
+                        <div className="text-[14px]">
                             <span className="font-semibold text-[#1d1d1f]">
                                 {mobile}
                             </span>
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="text-sm text-red-500 hover:text-red-600 transition-colors font-medium flex items-center gap-1"
+                            className="text-[14px] text-red-500 hover:text-red-600 transition-colors font-medium"
                             aria-label="Logout"
                         >
                             Logout
@@ -327,28 +319,27 @@ export function PublicPortal() {
                     </header>
                 )}
 
-                {/* Main Content Area */}
+                {/* Main Content */}
                 <div className="flex-grow">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={step}
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.25, ease: "easeInOut" }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
                         >
                             {renderStep()}
                         </motion.div>
                     </AnimatePresence>
                 </div>
 
-                {/* Sticky Footer */}
-                <footer className="mt-12 pt-6">
+                {/* Footer */}
+                <footer className="mt-14 pt-6">
                     <SatyalokBadge variant="footer" />
                 </footer>
             </main>
 
-            {/* WhatsApp Help Button - Floating */}
             <WhatsAppHelp />
         </div>
     );

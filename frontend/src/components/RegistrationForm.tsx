@@ -285,40 +285,34 @@ export function RegistrationForm({
                     type="button"
                     onClick={onBack}
                     disabled={submitting}
-                    className="text-[#0071e3] text-sm font-medium mb-6 flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50"
+                    className="text-[#0071e3] text-[15px] font-medium mb-7 flex items-center gap-1.5 hover:opacity-70 transition-opacity disabled:opacity-40"
                 >
-                    &larr; Back
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
                 </button>
-                <p className="text-xs font-semibold text-[#0071e3] tracking-widest uppercase mb-2">
-                    Step 3 of 3
-                </p>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1d1d1f] mb-2">
-                    Registration details
-                </h2>
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3 mt-3">
-                    <span className="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-[#1d1d1f] w-fit">
-                        {batchType === "JUNIOR"
-                            ? "🎓 Junior Batch (5-10)"
-                            : "🏆 Senior Batch (10+)"}
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex items-center px-2.5 py-1 bg-[#0071e3]/8 rounded-full text-[12px] font-semibold text-[#0071e3] tracking-wide">
+                        Step 3 of 3
                     </span>
                     {draft && (
-                        <span className="text-sm font-medium text-green-600 flex items-center gap-1">
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 rounded-full text-[12px] font-semibold text-green-600">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                             Draft loaded
                         </span>
                     )}
+                </div>
+                <h2 className="text-[26px] font-bold tracking-tight text-[#1d1d1f] leading-tight mb-2">
+                    Registration details
+                </h2>
+                <div className="flex items-center gap-2.5 px-4 py-3 bg-[#f5f5f7] rounded-[12px] mt-4 border border-[#e8e8ed]">
+                    <div className={`w-2.5 h-2.5 rounded-full ${batchType === 'JUNIOR' ? 'bg-blue-500' : 'bg-purple-500'}`} />
+                    <span className="text-[14px] font-medium text-[#1d1d1f]">
+                        {batchType === "JUNIOR" ? "Junior Batch (Class 5-10)" : "Senior Batch (Class 10+)"}
+                    </span>
                 </div>
             </header>
 
