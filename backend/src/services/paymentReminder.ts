@@ -42,6 +42,7 @@ export async function sendPendingPaymentReminders(): Promise<void> {
           name: participant.name,
           amount,
           paymentUrl,
+          batchType: participant.batchType,
         });
 
         // Mark reminder as sent

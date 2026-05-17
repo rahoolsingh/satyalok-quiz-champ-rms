@@ -623,7 +623,16 @@ adminRouter.post('/registrations/:id/remind-admit-card', async (req: AuthRequest
       }
     }
 
-    await sendAdmitCardReminder(participant.mobileNumber, participant.name);
+    const portalConfig = await PortalConfig.findOne().lean();
+
+    await sendAdmitCardReminder(participant.mobileNumber, {
+      name: participant.name,
+      rollNumber: participant.rollNumber || '',
+      batchType: participant.batchType,
+      eventDate: portalConfig?.eventDate
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : 'To be announced',
+    });
 
     participant.lastAdmitCardReminderAt = new Date();
     await participant.save();
@@ -663,6 +672,7 @@ adminRouter.post('/registrations/:id/remind-payment', manualPaymentReminderLimit
       name: participant.name,
       amount,
       paymentUrl,
+      batchType: participant.batchType,
     });
 
     participant.paymentReminderSent = true;

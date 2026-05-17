@@ -23,6 +23,7 @@ export interface ReminderData {
   name: string;
   amount: number;
   paymentUrl: string;
+  batchType: string;
 }
 
 /**
@@ -174,6 +175,10 @@ export async function sendThankYouMessage(
 
 /**
  * Sends payment reminder
+ * Template: quizchamppaymentreminder (en, UTILITY)
+ * Header: "Registration Pending"
+ * Body: Hi {{1}}, your Quiz Champ 2026 registration payment of {{2}} for {{3}} is pending.
+ * Button: Static URL
  */
 export async function sendPaymentReminder(
   mobileNumber: string,
@@ -186,20 +191,18 @@ export async function sendPaymentReminder(
     return;
   }
 
-  const message = `📢 *Payment Pending*
+  const batchLabel = data.batchType === 'JUNIOR' ? 'Junior Batch' : 'Senior Batch';
 
-Dear ${data.name},
-
-Your Quiz Champ 2026 registration is incomplete.
-
-💰 Amount: ₹${data.amount}
-🔗 Complete Payment: ${data.paymentUrl}
-
-Complete your payment to secure your spot!
-
-Need help? Contact us at contact@satyalok.in`;
-
-  await sendMetaTextMessage(mobileNumber, message);
+  await sendMetaTemplate(mobileNumber, 'quizchamppaymentreminder', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: `Rs.${data.amount}` },
+        { type: 'text', text: batchLabel },
+      ],
+    },
+  ]);
 }
 
 /**
@@ -230,8 +233,22 @@ Join our official WhatsApp group for event updates and announcements:
 
 /**
  * Sends admit card download reminder
+ * Template: quizchampadmitcardreminder (en, MARKETING)
+ * Header: "Download Your Hall Ticket"
+ * Body: Hi {{1}}, ... Roll Number: {{2}}, Group: {{3}}, Date of Event: {{4}}
+ * Button: Static URL
  */
-export async function sendAdmitCardReminder(mobileNumber: string, name: string): Promise<void> {
+export interface AdmitCardReminderData {
+  name: string;
+  rollNumber: string;
+  batchType: string;
+  eventDate: string;
+}
+
+export async function sendAdmitCardReminder(
+  mobileNumber: string,
+  data: AdmitCardReminderData
+): Promise<void> {
   const provider = process.env.WHATSAPP_PROVIDER || 'mock';
 
   if (provider === 'mock') {
@@ -239,8 +256,17 @@ export async function sendAdmitCardReminder(mobileNumber: string, name: string):
     return;
   }
 
-  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.satyalok.in';
-  const message = `Hi ${name}, please download your Quiz Champ 2026 admit card from ${portalUrl}. You will need it on the event day.`;
+  const groupLabel = data.batchType === 'JUNIOR' ? 'Junior' : 'Senior';
 
-  await sendMetaTextMessage(mobileNumber, message);
+  await sendMetaTemplate(mobileNumber, 'quizchampadmitcardreminder', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: data.rollNumber },
+        { type: 'text', text: groupLabel },
+        { type: 'text', text: data.eventDate },
+      ],
+    },
+  ]);
 }
