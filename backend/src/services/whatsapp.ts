@@ -203,8 +203,8 @@ Need help? Contact us at contact@satyalok.in`;
 }
 
 /**
- * Sends WhatsApp group invite link as a text message
- * Uses free-form text within the 24h conversation window (user just completed payment)
+ * Sends group join reminder — directs user to the portal where they can join the WhatsApp group
+ * (WhatsApp API blocks chat.whatsapp.com links in messages)
  */
 export async function sendGroupInvite(mobileNumber: string): Promise<void> {
   const provider = process.env.WHATSAPP_PROVIDER || 'mock';
@@ -214,17 +214,15 @@ export async function sendGroupInvite(mobileNumber: string): Promise<void> {
     return;
   }
 
-  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
+  const portalUrl = process.env.FRONTEND_URL || 'https://quizchamp.satyalok.in';
 
   const message = `🎓 *Quiz Champ 2026*
 
-Your registration is confirmed! 🎉
+Please visit our portal and login to join the official WhatsApp group for updates and announcements:
 
-Please join our official WhatsApp group for important updates, event reminders, and announcements:
+🔗 ${portalUrl}
 
-👉 ${whatsappGroupUrl}
-
-See you at the competition! 🏆`;
+Login with your registered mobile number to access the group invite link.`;
 
   await sendMetaTextMessage(mobileNumber, message);
 }
