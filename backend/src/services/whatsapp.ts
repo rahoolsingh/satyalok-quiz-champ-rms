@@ -16,6 +16,7 @@ export interface ThankYouMessageData {
   eventDate: string;
   eventTime: string;
   venue: string;
+  amount: number;
 }
 
 export interface ReminderData {
@@ -143,8 +144,10 @@ export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promis
 
 
 /**
- * Sends thank you message after successful payment
- * Uses free-form text (within 24h window) since user just interacted
+ * Sends payment confirmation after successful payment
+ * Template: quizchamppaymentdone (en_US, UTILITY)
+ * Body: Hi {{1}}, We have received your payment of {{2}} for {{3}}.
+ * Button: Static URL (no parameter needed)
  */
 export async function sendThankYouMessage(
   mobileNumber: string,
@@ -157,34 +160,16 @@ export async function sendThankYouMessage(
     return;
   }
 
-  const message = `🎉 *Registration Successful!*
-
-Dear *${data.name}*,
-
-Thank you for registering for Quiz Champ 2026!
-
-📋 *Your Details:*
-Roll Number: *${data.rollNumber}*
-
-📅 *Event Details:*
-Date: ${data.eventDate}
-Time: ${data.eventTime}
-Venue: ${data.venue}
-
-📥 *Download Admit Card:*
-${data.portalUrl}
-
-📌 *Important Instructions:*
-• Bring your admit card on event day
-• Arrive 30 minutes before scheduled time
-• Carry a valid ID proof
-
-📞 *Need Help?*
-Contact: +916207782702
-
-Best wishes for the competition! 🏆`;
-
-  await sendMetaTextMessage(mobileNumber, message);
+  await sendMetaTemplate(mobileNumber, 'quizchamppaymentdone', 'en_US', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: `₹${data.amount}` },
+        { type: 'text', text: 'Quiz Champ 2026 Registration' },
+      ],
+    },
+  ]);
 }
 
 /**
@@ -219,6 +204,9 @@ Need help? Contact us at contact@satyalok.in`;
 
 /**
  * Sends WhatsApp group invite link
+ * Template: quizchampgroupinvite (en, UTILITY)
+ * Body: Your {{1}} request with {{2}} is confirmed. Please join the WhatsApp group to start: {{3}}
+ * Note: {{3}} expects the CAPI group ID (base64 encoded), not a chat.whatsapp.com URL
  */
 export async function sendGroupInvite(mobileNumber: string): Promise<void> {
   const provider = process.env.WHATSAPP_PROVIDER || 'mock';
@@ -228,10 +216,22 @@ export async function sendGroupInvite(mobileNumber: string): Promise<void> {
     return;
   }
 
-  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
-  const message = `🎓 *Quiz Champ 2026*\n\nJoin our official WhatsApp group for updates:\n${whatsappGroupUrl}`;
+  const groupId = process.env.META_WHATSAPP_GROUP_ID;
+  if (!groupId) {
+    console.error('[Meta WhatsApp] META_WHATSAPP_GROUP_ID is not set, skipping group invite');
+    return;
+  }
 
-  await sendMetaTextMessage(mobileNumber, message);
+  await sendMetaTemplate(mobileNumber, 'quizchampgroupinvite', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: 'Quiz Champ 2026 registration' },
+        { type: 'text', text: 'Satyalok' },
+        { type: 'text', text: groupId },
+      ],
+    },
+  ]);
 }
 
 /**

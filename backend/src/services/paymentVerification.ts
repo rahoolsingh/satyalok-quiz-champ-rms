@@ -144,6 +144,9 @@ export async function processPaymentVerification(
             eventDate,
             eventTime,
             venue,
+            amount: participant.batchType === 'JUNIOR'
+              ? (portalConfig?.feeJunior ?? 100)
+              : (portalConfig?.feeSenior ?? 150),
           });
 
           // Mark as sent
