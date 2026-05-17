@@ -4,6 +4,7 @@ import { PublicPortal } from './pages/PublicPortal';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { PaymentStatus } from './pages/PaymentStatus';
+import { GroupJoin } from './pages/GroupJoin';
 
 function AdminRoute() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('adminToken'));
@@ -44,6 +45,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<PublicPortal />} />
           <Route path="/payment-status" element={<PaymentStatus />} />
+          <Route path="/group-join" element={<GroupJoin />} />
           {/* Legacy routes - redirect to unified status page */}
           <Route path="/payment-success" element={<PaymentStatus />} />
           <Route path="/payment-failed" element={<PaymentStatus />} />

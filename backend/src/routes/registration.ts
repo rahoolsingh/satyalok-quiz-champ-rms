@@ -367,3 +367,25 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
     return res.status(500).json({ error: 'Failed to generate admit card PDF' });
   }
 });
+
+// POST /api/registration/group-joined/:id — marks participant as having joined the WhatsApp group
+registrationRouter.post('/group-joined/:id', async (req, res) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Only registered participants can join the group' });
+    }
+
+    participant.groupJoined = true;
+    await participant.save();
+
+    return res.json({ message: 'Group join recorded', name: participant.name });
+  } catch (err) {
+    console.error('[registration/group-joined]', err);
+    return res.status(500).json({ error: 'Failed to record group join' });
+  }
+});

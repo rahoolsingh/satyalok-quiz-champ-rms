@@ -158,7 +158,7 @@ export async function processPaymentVerification(
           // Send group invite link separately (only once)
           if (!participant.groupInviteSent) {
             try {
-              await sendGroupInvite(participant.mobileNumber);
+              await sendGroupInvite(participant.mobileNumber, participant._id.toString());
               participant.groupInviteSent = true;
               await participant.save();
               console.log(`[Payment Verification] Group invite sent to ${participant.mobileNumber}`);

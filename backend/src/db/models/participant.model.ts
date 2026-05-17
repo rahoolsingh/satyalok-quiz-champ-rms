@@ -20,6 +20,7 @@ export interface IParticipant extends Document {
   thankYouMessageSent?: boolean;
   paymentReminderSent?: boolean;
   groupInviteSent?: boolean;
+  groupJoined?: boolean;
   admitCardDownloaded?: boolean;
   lastAdmitCardReminderAt?: Date;
   createdAt: Date;
@@ -51,6 +52,7 @@ const ParticipantSchema = new Schema<IParticipant>(
     thankYouMessageSent: { type: Boolean, default: false },
     paymentReminderSent: { type: Boolean, default: false },
     groupInviteSent: { type: Boolean, default: false },
+    groupJoined: { type: Boolean, default: false },
     admitCardDownloaded: { type: Boolean, default: false },
     lastAdmitCardReminderAt: { type: Date },
   },

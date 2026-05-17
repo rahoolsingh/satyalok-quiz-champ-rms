@@ -589,7 +589,7 @@ adminRouter.post('/registrations/:id/send-group-invite', async (req: AuthRequest
       return res.status(409).json({ error: 'Group invite already sent to this participant' });
     }
 
-    await sendGroupInvite(participant.mobileNumber);
+    await sendGroupInvite(participant.mobileNumber, participant._id.toString());
 
     participant.groupInviteSent = true;
     await participant.save();
@@ -730,7 +730,7 @@ adminRouter.post('/registrations/:id/resend-group-invite', async (req: AuthReque
       return res.status(400).json({ error: 'Can only send group invite for completed registrations' });
     }
 
-    await sendGroupInvite(participant.mobileNumber);
+    await sendGroupInvite(participant.mobileNumber, participant._id.toString());
 
     return res.json({ message: 'Group invite resent successfully' });
   } catch (err) {
