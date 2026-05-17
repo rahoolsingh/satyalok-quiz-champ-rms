@@ -547,6 +547,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         photoUrl: p.photoUrl,
         paymentStatus: p.paymentStatus,
         groupInviteSent: p.groupInviteSent || false,
+        groupJoined: p.groupJoined || false,
         admitCardDownloaded: p.admitCardDownloaded || false,
         createdAt: p.createdAt,
       })),

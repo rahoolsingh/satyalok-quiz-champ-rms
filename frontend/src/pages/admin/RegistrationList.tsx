@@ -15,6 +15,7 @@ interface Participant {
   photoUrl?: string;
   paymentStatus: string;
   groupInviteSent: boolean;
+  groupJoined: boolean;
   admitCardDownloaded: boolean;
   createdAt: string;
 }
@@ -468,10 +469,10 @@ export function RegistrationList() {
                       <button
                         onClick={() => handleSendInvite(p.id, p.name)}
                         disabled={p.groupInviteSent}
-                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${p.groupInviteSent ? 'bg-gray-100 text-gray-400' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'}`}
-                        title={p.groupInviteSent ? 'Invite already sent' : 'Send group invite'}
+                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${p.groupJoined ? 'bg-green-100 text-green-700' : p.groupInviteSent ? 'bg-gray-100 text-gray-400' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'}`}
+                        title={p.groupJoined ? 'Joined the group' : p.groupInviteSent ? 'Invite already sent' : 'Send group invite'}
                       >
-                        {p.groupInviteSent ? '✓ Invited' : '📨 Invite'}
+                        {p.groupJoined ? '✓ Joined' : p.groupInviteSent ? '✓ Invited' : '📨 Invite'}
                       </button>
                     )}
                     {/* God Mode: Resend buttons */}
