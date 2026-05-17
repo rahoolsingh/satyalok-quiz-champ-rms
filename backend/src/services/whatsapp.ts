@@ -203,10 +203,8 @@ Need help? Contact us at contact@satyalok.in`;
 }
 
 /**
- * Sends WhatsApp group invite link
- * Template: quizchampgroupinvite (en, UTILITY)
- * Body: Your {{1}} request with {{2}} is confirmed. Please join the WhatsApp group to start: {{3}}
- * Note: {{3}} expects the CAPI group ID (base64 encoded), not a chat.whatsapp.com URL
+ * Sends WhatsApp group invite link as a text message
+ * Uses free-form text within the 24h conversation window (user just completed payment)
  */
 export async function sendGroupInvite(mobileNumber: string): Promise<void> {
   const provider = process.env.WHATSAPP_PROVIDER || 'mock';
@@ -216,22 +214,19 @@ export async function sendGroupInvite(mobileNumber: string): Promise<void> {
     return;
   }
 
-  const groupId = process.env.META_WHATSAPP_GROUP_ID;
-  if (!groupId) {
-    console.error('[Meta WhatsApp] META_WHATSAPP_GROUP_ID is not set, skipping group invite');
-    return;
-  }
+  const whatsappGroupUrl = 'https://chat.whatsapp.com/KNDhPH2OIUvIUrofJ3xMtc';
 
-  await sendMetaTemplate(mobileNumber, 'quizchampgroupinvite', 'en', [
-    {
-      type: 'body',
-      parameters: [
-        { type: 'text', text: 'Quiz Champ 2026 registration' },
-        { type: 'text', text: 'Satyalok' },
-        { type: 'text', text: groupId },
-      ],
-    },
-  ]);
+  const message = `🎓 *Quiz Champ 2026*
+
+Your registration is confirmed! 🎉
+
+Please join our official WhatsApp group for important updates, event reminders, and announcements:
+
+👉 ${whatsappGroupUrl}
+
+See you at the competition! 🏆`;
+
+  await sendMetaTextMessage(mobileNumber, message);
 }
 
 /**
