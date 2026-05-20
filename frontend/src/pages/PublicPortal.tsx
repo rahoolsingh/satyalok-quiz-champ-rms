@@ -277,6 +277,42 @@ export function PublicPortal() {
                             </motion.div>
                         )}
 
+                        {/* Important Dates */}
+                        <motion.div
+                            className="mb-8 bg-[#f5f5f7] rounded-[14px] border border-[#e8e8ed] p-4"
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <h3 className="text-[13px] font-semibold text-[#424245] uppercase tracking-wide mb-3">Important Dates</h3>
+                            <div className="space-y-2.5">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[13px] text-[#86868b]">Last Date to Apply</span>
+                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
+                                        {status.closingDate
+                                            ? new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                            : 'Not Declared'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[13px] text-[#86868b]">Date of Examination</span>
+                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
+                                        {status.eventDate
+                                            ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                            : 'Not Declared'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[13px] text-[#86868b]">Prize Distribution</span>
+                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
+                                        {status.prizeDistributionDate
+                                            ? new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                            : 'Not Declared'}
+                                    </span>
+                                </div>
+                            </div>
+                        </motion.div>
+
                         <BatchSelector
                             onSelect={(b) => {
                                 setBatch(b);
