@@ -88,9 +88,9 @@
 
                 <!-- Photo: spans 4 rows -->
                 <div class="col-span-4 row-span-4 border-r border-b border-blue-500 p-2 bg-white flex flex-col items-center justify-center">
-                    <div class="w-full h-full border border-gray-300 rounded bg-gray-50/50 flex items-center justify-center text-center text-[10px] text-gray-400 font-medium border-dashed overflow-hidden min-h-[110px]">
+                    <div class="border border-gray-300 rounded bg-gray-50/50 flex items-center justify-center text-center text-[10px] text-gray-400 font-medium border-dashed overflow-hidden" style="width:128px;height:160px;">
                         <% if (locals.candidatePhotoUrl) { %>
-                            <img src="<%= candidatePhotoUrl %>" alt="Candidate Photo" class="w-full h-full object-cover rounded">
+                            <img src="<%= candidatePhotoUrl %>" alt="Candidate Photo" style="width:128px;height:160px;object-fit:cover;" class="rounded">
                         <% } else { %>
                             [ Photo ]
                         <% } %>

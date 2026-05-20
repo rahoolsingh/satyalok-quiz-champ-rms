@@ -50,6 +50,7 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
   ]);
 
   // Prepare template variables
+  console.log('[AdmitCard PDF] Data received:', { reportingTime: data.reportingTime, examTime: data.examTime, eventDate: data.eventDate });
   const templateVars = {
     admitCardType: data.batchType === 'JUNIOR' ? 'JUNIOR ADMIT CARD' : 'SENIOR ADMIT CARD',
     competitionYear: '2026',
