@@ -120,8 +120,11 @@ profileRouter.get(
         eventName: 'Quiz Champ 2026 Competition',
         eventDate,
         eventTime: portalConfig?.eventTime,
+        reportingTime: portalConfig?.reportingTime,
+        examTime: portalConfig?.examTime,
         venue: portalConfig?.venue,
         venueMapUrl: portalConfig?.venueMapUrl,
+        participantId: participant._id.toString(),
       };
 
       // Generate PDF
