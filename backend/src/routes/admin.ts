@@ -426,9 +426,12 @@ adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response
     return res.json({
       eventDate: config?.eventDate,
       eventTime: config?.eventTime,
+      reportingTime: config?.reportingTime,
+      examTime: config?.examTime,
       venue: config?.venue,
       venueMapUrl: config?.venueMapUrl,
       prizeDistributionDate: config?.prizeDistributionDate,
+      prizeDistributionTime: config?.prizeDistributionTime,
       prizeDistributionVenue: config?.prizeDistributionVenue,
       prizeDistributionMapUrl: config?.prizeDistributionMapUrl,
       whatsappSupportName: config?.whatsappSupportName,
@@ -445,7 +448,7 @@ adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response
 // PUT /api/admin/portal/event-details
 adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response) => {
   try {
-    const { eventDate, eventTime, venue, venueMapUrl, prizeDistributionDate, prizeDistributionVenue, prizeDistributionMapUrl, whatsappSupportName, whatsappSupportNumber, callContactName, callContactNumber } = req.body;
+    const { eventDate, eventTime, reportingTime, examTime, venue, venueMapUrl, prizeDistributionDate, prizeDistributionTime, prizeDistributionVenue, prizeDistributionMapUrl, whatsappSupportName, whatsappSupportNumber, callContactName, callContactNumber } = req.body;
     
     const updateData: Partial<IPortalConfig> = {};
     
@@ -458,6 +461,8 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
     }
     
     if (eventTime !== undefined) updateData.eventTime = eventTime;
+    if (reportingTime !== undefined) updateData.reportingTime = reportingTime;
+    if (examTime !== undefined) updateData.examTime = examTime;
     if (venue !== undefined) updateData.venue = venue;
     if (venueMapUrl !== undefined) updateData.venueMapUrl = venueMapUrl;
     if (prizeDistributionDate !== undefined) {
@@ -471,6 +476,7 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
         updateData.prizeDistributionDate = undefined;
       }
     }
+    if (prizeDistributionTime !== undefined) updateData.prizeDistributionTime = prizeDistributionTime;
     if (prizeDistributionVenue !== undefined) updateData.prizeDistributionVenue = prizeDistributionVenue;
     if (prizeDistributionMapUrl !== undefined) updateData.prizeDistributionMapUrl = prizeDistributionMapUrl;
     if (whatsappSupportName !== undefined) updateData.whatsappSupportName = whatsappSupportName;

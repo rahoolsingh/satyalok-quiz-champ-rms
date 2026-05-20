@@ -15,6 +15,8 @@ interface AdmitCardData {
     eventName?: string;
     eventDate?: string;
     eventTime?: string;
+    reportingTime?: string;
+    examTime?: string;
     venue?: string;
     venueMapUrl?: string;
     ipAddress?: string;
@@ -242,7 +244,7 @@ export async function generateAdmitCardPDF(
             // ========== EVENT DETAILS BOX ==========
             currentY = margin + 270;
 
-            const eventBoxHeight = data.venueMapUrl ? 110 : 75;
+            const eventBoxHeight = data.venueMapUrl ? 130 : 95;
 
             doc.roundedRect(
                 margin + 20,
@@ -298,6 +300,27 @@ export async function generateAdmitCardPDF(
                 });
 
             currentY += 20;
+
+            // Reporting & Exam Time
+            if (data.reportingTime || data.examTime) {
+                const timingText = [
+                    data.reportingTime ? `Reporting: ${data.reportingTime}` : '',
+                    data.examTime ? `Exam: ${data.examTime}` : '',
+                ].filter(Boolean).join('  |  ');
+
+                doc.fontSize(9)
+                    .fillColor(colors.secondary)
+                    .font("Helvetica")
+                    .text("Timing:", margin + 30, currentY);
+                doc.fontSize(10)
+                    .fillColor(colors.primary)
+                    .font("Helvetica-Bold")
+                    .text(timingText, margin + 100, currentY, {
+                        width: contentWidth - 140,
+                    });
+
+                currentY += 20;
+            }
 
             // Venue with hyperlink
             doc.fontSize(9)

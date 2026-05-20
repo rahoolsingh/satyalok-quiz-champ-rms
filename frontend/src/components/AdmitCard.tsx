@@ -62,6 +62,27 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
         </div>
       </div>
 
+      {/* Download Button */}
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        className="w-full py-4 px-6 bg-[#0071e3] text-white rounded-xl font-semibold text-base hover:bg-[#005bb5] active:scale-98 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-5"
+      >
+        {downloading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span>Downloading...</span>
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Download Admit Card PDF</span>
+          </>
+        )}
+      </button>
+
       {/* Personal Information */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-5">
         <h3 className="text-sm font-bold text-gray-900 mb-4">Personal Information</h3>
@@ -83,23 +104,59 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
         <div className="space-y-2 text-sm text-gray-700">
           <p><span className="font-medium">Event:</span> {data.eventName}</p>
           <p><span className="font-medium">Date:</span> {data.eventDate || 'To be announced'}</p>
+          {portalStatus?.reportingTime && <p><span className="font-medium">Reporting:</span> {portalStatus.reportingTime}</p>}
+          {portalStatus?.examTime && <p><span className="font-medium">Exam:</span> {portalStatus.examTime}</p>}
           {data.eventTime && <p><span className="font-medium">Time:</span> {data.eventTime}</p>}
           <p><span className="font-medium">Venue:</span> {data.venue || 'To be announced'}</p>
-          {data.venueMapUrl && (
-            <a
-              href={data.venueMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[#0071e3] text-xs font-medium mt-1 hover:underline"
-            >
-              📍 View on Map
-            </a>
-          )}
-          {(!data.eventDate || !data.venue) && (
-            <p className="text-xs text-gray-600 mt-3">
-              Check your email and WhatsApp for event updates
-            </p>
-          )}
+        </div>
+      </div>
+
+      {/* Location Buttons */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-5">
+        <h3 className="text-sm font-bold text-gray-900 mb-3">Locations</h3>
+        <div className="space-y-3">
+          <a
+            href={data.venueMapUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${data.venueMapUrl ? 'border-blue-200 bg-blue-50 hover:bg-blue-100' : 'border-gray-200 bg-gray-50 opacity-60 pointer-events-none'}`}
+          >
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Exam Hall</p>
+              <p className="text-xs text-gray-600 mt-0.5">{data.venue || 'Not Declared'}</p>
+              {portalStatus?.eventDate && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {new Date(portalStatus.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                  {portalStatus.reportingTime && ` \u00B7 Reporting ${portalStatus.reportingTime}`}
+                </p>
+              )}
+            </div>
+            <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </a>
+          <a
+            href={portalStatus?.prizeDistributionMapUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${portalStatus?.prizeDistributionMapUrl ? 'border-purple-200 bg-purple-50 hover:bg-purple-100' : 'border-gray-200 bg-gray-50 opacity-60 pointer-events-none'}`}
+          >
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Prize Distribution</p>
+              <p className="text-xs text-gray-600 mt-0.5">{portalStatus?.prizeDistributionVenue || 'Not Declared'}</p>
+              {portalStatus?.prizeDistributionDate && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {new Date(portalStatus.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                  {portalStatus.prizeDistributionTime && ` \u00B7 ${portalStatus.prizeDistributionTime}`}
+                </p>
+              )}
+            </div>
+            <svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </a>
         </div>
       </div>
 
@@ -131,24 +188,6 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
                 : 'Not Declared'}
             </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Prize Venue</span>
-            <span className="font-semibold text-gray-900 text-right max-w-[60%]">
-              {portalStatus?.prizeDistributionVenue || 'Not Declared'}
-            </span>
-          </div>
-          {portalStatus?.prizeDistributionMapUrl && (
-            <div className="pt-1">
-              <a
-                href={portalStatus.prizeDistributionMapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[13px] text-[#0071e3] font-medium hover:underline inline-flex items-center gap-1"
-              >
-                📍 View Prize Venue on Map
-              </a>
-            </div>
-          )}
         </div>
       </div>
 
@@ -227,27 +266,6 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
           </div>
         </div>
       </div>
-
-      {/* Download Button */}
-      <button
-        onClick={handleDownload}
-        disabled={downloading}
-        className="w-full py-4 px-6 bg-[#0071e3] text-white rounded-xl font-semibold text-base hover:bg-[#005bb5] active:scale-98 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-      >
-        {downloading ? (
-          <>
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            <span>Downloading...</span>
-          </>
-        ) : (
-          <>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span>Download Admit Card PDF</span>
-          </>
-        )}
-      </button>
 
       {/* Help Text */}
       <p className="text-center text-gray-500 text-xs mt-4">

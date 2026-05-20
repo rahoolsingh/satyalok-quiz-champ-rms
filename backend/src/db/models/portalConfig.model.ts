@@ -9,9 +9,12 @@ export interface IPortalConfig extends Document {
   feeSenior: number;
   eventDate?: Date;
   eventTime?: string;
+  reportingTime?: string;
+  examTime?: string;
   venue?: string;
   venueMapUrl?: string;
   prizeDistributionDate?: Date;
+  prizeDistributionTime?: string;
   prizeDistributionVenue?: string;
   prizeDistributionMapUrl?: string;
   whatsappSupportName?: string;
@@ -36,9 +39,12 @@ const PortalConfigSchema = new Schema<IPortalConfig>(
     feeSenior: { type: Number, default: 150 },
     eventDate: { type: Date },
     eventTime: { type: String },
+    reportingTime: { type: String },
+    examTime: { type: String },
     venue: { type: String },
     venueMapUrl: { type: String },
     prizeDistributionDate: { type: Date },
+    prizeDistributionTime: { type: String },
     prizeDistributionVenue: { type: String },
     prizeDistributionMapUrl: { type: String },
     whatsappSupportName: { type: String },

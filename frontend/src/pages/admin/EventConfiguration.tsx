@@ -5,9 +5,12 @@ import { adminApi } from '../../api/client';
 export function EventConfiguration() {
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
+  const [reportingTime, setReportingTime] = useState('');
+  const [examTime, setExamTime] = useState('');
   const [venue, setVenue] = useState('');
   const [venueMapUrl, setVenueMapUrl] = useState('');
   const [prizeDistributionDate, setPrizeDistributionDate] = useState('');
+  const [prizeDistributionTime, setPrizeDistributionTime] = useState('');
   const [prizeDistributionVenue, setPrizeDistributionVenue] = useState('');
   const [prizeDistributionMapUrl, setPrizeDistributionMapUrl] = useState('');
   const [whatsappSupportName, setWhatsappSupportName] = useState('');
@@ -34,8 +37,11 @@ export function EventConfiguration() {
         setPrizeDistributionDate(new Date(data.prizeDistributionDate).toISOString().split('T')[0]);
       }
       setPrizeDistributionVenue(data.prizeDistributionVenue || '');
+      setPrizeDistributionTime(data.prizeDistributionTime || '');
       setPrizeDistributionMapUrl(data.prizeDistributionMapUrl || '');
       setEventTime(data.eventTime || '');
+      setReportingTime(data.reportingTime || '');
+      setExamTime(data.examTime || '');
       setVenue(data.venue || '');
       setVenueMapUrl(data.venueMapUrl || '');
       setWhatsappSupportName(data.whatsappSupportName || '');
@@ -57,9 +63,12 @@ export function EventConfiguration() {
       await adminApi.updateEventDetails({
         eventDate: eventDate || undefined,
         eventTime: eventTime || undefined,
+        reportingTime: reportingTime || undefined,
+        examTime: examTime || undefined,
         venue: venue || undefined,
         venueMapUrl: venueMapUrl || undefined,
         prizeDistributionDate: prizeDistributionDate || undefined,
+        prizeDistributionTime: prizeDistributionTime || undefined,
         prizeDistributionVenue: prizeDistributionVenue || undefined,
         prizeDistributionMapUrl: prizeDistributionMapUrl || undefined,
         whatsappSupportName: whatsappSupportName || undefined,
@@ -118,9 +127,34 @@ export function EventConfiguration() {
               placeholder="e.g., 10:00 AM - 12:00 PM"
               className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
             />
-            <p className="text-xs text-[#86868b] mt-1">
-              Time range for the event (e.g., "10:00 AM - 12:00 PM")
-            </p>
+          </div>
+
+          {/* Reporting & Exam Time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+                Reporting Time
+              </label>
+              <input
+                type="text"
+                value={reportingTime}
+                onChange={(e) => setReportingTime(e.target.value)}
+                placeholder="e.g., 3:00 PM"
+                className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+                Exam Time
+              </label>
+              <input
+                type="text"
+                value={examTime}
+                onChange={(e) => setExamTime(e.target.value)}
+                placeholder="e.g., 4:00 PM"
+                className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+              />
+            </div>
           </div>
 
           {/* Venue */}
@@ -166,6 +200,20 @@ export function EventConfiguration() {
               type="date"
               value={prizeDistributionDate}
               onChange={(e) => setPrizeDistributionDate(e.target.value)}
+              className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+            />
+          </div>
+
+          {/* Prize Distribution Time */}
+          <div>
+            <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+              Prize Distribution Time
+            </label>
+            <input
+              type="text"
+              value={prizeDistributionTime}
+              onChange={(e) => setPrizeDistributionTime(e.target.value)}
+              placeholder="e.g., 11:00 AM"
               className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
             />
           </div>

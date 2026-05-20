@@ -11,8 +11,11 @@ export interface PortalStatus {
   resultPublicationDate?: string;
   eventDate?: string;
   eventTime?: string;
+  reportingTime?: string;
+  examTime?: string;
   venue?: string;
   prizeDistributionDate?: string;
+  prizeDistributionTime?: string;
   prizeDistributionVenue?: string;
   prizeDistributionMapUrl?: string;
   whatsappSupportName?: string;

@@ -85,6 +85,8 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
     }, {
       eventDate,
       eventTime: portalConfig?.eventTime,
+      reportingTime: portalConfig?.reportingTime,
+      examTime: portalConfig?.examTime,
       venue: portalConfig?.venue,
       venueMapUrl: portalConfig?.venueMapUrl,
     });

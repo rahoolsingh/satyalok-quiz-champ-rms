@@ -350,6 +350,8 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
       eventName: 'Quiz Champ 2026',
       eventDate,
       eventTime: portalConfig?.eventTime,
+      reportingTime: portalConfig?.reportingTime,
+      examTime: portalConfig?.examTime,
       venue: portalConfig?.venue,
       venueMapUrl: portalConfig?.venueMapUrl,
     });

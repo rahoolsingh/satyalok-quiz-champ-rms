@@ -45,9 +45,12 @@ export interface PortalConfiguration {
   feeSenior: number;
   eventDate?: Date;
   eventTime?: string;
+  reportingTime?: string;
+  examTime?: string;
   venue?: string;
   venueMapUrl?: string;
   prizeDistributionDate?: Date;
+  prizeDistributionTime?: string;
   prizeDistributionVenue?: string;
   prizeDistributionMapUrl?: string;
   whatsappSupportName?: string;

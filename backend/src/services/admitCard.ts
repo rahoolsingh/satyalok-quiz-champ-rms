@@ -10,13 +10,15 @@ export interface AdmitCardData {
   eventName: string;
   eventDate?: string;
   eventTime?: string;
+  reportingTime?: string;
+  examTime?: string;
   venue?: string;
   venueMapUrl?: string;
   generatedAt: string;
   photoUrl?: string;
 }
 
-export function generateAdmitCardData(participant: Participant, eventDetails?: { eventDate?: string; eventTime?: string; venue?: string; venueMapUrl?: string }): AdmitCardData {
+export function generateAdmitCardData(participant: Participant, eventDetails?: { eventDate?: string; eventTime?: string; reportingTime?: string; examTime?: string; venue?: string; venueMapUrl?: string }): AdmitCardData {
   if (!participant.rollNumber) {
     throw new Error('Participant does not have a roll number assigned');
   }
@@ -31,6 +33,8 @@ export function generateAdmitCardData(participant: Participant, eventDetails?: {
     eventName: 'Quiz Champ 2026',
     eventDate: eventDetails?.eventDate,
     eventTime: eventDetails?.eventTime,
+    reportingTime: eventDetails?.reportingTime,
+    examTime: eventDetails?.examTime,
     venue: eventDetails?.venue,
     venueMapUrl: eventDetails?.venueMapUrl,
     generatedAt: new Date().toISOString(),
