@@ -9,6 +9,14 @@ export interface PortalStatus {
   closingDate: string;
   resultsPublished: boolean;
   resultPublicationDate?: string;
+  eventDate?: string;
+  eventTime?: string;
+  venue?: string;
+  prizeDistributionDate?: string;
+  whatsappSupportName?: string;
+  whatsappSupportNumber?: string;
+  callContactName?: string;
+  callContactNumber?: string;
 }
 
 export interface SliderImage {

@@ -43,6 +43,15 @@ export interface PortalConfiguration {
   resultPublicationDate?: Date;
   feeJunior: number;
   feeSenior: number;
+  eventDate?: Date;
+  eventTime?: string;
+  venue?: string;
+  venueMapUrl?: string;
+  prizeDistributionDate?: Date;
+  whatsappSupportName?: string;
+  whatsappSupportNumber?: string;
+  callContactName?: string;
+  callContactNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }

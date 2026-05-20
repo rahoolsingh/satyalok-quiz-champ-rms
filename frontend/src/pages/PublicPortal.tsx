@@ -166,6 +166,7 @@ export function PublicPortal() {
                 return profile ? (
                     <UserProfile
                         profile={profile}
+                        portalStatus={status}
                         onLogout={handleLogout}
                         onCompletePayment={() => setStep("form")}
                         onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)}

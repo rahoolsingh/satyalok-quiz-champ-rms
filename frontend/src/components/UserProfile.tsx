@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ProfileData } from '../types';
+import { ProfileData, PortalStatus } from '../types';
 import { AdmitCard } from './AdmitCard';
 import { profileApi } from '../api/client';
 
 interface UserProfileProps {
   profile: ProfileData;
+  portalStatus?: PortalStatus | null;
   onLogout: () => void;
   onCompletePayment?: () => void;
   onProfileUpdate?: (profile: ProfileData) => void;
 }
 
-export function UserProfile({ profile, onLogout, onCompletePayment, onProfileUpdate }: UserProfileProps) {
+export function UserProfile({ profile, portalStatus, onLogout, onCompletePayment, onProfileUpdate }: UserProfileProps) {
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [checkMessage, setCheckMessage] = useState('');
 
@@ -56,7 +57,7 @@ export function UserProfile({ profile, onLogout, onCompletePayment, onProfileUpd
       {/* Admit Card (if completed) - Show this FIRST */}
       {profile.paymentStatus === 'COMPLETED' && profile.admitCard ? (
         <div className="mt-0">
-          <AdmitCard data={profile.admitCard} participantId={profile.participantId} />
+          <AdmitCard data={profile.admitCard} participantId={profile.participantId} portalStatus={portalStatus} />
         </div>
       ) : profile.paymentStatus === 'COMPLETED' && !profile.admitCard ? (
         /* Show success message if completed but no admit card yet */

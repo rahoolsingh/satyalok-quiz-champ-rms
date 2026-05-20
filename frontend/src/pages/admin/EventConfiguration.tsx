@@ -7,6 +7,11 @@ export function EventConfiguration() {
   const [eventTime, setEventTime] = useState('');
   const [venue, setVenue] = useState('');
   const [venueMapUrl, setVenueMapUrl] = useState('');
+  const [prizeDistributionDate, setPrizeDistributionDate] = useState('');
+  const [whatsappSupportName, setWhatsappSupportName] = useState('');
+  const [whatsappSupportNumber, setWhatsappSupportNumber] = useState('');
+  const [callContactName, setCallContactName] = useState('');
+  const [callContactNumber, setCallContactNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -23,9 +28,16 @@ export function EventConfiguration() {
       if (data.eventDate) {
         setEventDate(new Date(data.eventDate).toISOString().split('T')[0]);
       }
+      if (data.prizeDistributionDate) {
+        setPrizeDistributionDate(new Date(data.prizeDistributionDate).toISOString().split('T')[0]);
+      }
       setEventTime(data.eventTime || '');
       setVenue(data.venue || '');
       setVenueMapUrl(data.venueMapUrl || '');
+      setWhatsappSupportName(data.whatsappSupportName || '');
+      setWhatsappSupportNumber(data.whatsappSupportNumber || '');
+      setCallContactName(data.callContactName || '');
+      setCallContactNumber(data.callContactNumber || '');
     } catch (err: any) {
       console.error('Failed to fetch event details:', err);
     }
@@ -43,6 +55,11 @@ export function EventConfiguration() {
         eventTime: eventTime || undefined,
         venue: venue || undefined,
         venueMapUrl: venueMapUrl || undefined,
+        prizeDistributionDate: prizeDistributionDate || undefined,
+        whatsappSupportName: whatsappSupportName || undefined,
+        whatsappSupportNumber: whatsappSupportNumber || undefined,
+        callContactName: callContactName || undefined,
+        callContactNumber: callContactNumber || undefined,
       });
 
       setMessage('Event details updated successfully!');
@@ -132,6 +149,80 @@ export function EventConfiguration() {
             <p className="text-xs text-[#86868b] mt-1">
               Google Maps link - will be shown as QR code and clickable link on admit cards
             </p>
+          </div>
+
+          {/* Prize Distribution Date */}
+          <div>
+            <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+              Prize Distribution Date
+            </label>
+            <input
+              type="date"
+              value={prizeDistributionDate}
+              onChange={(e) => setPrizeDistributionDate(e.target.value)}
+              className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-[#d2d2d7] pt-6">
+            <h3 className="text-lg font-bold text-[#1d1d1f] mb-4">Support Contacts</h3>
+          </div>
+
+          {/* WhatsApp Support */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+                WhatsApp Support Name
+              </label>
+              <input
+                type="text"
+                value={whatsappSupportName}
+                onChange={(e) => setWhatsappSupportName(e.target.value)}
+                placeholder="e.g., Subodh"
+                className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+                WhatsApp Number
+              </label>
+              <input
+                type="tel"
+                value={whatsappSupportNumber}
+                onChange={(e) => setWhatsappSupportNumber(e.target.value)}
+                placeholder="e.g., 6207782702"
+                className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Call Contact */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+                Call Contact Name
+              </label>
+              <input
+                type="text"
+                value={callContactName}
+                onChange={(e) => setCallContactName(e.target.value)}
+                placeholder="e.g., Rahul"
+                className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+                Call Number
+              </label>
+              <input
+                type="tel"
+                value={callContactNumber}
+                onChange={(e) => setCallContactNumber(e.target.value)}
+                placeholder="e.g., 8210228101"
+                className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+              />
+            </div>
           </div>
 
           {/* Messages */}

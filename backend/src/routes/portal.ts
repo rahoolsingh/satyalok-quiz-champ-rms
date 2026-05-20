@@ -19,6 +19,14 @@ portalRouter.get('/status', async (_req: Request, res: Response) => {
       closingDate: config.closingDate,
       resultsPublished,
       resultPublicationDate: config.resultPublicationDate,
+      eventDate: config.eventDate,
+      eventTime: config.eventTime,
+      venue: config.venue,
+      prizeDistributionDate: config.prizeDistributionDate,
+      whatsappSupportName: config.whatsappSupportName,
+      whatsappSupportNumber: config.whatsappSupportNumber,
+      callContactName: config.callContactName,
+      callContactNumber: config.callContactNumber,
     });
   } catch (err) {
     console.error(err);

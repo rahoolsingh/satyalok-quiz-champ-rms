@@ -412,6 +412,11 @@ adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response
       eventTime: config?.eventTime,
       venue: config?.venue,
       venueMapUrl: config?.venueMapUrl,
+      prizeDistributionDate: config?.prizeDistributionDate,
+      whatsappSupportName: config?.whatsappSupportName,
+      whatsappSupportNumber: config?.whatsappSupportNumber,
+      callContactName: config?.callContactName,
+      callContactNumber: config?.callContactNumber,
     });
   } catch (err) {
     console.error(err);
@@ -422,7 +427,7 @@ adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response
 // PUT /api/admin/portal/event-details
 adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response) => {
   try {
-    const { eventDate, eventTime, venue, venueMapUrl } = req.body;
+    const { eventDate, eventTime, venue, venueMapUrl, prizeDistributionDate, whatsappSupportName, whatsappSupportNumber, callContactName, callContactNumber } = req.body;
     
     const updateData: Partial<IPortalConfig> = {};
     
@@ -437,6 +442,21 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
     if (eventTime !== undefined) updateData.eventTime = eventTime;
     if (venue !== undefined) updateData.venue = venue;
     if (venueMapUrl !== undefined) updateData.venueMapUrl = venueMapUrl;
+    if (prizeDistributionDate !== undefined) {
+      if (prizeDistributionDate) {
+        const date = new Date(prizeDistributionDate);
+        if (isNaN(date.getTime())) {
+          return res.status(400).json({ error: 'Invalid prize distribution date format' });
+        }
+        updateData.prizeDistributionDate = date;
+      } else {
+        updateData.prizeDistributionDate = undefined;
+      }
+    }
+    if (whatsappSupportName !== undefined) updateData.whatsappSupportName = whatsappSupportName;
+    if (whatsappSupportNumber !== undefined) updateData.whatsappSupportNumber = whatsappSupportNumber;
+    if (callContactName !== undefined) updateData.callContactName = callContactName;
+    if (callContactNumber !== undefined) updateData.callContactNumber = callContactNumber;
     
     await PortalConfig.findOneAndUpdate(
       {},
