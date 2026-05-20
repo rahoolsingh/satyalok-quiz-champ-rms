@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght=400;500;600;700&display=swap');
-        
         html, body {
             background-color: #ffffff;
             margin: 0;
@@ -15,8 +14,9 @@
         }
         body {
             font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
         }
-
         .a4-container {
             width: 210mm;
             height: 297mm;
@@ -30,7 +30,6 @@
             position: relative;
             overflow: hidden;
         }
-
         @media print {
             .a4-container {
                 padding: 8mm 12mm 6mm 12mm;
@@ -40,9 +39,9 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 py-4 print:py-0 print:bg-white">
 
-    <div class="a4-container flex flex-col justify-between">
+    <div class="a4-container flex flex-col justify-between shadow-2xl print:shadow-none">
         
         <div>
             <div class="flex items-start justify-between gap-4 mb-4">
@@ -61,7 +60,7 @@
                 </div>
 
                 <div class="w-24 h-24 border-2 border-blue-600 p-1 bg-white flex flex-col items-center justify-center flex-shrink-0 rounded shadow-sm">
-                    <div class="w-18 h-18 bg-gray-50 border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-400 font-bold text-center leading-none overflow-hidden">
+                    <div class="w-20 h-20 bg-gray-50 border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-400 font-bold text-center leading-none overflow-hidden">
                         <% if (locals.systemQrCode) { %>
                             <img src="<%= systemQrCode %>" alt="System QR" class="w-full h-full object-cover">
                         <% } else { %>
@@ -84,45 +83,35 @@
                     <span class="text-gray-700 text-[11px]">Exam: <%= examTime %></span>
                 </div>
 
-                <div class="col-span-8 grid grid-cols-8">
-                    <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2 font-semibold text-gray-700">Roll Number</div>
-                    <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-bold text-blue-700 tracking-wide text-sm"><%= rollNumber %></div>
+                <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2.5 font-semibold text-gray-700">Roll Number</div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2.5 bg-white font-bold text-blue-700 tracking-wide text-sm"><%= rollNumber %></div>
 
-                    <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2 font-semibold text-gray-700">Candidate Name</div>
-                    <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-bold text-gray-900 uppercase"><%= candidateName %></div>
-
-                    <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2 font-semibold text-gray-700">Class</div>
-                    <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-semibold text-gray-800"><%= studentClass %></div>
-
-                    <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2 font-semibold text-gray-700">Batch Category</div>
-                    <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-medium text-gray-800"><%= batchCategory %></div>
-
-                    <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2 font-semibold text-gray-700">Guardian Name</div>
-                    <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-medium text-gray-800"><%= guardianName %></div>
-
-                    <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2 font-semibold text-gray-700">Mobile Number</div>
-                    <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-medium text-gray-800"><%= mobileNumber %></div>
-                </div>
-
-                <div class="col-span-4 border-r border-b border-blue-500 p-2 bg-white flex flex-col items-center justify-center">
-                    <div class="w-full h-full border border-gray-300 rounded bg-gray-50/50 flex items-center justify-center text-center text-[10px] text-gray-400 p-1 font-medium border-dashed min-h-[130px] overflow-hidden">
+                <!-- Photo: spans 4 rows -->
+                <div class="col-span-4 row-span-4 border-r border-b border-blue-500 p-2 bg-white flex flex-col items-center justify-center">
+                    <div class="w-full h-full border border-gray-300 rounded bg-gray-50/50 flex items-center justify-center text-center text-[10px] text-gray-400 font-medium border-dashed overflow-hidden min-h-[110px]">
                         <% if (locals.candidatePhotoUrl) { %>
                             <img src="<%= candidatePhotoUrl %>" alt="Candidate Photo" class="w-full h-full object-cover rounded">
                         <% } else { %>
-                            [ Candidate Photo ]
+                            [ Photo ]
                         <% } %>
                     </div>
                 </div>
 
-                <div class="col-span-3 border-r border-b border-blue-500 bg-blue-50 p-2 font-bold text-gray-800 flex flex-col justify-center text-[11px]">
-                    <span>EXAMINATION CENTRE</span>
-                </div>
-                <div class="col-span-6 border-r border-b border-blue-500 p-2 bg-white font-bold text-gray-900 flex items-center leading-relaxed text-[11px]">
-                    <%= centreDetails %>
-                </div>
-                
-                <div class="col-span-3 border-r border-b border-blue-500 p-2 bg-gray-50 flex flex-col items-center justify-center text-center">
-                    <div class="w-16 h-16 bg-white border border-gray-300 flex items-center justify-center text-[10px] text-gray-400 font-bold font-mono leading-none mb-1 shadow-sm overflow-hidden">
+                <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2.5 font-semibold text-gray-700">Candidate Name</div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2.5 bg-white font-bold text-gray-900 uppercase"><%= candidateName %></div>
+
+                <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2.5 font-semibold text-gray-700">Class</div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2.5 bg-white font-semibold text-gray-800"><%= studentClass %></div>
+
+                <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2.5 font-semibold text-gray-700">Batch Category</div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2.5 bg-white font-medium text-gray-800"><%= batchCategory %></div>
+
+                <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2.5 font-semibold text-gray-700">Guardian Name</div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2.5 bg-white font-medium text-gray-800"><%= guardianName %></div>
+
+                <!-- Map QR: spans 3 rows -->
+                <div class="col-span-4 row-span-3 border-r border-b border-blue-500 p-2 bg-gray-50 flex flex-col items-center justify-center text-center">
+                    <div class="w-20 h-20 bg-white border border-gray-300 flex items-center justify-center text-[10px] text-gray-400 font-bold font-mono leading-none mb-1 shadow-sm overflow-hidden">
                         <% if (locals.mapQrCode) { %>
                             <img src="<%= mapQrCode %>" alt="Map QR" class="w-full h-full object-cover">
                         <% } else { %>
@@ -130,6 +119,16 @@
                         <% } %>
                     </div>
                     <span class="text-[8px] font-bold text-gray-700 uppercase tracking-tighter">Scan Location</span>
+                </div>
+
+                <div class="col-span-3 border-r border-b border-blue-500 bg-gray-50 p-2.5 font-semibold text-gray-700">Mobile Number</div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2.5 bg-white font-medium text-gray-800"><%= mobileNumber %></div>
+
+                <div class="col-span-3 border-r border-b border-blue-500 bg-blue-50 p-2 font-bold text-gray-800 flex flex-col justify-center text-[11px]">
+                    <span>EXAMINATION CENTRE</span>
+                </div>
+                <div class="col-span-5 border-r border-b border-blue-500 p-2 bg-white font-bold text-gray-900 flex items-center leading-relaxed text-[11px]">
+                    <%= centreDetails %>
                 </div>
             </div>
 
@@ -171,7 +170,7 @@
                     <div class="w-full border-t border-dashed border-gray-400"></div>
                 </div>
                 <div class="relative flex justify-center text-[8px] font-bold uppercase tracking-wider text-gray-400">
-                    <span class="bg-white px-2 border border-gray-300 rounded-full py-0.5">✂ Tear here. Staple with OMR sheet. ✂</span>
+                    <span class="bg-white px-2 border border-gray-300 rounded-full py-0.5">&#9986; Tear here. Staple with OMR sheet. &#9986;</span>
                 </div>
             </div>
 
@@ -196,16 +195,16 @@
                     </div>
                     
                     <div class="col-span-4 flex items-center justify-center bg-white p-1 border-2 border-red-500 rounded shadow-sm">
-                        <div class="bg-gray-50 flex items-center justify-center overflow-hidden" style="width:250px;height:250px;">
+                        <div class="bg-gray-50 flex items-center justify-center overflow-hidden" style="width:200px;height:200px;">
                             <% if (locals.omrQrCode) { %>
-                                <img src="<%= omrQrCode %>" alt="OMR Scanner QR" style="width:250px;height:250px;" class="object-contain">
+                                <img src="<%= omrQrCode %>" alt="OMR Scanner QR" style="width:200px;height:200px;" class="object-contain">
                             <% } else { %>
                                 <span class="text-[9px] text-gray-500 font-bold font-mono">SCAN OMR</span>
                             <% } %>
                         </div>
                     </div>
                 </div>
-                <p class="text-[7px] font-black text-red-600 mt-1 uppercase tracking-tight text-right">⚠ Checker Use Only — Do Not Damage QR</p>
+                <p class="text-[7px] font-black text-red-600 mt-1 uppercase tracking-tight text-right">&#9888; Checker Use Only — Do Not Damage QR</p>
             </div>
         </div>
 
