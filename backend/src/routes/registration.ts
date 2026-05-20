@@ -354,6 +354,7 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
       examTime: portalConfig?.examTime,
       venue: portalConfig?.venue,
       venueMapUrl: portalConfig?.venueMapUrl,
+      participantId: participant._id.toString(),
     });
 
     res.setHeader('Content-Type', 'application/pdf');

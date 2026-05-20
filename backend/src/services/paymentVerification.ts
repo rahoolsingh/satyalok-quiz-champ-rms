@@ -214,8 +214,11 @@ export async function processPaymentVerification(
             eventName: 'Quiz Champ 2026',
             eventDate,
             eventTime: portalConfig?.eventTime,
+            reportingTime: portalConfig?.reportingTime,
+            examTime: portalConfig?.examTime,
             venue: portalConfig?.venue,
             venueMapUrl: portalConfig?.venueMapUrl,
+            participantId: participant._id.toString(),
           });
 
           const emailHtml = generateAdmitCardEmail({
