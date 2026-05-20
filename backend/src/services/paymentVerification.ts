@@ -123,7 +123,7 @@ export async function processPaymentVerification(
           const portalConfig = await PortalConfig.findOne().lean();
           
           const eventDate = portalConfig?.eventDate 
-            ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+            ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata',
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
@@ -196,7 +196,7 @@ export async function processPaymentVerification(
           const portalConfig = await PortalConfig.findOne().lean();
           
           const eventDate = portalConfig?.eventDate 
-            ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+            ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata',
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',

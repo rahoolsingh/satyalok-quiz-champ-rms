@@ -270,3 +270,43 @@ export async function sendAdmitCardReminder(
     },
   ]);
 }
+
+/**
+ * Sends important dates notification
+ * Template: quizchamp_important_dates (en, UTILITY)
+ * Header: "IMPORTANT DATES"
+ * Body: {{1}} year, {{2}} last date, {{3}} exam date, {{4}} prize date, {{5}} contact number
+ * Footer: "Team @ Satyalok - A New Hope"
+ */
+export interface ImportantDatesData {
+  year: string;
+  lastDateToApply: string;
+  examDate: string;
+  prizeDistributionDate: string;
+  contactNumber: string;
+}
+
+export async function sendImportantDates(
+  mobileNumber: string,
+  data: ImportantDatesData
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Important dates → ${mobileNumber}`);
+    return;
+  }
+
+  await sendMetaTemplate(mobileNumber, 'quizchamp_important_dates', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.year },
+        { type: 'text', text: data.lastDateToApply },
+        { type: 'text', text: data.examDate },
+        { type: 'text', text: data.prizeDistributionDate },
+        { type: 'text', text: data.contactNumber },
+      ],
+    },
+  ]);
+}

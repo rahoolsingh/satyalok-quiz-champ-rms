@@ -111,7 +111,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
             <span className="text-gray-600">Last Date to Apply</span>
             <span className="font-semibold text-gray-900">
               {portalStatus?.closingDate
-                ? new Date(portalStatus.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                ? new Date(portalStatus.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                 : 'Not Declared'}
             </span>
           </div>
@@ -119,7 +119,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
             <span className="text-gray-600">Date of Examination</span>
             <span className="font-semibold text-gray-900">
               {portalStatus?.eventDate
-                ? new Date(portalStatus.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                ? new Date(portalStatus.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                 : 'Not Declared'}
             </span>
           </div>
@@ -127,7 +127,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
             <span className="text-gray-600">Prize Distribution</span>
             <span className="font-semibold text-gray-900">
               {portalStatus?.prizeDistributionDate
-                ? new Date(portalStatus.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                ? new Date(portalStatus.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                 : 'Not Declared'}
             </span>
           </div>

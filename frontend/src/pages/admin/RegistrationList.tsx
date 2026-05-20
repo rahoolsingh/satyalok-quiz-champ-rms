@@ -262,6 +262,26 @@ export function RegistrationList() {
     }
   };
 
+  const handleSendImportantDates = async (id: string, name: string, isGodMode: boolean) => {
+    const datesChanged = confirm('Have the dates changed? If yes, admit card download status will be cleared for this participant.');
+    try {
+      if (isGodMode) {
+        await adminApi.resendImportantDates(id, datesChanged);
+      } else {
+        await adminApi.sendImportantDates(id, datesChanged);
+      }
+      alert(`Important dates sent to ${name}${datesChanged ? ' (admit card status cleared)' : ''}`);
+      if (datesChanged) {
+        setParticipants(prev =>
+          prev.map(p => p.id === id ? { ...p, admitCardDownloaded: false } : p)
+        );
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to send important dates';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
   const chartWidth = 100;
   const chartHeight = 42;
   const maxY = Math.max(
@@ -523,6 +543,13 @@ export function RegistrationList() {
                               >
                                 🔄 Admit Card
                               </button>
+                              <button
+                                onClick={() => handleSendImportantDates(p.id, p.name, true)}
+                                className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                title="Send important dates (no limit)"
+                              >
+                                🔄 Dates
+                              </button>
                             </>
                           )}
                           {p.paymentStatus === 'PENDING' && (
@@ -544,6 +571,16 @@ export function RegistrationList() {
                         title="Send payment reminder"
                       >
                         💰 Remind
+                      </button>
+                    )}
+                    {/* Important Dates (normal - 24h limit) */}
+                    {p.paymentStatus === 'COMPLETED' && !godMode && (
+                      <button
+                        onClick={() => handleSendImportantDates(p.id, p.name, false)}
+                        className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                        title="Send important dates (24h limit)"
+                      >
+                        📅 Dates
                       </button>
                     )}
                     {/* Admit card status */}

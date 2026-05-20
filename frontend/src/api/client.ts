@@ -145,4 +145,8 @@ export const adminApi = {
     api.post(`/admin/registrations/${participantId}/resend-admit-card-reminder`),
   resendPaymentReminder: (participantId: string) =>
     api.post(`/admin/registrations/${participantId}/resend-payment-reminder`),
+  sendImportantDates: (participantId: string, datesChanged: boolean) =>
+    api.post(`/admin/registrations/${participantId}/send-important-dates`, { datesChanged }),
+  resendImportantDates: (participantId: string, datesChanged: boolean) =>
+    api.post(`/admin/registrations/${participantId}/resend-important-dates`, { datesChanged }),
 };

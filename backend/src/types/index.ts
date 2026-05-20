@@ -48,6 +48,8 @@ export interface PortalConfiguration {
   venue?: string;
   venueMapUrl?: string;
   prizeDistributionDate?: Date;
+  prizeDistributionVenue?: string;
+  prizeDistributionMapUrl?: string;
   whatsappSupportName?: string;
   whatsappSupportNumber?: string;
   callContactName?: string;

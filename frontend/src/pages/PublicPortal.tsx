@@ -290,7 +290,7 @@ export function PublicPortal() {
                                     <span className="text-[13px] text-[#86868b]">Last Date to Apply</span>
                                     <span className="text-[13px] font-semibold text-[#1d1d1f]">
                                         {status.closingDate
-                                            ? new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                            ? new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                                             : 'Not Declared'}
                                     </span>
                                 </div>
@@ -298,7 +298,7 @@ export function PublicPortal() {
                                     <span className="text-[13px] text-[#86868b]">Date of Examination</span>
                                     <span className="text-[13px] font-semibold text-[#1d1d1f]">
                                         {status.eventDate
-                                            ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                            ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                                             : 'Not Declared'}
                                     </span>
                                 </div>
@@ -306,7 +306,7 @@ export function PublicPortal() {
                                     <span className="text-[13px] text-[#86868b]">Prize Distribution</span>
                                     <span className="text-[13px] font-semibold text-[#1d1d1f]">
                                         {status.prizeDistributionDate
-                                            ? new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                            ? new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                                             : 'Not Declared'}
                                     </span>
                                 </div>

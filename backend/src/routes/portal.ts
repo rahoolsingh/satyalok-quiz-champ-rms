@@ -23,6 +23,8 @@ portalRouter.get('/status', async (_req: Request, res: Response) => {
       eventTime: config.eventTime,
       venue: config.venue,
       prizeDistributionDate: config.prizeDistributionDate,
+      prizeDistributionVenue: config.prizeDistributionVenue,
+      prizeDistributionMapUrl: config.prizeDistributionMapUrl,
       whatsappSupportName: config.whatsappSupportName,
       whatsappSupportNumber: config.whatsappSupportNumber,
       callContactName: config.callContactName,

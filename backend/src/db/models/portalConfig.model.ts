@@ -12,6 +12,8 @@ export interface IPortalConfig extends Document {
   venue?: string;
   venueMapUrl?: string;
   prizeDistributionDate?: Date;
+  prizeDistributionVenue?: string;
+  prizeDistributionMapUrl?: string;
   whatsappSupportName?: string;
   whatsappSupportNumber?: string;
   callContactName?: string;
@@ -37,6 +39,8 @@ const PortalConfigSchema = new Schema<IPortalConfig>(
     venue: { type: String },
     venueMapUrl: { type: String },
     prizeDistributionDate: { type: Date },
+    prizeDistributionVenue: { type: String },
+    prizeDistributionMapUrl: { type: String },
     whatsappSupportName: { type: String },
     whatsappSupportNumber: { type: String },
     callContactName: { type: String },

@@ -35,6 +35,8 @@ export async function getPortalConfig(): Promise<PortalConfiguration | null> {
     venue: doc.venue,
     venueMapUrl: doc.venueMapUrl,
     prizeDistributionDate: doc.prizeDistributionDate,
+    prizeDistributionVenue: doc.prizeDistributionVenue,
+    prizeDistributionMapUrl: doc.prizeDistributionMapUrl,
     whatsappSupportName: doc.whatsappSupportName,
     whatsappSupportNumber: doc.whatsappSupportNumber,
     callContactName: doc.callContactName,

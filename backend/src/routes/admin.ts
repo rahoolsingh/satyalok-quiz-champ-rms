@@ -9,7 +9,7 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
@@ -413,6 +413,8 @@ adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response
       venue: config?.venue,
       venueMapUrl: config?.venueMapUrl,
       prizeDistributionDate: config?.prizeDistributionDate,
+      prizeDistributionVenue: config?.prizeDistributionVenue,
+      prizeDistributionMapUrl: config?.prizeDistributionMapUrl,
       whatsappSupportName: config?.whatsappSupportName,
       whatsappSupportNumber: config?.whatsappSupportNumber,
       callContactName: config?.callContactName,
@@ -650,7 +652,7 @@ adminRouter.post('/registrations/:id/remind-admit-card', async (req: AuthRequest
       rollNumber: participant.rollNumber || '',
       batchType: participant.batchType,
       eventDate: portalConfig?.eventDate
-        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
         : 'To be announced',
     });
 
@@ -725,7 +727,7 @@ adminRouter.post('/registrations/:id/resend-payment-confirmation', async (req: A
       : (portalConfig?.feeSenior ?? DEFAULT_FEE_SENIOR);
 
     const eventDate = portalConfig?.eventDate
-      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
       : 'To be announced';
     const eventTime = portalConfig?.eventTime || 'To be announced';
     const venue = portalConfig?.venue || 'To be announced';
@@ -789,7 +791,7 @@ adminRouter.post('/registrations/:id/resend-admit-card-reminder', async (req: Au
       rollNumber: participant.rollNumber || '',
       batchType: participant.batchType,
       eventDate: portalConfig?.eventDate
-        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
         : 'To be announced',
     });
 
@@ -827,5 +829,107 @@ adminRouter.post('/registrations/:id/resend-payment-reminder', async (req: AuthR
   } catch (err) {
     console.error('[Admin GodMode] Failed to resend payment reminder:', err);
     return res.status(500).json({ error: 'Failed to resend payment reminder' });
+  }
+});
+
+// POST /api/admin/registrations/:id/send-important-dates — 24h cooldown
+adminRouter.post('/registrations/:id/send-important-dates', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Can only send to completed registrations' });
+    }
+
+    // 24h cooldown
+    if (participant.lastImportantDatesSentAt) {
+      const hoursSinceLast = (Date.now() - new Date(participant.lastImportantDatesSentAt).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceLast < 24) {
+        const hoursLeft = Math.ceil(24 - hoursSinceLast);
+        return res.status(429).json({ error: `Already sent. Try again in ${hoursLeft}h.` });
+      }
+    }
+
+    const portalConfig = await PortalConfig.findOne().lean();
+
+    const lastDate = portalConfig?.closingDate
+      ? new Date(portalConfig.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'Not Declared';
+    const examDate = portalConfig?.eventDate
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'Not Declared';
+    const prizeDate = portalConfig?.prizeDistributionDate
+      ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'Not Declared';
+    const contactNumber = portalConfig?.callContactNumber || portalConfig?.whatsappSupportNumber || '';
+
+    await sendImportantDates(participant.mobileNumber, {
+      year: '2026',
+      lastDateToApply: lastDate,
+      examDate,
+      prizeDistributionDate: prizeDate,
+      contactNumber,
+    });
+
+    // If datesChanged flag is set, clear admit card download status
+    if (req.body.datesChanged) {
+      participant.admitCardDownloaded = false;
+    }
+
+    participant.lastImportantDatesSentAt = new Date();
+    await participant.save();
+
+    return res.json({ message: 'Important dates sent successfully' });
+  } catch (err) {
+    console.error('[Admin] Failed to send important dates:', err);
+    return res.status(500).json({ error: 'Failed to send important dates' });
+  }
+});
+
+// POST /api/admin/registrations/:id/resend-important-dates — god mode, no limit
+adminRouter.post('/registrations/:id/resend-important-dates', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Can only send to completed registrations' });
+    }
+
+    const portalConfig = await PortalConfig.findOne().lean();
+
+    const lastDate = portalConfig?.closingDate
+      ? new Date(portalConfig.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'Not Declared';
+    const examDate = portalConfig?.eventDate
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'Not Declared';
+    const prizeDate = portalConfig?.prizeDistributionDate
+      ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'Not Declared';
+    const contactNumber = portalConfig?.callContactNumber || portalConfig?.whatsappSupportNumber || '';
+
+    await sendImportantDates(participant.mobileNumber, {
+      year: '2026',
+      lastDateToApply: lastDate,
+      examDate,
+      prizeDistributionDate: prizeDate,
+      contactNumber,
+    });
+
+    if (req.body.datesChanged) {
+      participant.admitCardDownloaded = false;
+      await participant.save();
+    }
+
+    return res.json({ message: 'Important dates resent successfully' });
+  } catch (err) {
+    console.error('[Admin GodMode] Failed to resend important dates:', err);
+    return res.status(500).json({ error: 'Failed to resend important dates' });
   }
 });

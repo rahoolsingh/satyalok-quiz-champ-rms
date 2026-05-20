@@ -331,6 +331,7 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
     
     const eventDate = portalConfig?.eventDate 
       ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
           day: 'numeric',
           month: 'long',
           year: 'numeric',
