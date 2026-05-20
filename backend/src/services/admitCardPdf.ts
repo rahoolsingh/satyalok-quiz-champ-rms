@@ -46,7 +46,7 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
     data.venueMapUrl
       ? QRCode.toDataURL(data.venueMapUrl, { width: 150, margin: 1 })
       : Promise.resolve(null),
-    QRCode.toDataURL(omrData, { width: 150, margin: 1 }),
+    QRCode.toDataURL(omrData, { width: 500, margin: 1 }),
   ]);
 
   // Prepare template variables

@@ -144,18 +144,18 @@
                 </ul>
             </div>
 
-            <div class="grid grid-cols-3 gap-6 pt-8 text-center text-[11px] font-bold text-gray-800">
+            <div class="grid grid-cols-3 gap-6 pt-5 text-center text-[11px] font-bold text-gray-800">
                 <div class="flex flex-col justify-end items-center">
-                    <div class="w-28 border-b border-gray-400 mb-1 h-5"></div>
-                    <span class="text-gray-500 font-medium text-[10px]">Candidate's Signature</span>
+                    <div class="w-28 border-b border-gray-400 mb-1 h-4"></div>
+                    <span class="text-gray-500 font-medium text-[9px]">Candidate's Signature</span>
                 </div>
                 <div class="flex flex-col justify-end items-center">
-                    <div class="w-28 border-b border-gray-400 mb-1 h-5"></div>
-                    <span class="text-gray-500 font-medium text-[10px]">Invigilator's Signature</span>
+                    <div class="w-28 border-b border-gray-400 mb-1 h-4"></div>
+                    <span class="text-gray-500 font-medium text-[9px]">Invigilator's Signature</span>
                 </div>
                 <div class="flex flex-col justify-end items-center">
-                    <div class="w-28 border-b border-gray-400 mb-1 h-5"></div>
-                    <span class="text-blue-800 text-[10px]">Authorized Signatory</span>
+                    <div class="w-28 border-b border-gray-400 mb-1 h-4"></div>
+                    <span class="text-blue-800 text-[9px]">Authorized Signatory</span>
                 </div>
             </div>
         </div>
@@ -181,31 +181,31 @@
                     <span class="text-[10px] font-mono font-bold text-blue-700 bg-white px-2 py-0.5 border rounded">Roll No: <%= rollNumber %></span>
                 </div>
                 
-                <div class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-gray-800 items-center">
-                    <div class="col-span-4">
-                        <span class="text-gray-400 block text-[9px] uppercase font-bold">Candidate Name</span>
+                <div class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-gray-800 items-stretch">
+                    <div class="col-span-3">
+                        <span class="text-gray-400 block text-[9px] uppercase font-bold">Candidate</span>
                         <span class="text-xs font-bold text-gray-900 uppercase"><%= candidateName %></span>
                     </div>
-                    <div class="col-span-3">
-                        <span class="text-gray-400 block text-[9px] uppercase font-bold">Class / Group</span>
+                    <div class="col-span-2">
+                        <span class="text-gray-400 block text-[9px] uppercase font-bold">Class</span>
                         <span class="text-xs font-bold text-gray-900"><%= studentClass %> (<%= batchType %>)</span>
                     </div>
-                    <div class="col-span-2 flex flex-col justify-end items-center border-l border-r px-1">
+                    <div class="col-span-3 flex flex-col justify-end items-center border-l border-r px-1">
                         <div class="w-full border-b border-gray-300 h-5 mb-0.5"></div>
-                        <span class="text-[7px] text-gray-500 font-bold uppercase tracking-tight text-center leading-tight mt-0.5">Invigilator Sign</span>
+                        <span class="text-[7px] text-gray-500 font-bold uppercase tracking-tight text-center leading-tight mt-0.5">Invigilator Sign & Stamp</span>
                     </div>
                     
-                    <div class="col-span-3 flex flex-col items-center justify-center bg-white p-1.5 border-2 border-red-500 rounded shadow-sm">
-                        <div class="w-20 h-20 bg-gray-50 border border-dashed border-gray-400 flex items-center justify-center text-[9px] text-gray-500 font-bold font-mono text-center leading-none overflow-hidden">
+                    <div class="col-span-4 flex items-center justify-center bg-white p-1 border-2 border-red-500 rounded shadow-sm">
+                        <div class="bg-gray-50 flex items-center justify-center overflow-hidden" style="width:250px;height:250px;">
                             <% if (locals.omrQrCode) { %>
-                                <img src="<%= omrQrCode %>" alt="OMR Scanner QR" class="w-full h-full object-cover">
+                                <img src="<%= omrQrCode %>" alt="OMR Scanner QR" style="width:250px;height:250px;" class="object-contain">
                             <% } else { %>
-                                SCAN OMR
+                                <span class="text-[9px] text-gray-500 font-bold font-mono">SCAN OMR</span>
                             <% } %>
                         </div>
-                        <span class="text-[7px] font-black text-red-600 mt-1 uppercase tracking-tighter text-center">Checker Use Only</span>
                     </div>
                 </div>
+                <p class="text-[7px] font-black text-red-600 mt-1 uppercase tracking-tight text-right">⚠ Checker Use Only — Do Not Damage QR</p>
             </div>
         </div>
 
