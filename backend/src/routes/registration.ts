@@ -362,11 +362,10 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
       participant.admitCardDownloaded = true;
       await participant.save();
 
-      // Send important dates + location via WhatsApp
-      try {
-        const portalConfig = await PortalConfig.findOne().lean();
+      const portalConfig = await PortalConfig.findOne().lean();
 
-        // 1. Send important dates
+      // 1. Send important dates
+      try {
         const lastDate = portalConfig?.closingDate
           ? new Date(portalConfig.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
           : 'Not Declared';
@@ -386,13 +385,22 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
           contactNumber,
         });
         console.log(`[Admit Card] Important dates sent to ${participant.mobileNumber}`);
+      } catch (datesErr) {
+        console.error('[Admit Card] Failed to send important dates:', datesErr);
+      }
 
-        // 2. Send event location
+      // 2. Send event location (independent of important dates)
+      try {
         const venue = portalConfig?.venue;
         const venueMapUrl = portalConfig?.venueMapUrl;
 
         if (venue && venueMapUrl) {
-          const mapShortSuffix = venueMapUrl.replace(/^https?:\/\/maps\.app\.goo\.gl\//, '');
+          // Extract suffix: support maps.app.goo.gl/xxx or any URL — use last path segment
+          let mapShortSuffix = venueMapUrl;
+          const gooGlMatch = venueMapUrl.match(/maps\.app\.goo\.gl\/(.+)/);
+          if (gooGlMatch) {
+            mapShortSuffix = gooGlMatch[1];
+          }
 
           await sendEventLocation(participant.mobileNumber, {
             name: participant.name,
@@ -402,9 +410,11 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
             mapShortSuffix,
           });
           console.log(`[Admit Card] Location sent to ${participant.mobileNumber}`);
+        } else {
+          console.log(`[Admit Card] Skipping location — venue or map URL not configured`);
         }
-      } catch (msgErr) {
-        console.error('[Admit Card] Failed to send WhatsApp messages:', msgErr);
+      } catch (locErr) {
+        console.error('[Admit Card] Failed to send location:', locErr);
       }
     }
 
