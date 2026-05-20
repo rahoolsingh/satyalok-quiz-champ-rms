@@ -25,12 +25,17 @@ type TrendRange = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'EVENT_START';
 
 /**
  * Parses a date string as IST (UTC+5:30).
- * If no timezone info present, appends +05:30 before parsing.
+ * If no timezone info present, treats it as IST.
  */
 function parseAsIST(dateStr: string): Date {
   if (/[Z+-]\d{2}:\d{2}$/.test(dateStr) || dateStr.endsWith('Z')) {
     return new Date(dateStr);
   }
+  // Date-only format (YYYY-MM-DD) — append T00:00:00+05:30
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return new Date(dateStr + 'T00:00:00+05:30');
+  }
+  // DateTime without timezone (e.g., 2026-06-02T23:59) — append +05:30
   return new Date(dateStr + '+05:30');
 }
 
