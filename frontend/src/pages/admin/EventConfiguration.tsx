@@ -31,10 +31,15 @@ export function EventConfiguration() {
       const data = response.data;
       
       if (data.eventDate) {
-        setEventDate(new Date(data.eventDate).toISOString().split('T')[0]);
+        // Format as YYYY-MM-DD in IST (not UTC)
+        const d = new Date(data.eventDate);
+        const istDate = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // en-CA gives YYYY-MM-DD format
+        setEventDate(istDate);
       }
       if (data.prizeDistributionDate) {
-        setPrizeDistributionDate(new Date(data.prizeDistributionDate).toISOString().split('T')[0]);
+        const d = new Date(data.prizeDistributionDate);
+        const istDate = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+        setPrizeDistributionDate(istDate);
       }
       setPrizeDistributionVenue(data.prizeDistributionVenue || '');
       setPrizeDistributionTime(data.prizeDistributionTime || '');

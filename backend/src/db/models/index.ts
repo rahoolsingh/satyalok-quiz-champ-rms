@@ -6,3 +6,5 @@ export { Participant, IParticipant } from './participant.model';
 export { OTPVerification, IOTPVerification } from './otpVerification.model';
 export { OtpRateLimit, IOtpRateLimit } from './otpRateLimit.model';
 export { Result, IResult } from './result.model';
+
+export { AdminSession, IAdminSession } from './adminSession.model';

@@ -5,7 +5,7 @@ import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { parse } from 'csv-parse/sync';
 import { v4 as uuidv4 } from 'uuid';
-import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig } from '../db/models';
+import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig, AdminSession } from '../db/models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
@@ -168,12 +168,25 @@ adminRouter.post('/login', async (req: Request, res: Response) => {
     await admin.save();
 
     const secret = process.env.JWT_SECRET || 'default-secret';
-    const expiresIn = (process.env.JWT_EXPIRES_IN || '24h') as string;
+    const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as string;
     const token = jwt.sign(
       { adminId: admin._id.toString(), username: admin.username },
       secret,
       { expiresIn } as jwt.SignOptions
     );
+
+    // Track session
+    const deviceInfo = req.headers['user-agent'] || 'Unknown Device';
+    const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString() || '';
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await AdminSession.create({
+      adminId: admin._id.toString(),
+      token,
+      deviceInfo,
+      ipAddress,
+      expiresAt,
+    });
 
     return res.json({ token, username: admin.username });
   } catch (err) {
@@ -955,5 +968,69 @@ adminRouter.post('/registrations/:id/resend-important-dates', async (req: AuthRe
   } catch (err) {
     console.error('[Admin GodMode] Failed to resend important dates:', err);
     return res.status(500).json({ error: 'Failed to resend important dates' });
+  }
+});
+
+// ─── SESSION MANAGEMENT ───────────────────────────────────────────────────────
+
+// GET /api/admin/sessions — list all active sessions for current admin
+adminRouter.get('/sessions', async (req: AuthRequest, res: Response) => {
+  try {
+    const sessions = await AdminSession.find({
+      adminId: req.adminId,
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+    }).sort({ lastActiveAt: -1 }).lean();
+
+    const currentToken = req.headers.authorization?.split(' ')[1];
+
+    return res.json({
+      sessions: sessions.map(s => ({
+        id: s._id.toString(),
+        deviceInfo: s.deviceInfo,
+        ipAddress: s.ipAddress,
+        lastActiveAt: s.lastActiveAt,
+        createdAt: s.createdAt,
+        isCurrent: s.token === currentToken,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to get sessions' });
+  }
+});
+
+// POST /api/admin/sessions/expire-all — expire all sessions except current
+adminRouter.post('/sessions/expire-all', async (req: AuthRequest, res: Response) => {
+  try {
+    const currentToken = req.headers.authorization?.split(' ')[1];
+
+    await AdminSession.updateMany(
+      { adminId: req.adminId, token: { $ne: currentToken }, isActive: true },
+      { $set: { isActive: false } }
+    );
+
+    return res.json({ message: 'All other sessions expired' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to expire sessions' });
+  }
+});
+
+// POST /api/admin/sessions/:id/expire — expire a specific session
+adminRouter.post('/sessions/:id/expire', async (req: AuthRequest, res: Response) => {
+  try {
+    const session = await AdminSession.findOne({ _id: req.params.id, adminId: req.adminId });
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    session.isActive = false;
+    await session.save();
+
+    return res.json({ message: 'Session expired' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to expire session' });
   }
 });

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const SESSION_EXPIRY_SECONDS = 30 * 60; // 30 minutes
+const SESSION_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
 function getSecret(): string {
   const secret = process.env.SESSION_JWT_SECRET;
