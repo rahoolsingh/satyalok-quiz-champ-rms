@@ -376,7 +376,7 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
         const prizeDate = portalConfig?.prizeDistributionDate
           ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
           : 'Not Declared';
-        const contactNumber = portalConfig?.callContactNumber || portalConfig?.whatsappSupportNumber || '';
+        const contactNumber = portalConfig?.callContactNumber || portalConfig?.whatsappSupportNumber || 'Not Available';
 
         await sendImportantDates(participant.mobileNumber, {
           year: '2026',

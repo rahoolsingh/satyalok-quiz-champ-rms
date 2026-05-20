@@ -92,6 +92,7 @@ export function RegistrationList() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'PENDING' | 'FAILED' | 'NOT_DOWNLOADED'>('ALL');
   const [hideSensitiveData, setHideSensitiveData] = useState(false);
   const [godMode, setGodMode] = useState(false);
+  const [datesModal, setDatesModal] = useState<{ id: string; name: string; isGodMode: boolean } | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -263,7 +264,13 @@ export function RegistrationList() {
   };
 
   const handleSendImportantDates = async (id: string, name: string, isGodMode: boolean) => {
-    const datesChanged = confirm('Have the dates changed? If yes, admit card download status will be cleared for this participant.');
+    setDatesModal({ id, name, isGodMode });
+  };
+
+  const executeSendImportantDates = async (datesChanged: boolean) => {
+    if (!datesModal) return;
+    const { id, name, isGodMode } = datesModal;
+    setDatesModal(null);
     try {
       if (isGodMode) {
         await adminApi.resendImportantDates(id, datesChanged);
@@ -625,6 +632,46 @@ export function RegistrationList() {
         {/* Infinite scroll trigger */}
         <div ref={observerRef} className="h-4" />
       </div>
+
+      {/* Dates Changed Modal */}
+      {datesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in fade-in">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span className="text-lg">📅</span>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#1d1d1f]">Send Important Dates</h3>
+                <p className="text-xs text-[#86868b]">to {datesModal.name}</p>
+              </div>
+            </div>
+            <p className="text-sm text-[#424245] mb-5 leading-relaxed">
+              Have the dates changed? If yes, the admit card download status will be cleared so they can download the updated version.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => executeSendImportantDates(true)}
+                className="w-full py-2.5 px-4 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
+                Yes, dates changed — clear & send
+              </button>
+              <button
+                onClick={() => executeSendImportantDates(false)}
+                className="w-full py-2.5 px-4 bg-[#0071e3] text-white rounded-lg text-sm font-semibold hover:bg-[#005bb5] transition-colors"
+              >
+                No change — just send dates
+              </button>
+              <button
+                onClick={() => setDatesModal(null)}
+                className="w-full py-2.5 px-4 bg-[#f5f5f7] text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-[#e8e8ed] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
