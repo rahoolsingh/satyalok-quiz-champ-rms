@@ -310,3 +310,49 @@ export async function sendImportantDates(
     },
   ]);
 }
+
+/**
+ * Sends event location details
+ * Template: quizchamp_event_location (en, UTILITY)
+ * Header: "LOCATION DETAILS"
+ * Body: {{1}} name, {{2}} event type, {{3}} address, {{4}} map URL
+ * Button: URL with {{1}} (maps short link suffix)
+ * Footer: "Team @ Satyalok - A New Hope"
+ */
+export interface EventLocationData {
+  name: string;
+  eventType: string;
+  address: string;
+  mapUrl: string;
+  mapShortSuffix: string; // e.g., "HM2xfCxgVAJjQrWy6?g_st=ic" from https://maps.app.goo.gl/...
+}
+
+export async function sendEventLocation(
+  mobileNumber: string,
+  data: EventLocationData
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Event location → ${mobileNumber}`);
+    return;
+  }
+
+  await sendMetaTemplate(mobileNumber, 'quizchamp_event_location', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: data.eventType },
+        { type: 'text', text: data.address },
+        { type: 'text', text: data.mapUrl },
+      ],
+    },
+    {
+      type: 'button',
+      sub_type: 'url',
+      index: '0',
+      parameters: [{ type: 'text', text: data.mapShortSuffix }],
+    },
+  ]);
+}

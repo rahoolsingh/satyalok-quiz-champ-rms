@@ -13,6 +13,8 @@ export interface PortalStatus {
   eventTime?: string;
   venue?: string;
   prizeDistributionDate?: string;
+  prizeDistributionVenue?: string;
+  prizeDistributionMapUrl?: string;
   whatsappSupportName?: string;
   whatsappSupportNumber?: string;
   callContactName?: string;

@@ -429,7 +429,7 @@ adminRouter.get('/portal/event-details', async (_req: AuthRequest, res: Response
 // PUT /api/admin/portal/event-details
 adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response) => {
   try {
-    const { eventDate, eventTime, venue, venueMapUrl, prizeDistributionDate, whatsappSupportName, whatsappSupportNumber, callContactName, callContactNumber } = req.body;
+    const { eventDate, eventTime, venue, venueMapUrl, prizeDistributionDate, prizeDistributionVenue, prizeDistributionMapUrl, whatsappSupportName, whatsappSupportNumber, callContactName, callContactNumber } = req.body;
     
     const updateData: Partial<IPortalConfig> = {};
     
@@ -455,6 +455,8 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
         updateData.prizeDistributionDate = undefined;
       }
     }
+    if (prizeDistributionVenue !== undefined) updateData.prizeDistributionVenue = prizeDistributionVenue;
+    if (prizeDistributionMapUrl !== undefined) updateData.prizeDistributionMapUrl = prizeDistributionMapUrl;
     if (whatsappSupportName !== undefined) updateData.whatsappSupportName = whatsappSupportName;
     if (whatsappSupportNumber !== undefined) updateData.whatsappSupportNumber = whatsappSupportNumber;
     if (callContactName !== undefined) updateData.callContactName = callContactName;

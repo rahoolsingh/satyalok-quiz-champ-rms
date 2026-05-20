@@ -10,6 +10,7 @@ import { Participant, PortalConfig } from '../db/models';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { validateImageFormat } from '../services/validation';
 import { generateAdmitCardPDF } from '../services/admitCardPdf';
+import { sendEventLocation, sendImportantDates } from '../services/whatsapp';
 
 export const registrationRouter = Router();
 
@@ -356,10 +357,55 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="admit-card-${participant.rollNumber}.pdf"`);
 
-    // Track admit card download
+    // Track admit card download — triggers important dates + location on each fresh download
     if (!participant.admitCardDownloaded) {
       participant.admitCardDownloaded = true;
       await participant.save();
+
+      // Send important dates + location via WhatsApp
+      try {
+        const portalConfig = await PortalConfig.findOne().lean();
+
+        // 1. Send important dates
+        const lastDate = portalConfig?.closingDate
+          ? new Date(portalConfig.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+          : 'Not Declared';
+        const examDate = portalConfig?.eventDate
+          ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+          : 'Not Declared';
+        const prizeDate = portalConfig?.prizeDistributionDate
+          ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+          : 'Not Declared';
+        const contactNumber = portalConfig?.callContactNumber || portalConfig?.whatsappSupportNumber || '';
+
+        await sendImportantDates(participant.mobileNumber, {
+          year: '2026',
+          lastDateToApply: lastDate,
+          examDate,
+          prizeDistributionDate: prizeDate,
+          contactNumber,
+        });
+        console.log(`[Admit Card] Important dates sent to ${participant.mobileNumber}`);
+
+        // 2. Send event location
+        const venue = portalConfig?.venue;
+        const venueMapUrl = portalConfig?.venueMapUrl;
+
+        if (venue && venueMapUrl) {
+          const mapShortSuffix = venueMapUrl.replace(/^https?:\/\/maps\.app\.goo\.gl\//, '');
+
+          await sendEventLocation(participant.mobileNumber, {
+            name: participant.name,
+            eventType: 'Examination Venue',
+            address: venue,
+            mapUrl: venueMapUrl,
+            mapShortSuffix,
+          });
+          console.log(`[Admit Card] Location sent to ${participant.mobileNumber}`);
+        }
+      } catch (msgErr) {
+        console.error('[Admit Card] Failed to send WhatsApp messages:', msgErr);
+      }
     }
 
     res.send(pdfBuffer);

@@ -8,6 +8,8 @@ export function EventConfiguration() {
   const [venue, setVenue] = useState('');
   const [venueMapUrl, setVenueMapUrl] = useState('');
   const [prizeDistributionDate, setPrizeDistributionDate] = useState('');
+  const [prizeDistributionVenue, setPrizeDistributionVenue] = useState('');
+  const [prizeDistributionMapUrl, setPrizeDistributionMapUrl] = useState('');
   const [whatsappSupportName, setWhatsappSupportName] = useState('');
   const [whatsappSupportNumber, setWhatsappSupportNumber] = useState('');
   const [callContactName, setCallContactName] = useState('');
@@ -31,6 +33,8 @@ export function EventConfiguration() {
       if (data.prizeDistributionDate) {
         setPrizeDistributionDate(new Date(data.prizeDistributionDate).toISOString().split('T')[0]);
       }
+      setPrizeDistributionVenue(data.prizeDistributionVenue || '');
+      setPrizeDistributionMapUrl(data.prizeDistributionMapUrl || '');
       setEventTime(data.eventTime || '');
       setVenue(data.venue || '');
       setVenueMapUrl(data.venueMapUrl || '');
@@ -56,6 +60,8 @@ export function EventConfiguration() {
         venue: venue || undefined,
         venueMapUrl: venueMapUrl || undefined,
         prizeDistributionDate: prizeDistributionDate || undefined,
+        prizeDistributionVenue: prizeDistributionVenue || undefined,
+        prizeDistributionMapUrl: prizeDistributionMapUrl || undefined,
         whatsappSupportName: whatsappSupportName || undefined,
         whatsappSupportNumber: whatsappSupportNumber || undefined,
         callContactName: callContactName || undefined,
@@ -160,6 +166,34 @@ export function EventConfiguration() {
               type="date"
               value={prizeDistributionDate}
               onChange={(e) => setPrizeDistributionDate(e.target.value)}
+              className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+            />
+          </div>
+
+          {/* Prize Distribution Venue */}
+          <div>
+            <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+              Prize Distribution Venue
+            </label>
+            <input
+              type="text"
+              value={prizeDistributionVenue}
+              onChange={(e) => setPrizeDistributionVenue(e.target.value)}
+              placeholder="e.g., Satyalok Auditorium, Main Campus"
+              className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+            />
+          </div>
+
+          {/* Prize Distribution Map URL */}
+          <div>
+            <label className="block text-sm font-medium text-[#1d1d1f] mb-2">
+              Prize Distribution Map URL
+            </label>
+            <input
+              type="url"
+              value={prizeDistributionMapUrl}
+              onChange={(e) => setPrizeDistributionMapUrl(e.target.value)}
+              placeholder="https://maps.google.com/..."
               className="w-full px-4 py-3 border border-[#d2d2d7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
             />
           </div>

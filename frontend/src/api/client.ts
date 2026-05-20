@@ -129,7 +129,7 @@ export const adminApi = {
   updateFees: (feeJunior: number, feeSenior: number) =>
     api.put('/admin/portal/fees', { feeJunior, feeSenior }),
   getEventDetails: () => api.get('/admin/portal/event-details'),
-  updateEventDetails: (data: { eventDate?: string; eventTime?: string; venue?: string; venueMapUrl?: string; prizeDistributionDate?: string; whatsappSupportName?: string; whatsappSupportNumber?: string; callContactName?: string; callContactNumber?: string }) =>
+  updateEventDetails: (data: { eventDate?: string; eventTime?: string; venue?: string; venueMapUrl?: string; prizeDistributionDate?: string; prizeDistributionVenue?: string; prizeDistributionMapUrl?: string; whatsappSupportName?: string; whatsappSupportNumber?: string; callContactName?: string; callContactNumber?: string }) =>
     api.put('/admin/portal/event-details', data),
   sendGroupInvite: (participantId: string) =>
     api.post(`/admin/registrations/${participantId}/send-group-invite`),

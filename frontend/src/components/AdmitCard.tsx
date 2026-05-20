@@ -131,6 +131,24 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
                 : 'Not Declared'}
             </span>
           </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Prize Venue</span>
+            <span className="font-semibold text-gray-900 text-right max-w-[60%]">
+              {portalStatus?.prizeDistributionVenue || 'Not Declared'}
+            </span>
+          </div>
+          {portalStatus?.prizeDistributionMapUrl && (
+            <div className="pt-1">
+              <a
+                href={portalStatus.prizeDistributionMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[13px] text-[#0071e3] font-medium hover:underline inline-flex items-center gap-1"
+              >
+                📍 View Prize Venue on Map
+              </a>
+            </div>
+          )}
         </div>
       </div>
 
