@@ -23,6 +23,17 @@ const DEFAULT_FRONTEND_URL = 'https://quizchamp.satyalok.in';
 const escapeRegex = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 type TrendRange = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'EVENT_START';
 
+/**
+ * Parses a date string as IST (UTC+5:30).
+ * If no timezone info present, appends +05:30 before parsing.
+ */
+function parseAsIST(dateStr: string): Date {
+  if (/[Z+-]\d{2}:\d{2}$/.test(dateStr) || dateStr.endsWith('Z')) {
+    return new Date(dateStr);
+  }
+  return new Date(dateStr + '+05:30');
+}
+
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * ONE_HOUR_MS;
 
@@ -176,8 +187,8 @@ adminRouter.put('/portal/dates', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Opening date and closing date are required' });
     }
 
-    const opening = new Date(openingDate);
-    const closing = new Date(closingDate);
+    const opening = parseAsIST(openingDate);
+    const closing = parseAsIST(closingDate);
     if (isNaN(opening.getTime()) || isNaN(closing.getTime())) {
       return res.status(400).json({ error: 'Invalid date format' });
     }
@@ -434,7 +445,7 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
     const updateData: Partial<IPortalConfig> = {};
     
     if (eventDate) {
-      const date = new Date(eventDate);
+      const date = parseAsIST(eventDate);
       if (isNaN(date.getTime())) {
         return res.status(400).json({ error: 'Invalid event date format' });
       }
@@ -446,7 +457,7 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
     if (venueMapUrl !== undefined) updateData.venueMapUrl = venueMapUrl;
     if (prizeDistributionDate !== undefined) {
       if (prizeDistributionDate) {
-        const date = new Date(prizeDistributionDate);
+        const date = parseAsIST(prizeDistributionDate);
         if (isNaN(date.getTime())) {
           return res.status(400).json({ error: 'Invalid prize distribution date format' });
         }
