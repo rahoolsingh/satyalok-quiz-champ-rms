@@ -152,4 +152,6 @@ export const adminApi = {
   getSessions: () => api.get('/admin/sessions'),
   expireAllSessions: () => api.post('/admin/sessions/expire-all'),
   expireSession: (sessionId: string) => api.post(`/admin/sessions/${sessionId}/expire`),
+  verifyPayment: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/verify-payment`),
 };

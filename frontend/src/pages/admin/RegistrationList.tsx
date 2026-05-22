@@ -289,6 +289,21 @@ export function RegistrationList() {
     }
   };
 
+  const handleVerifyPayment = async (id: string, name: string) => {
+    try {
+      const res = await adminApi.verifyPayment(id);
+      alert(`${name}: ${res.data.message}`);
+      if (res.data.status === 'SUCCESS') {
+        setParticipants(prev =>
+          prev.map(p => p.id === id ? { ...p, paymentStatus: 'COMPLETED' } : p)
+        );
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to verify payment';
+      alert(`${name}: ${msg}`);
+    }
+  };
+
   const chartWidth = 100;
   const chartHeight = 42;
   const maxY = Math.max(
@@ -578,6 +593,15 @@ export function RegistrationList() {
                         title="Send payment reminder"
                       >
                         💰 Remind
+                      </button>
+                    )}
+                    {(p.paymentStatus === 'PENDING' || p.paymentStatus === 'FAILED') && (
+                      <button
+                        onClick={() => handleVerifyPayment(p.id, p.name)}
+                        className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                        title="Verify payment with gateway"
+                      >
+                        🔍 Verify
                       </button>
                     )}
                     {/* Important Dates (normal - 24h limit) */}

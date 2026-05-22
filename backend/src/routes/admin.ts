@@ -1034,3 +1034,47 @@ adminRouter.post('/sessions/:id/expire', async (req: AuthRequest, res: Response)
     return res.status(500).json({ error: 'Failed to expire session' });
   }
 });
+
+// POST /api/admin/registrations/:id/verify-payment — manually verify payment with gateway
+adminRouter.post('/registrations/:id/verify-payment', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (!participant.merchantTransactionId) {
+      return res.status(400).json({ error: 'No transaction ID found for this participant' });
+    }
+
+    if (participant.paymentStatus === 'COMPLETED') {
+      return res.json({ message: 'Payment already verified as COMPLETED', status: 'COMPLETED' });
+    }
+
+    // Import dynamically to avoid circular deps
+    const { verifyPaymentStatus, processPaymentVerification } = await import('../services/paymentVerification');
+
+    // Check with payment gateway
+    const paymentStatus = await verifyPaymentStatus(participant.merchantTransactionId);
+
+    if (paymentStatus.status === 'SUCCESS') {
+      // Process the full verification flow (update status, send notifications, etc.)
+      await processPaymentVerification(participant.merchantTransactionId);
+
+      return res.json({
+        message: 'Payment verified as SUCCESS. Participant status updated to COMPLETED.',
+        status: 'SUCCESS',
+        transactionId: paymentStatus.transactionId,
+      });
+    }
+
+    return res.json({
+      message: `Payment status from gateway: ${paymentStatus.status}`,
+      status: paymentStatus.status,
+      transactionId: participant.merchantTransactionId,
+    });
+  } catch (err) {
+    console.error('[Admin] Failed to verify payment:', err);
+    return res.status(500).json({ error: 'Failed to verify payment with gateway' });
+  }
+});
