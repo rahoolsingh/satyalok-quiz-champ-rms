@@ -14,6 +14,7 @@ interface Participant {
   email: string | null;
   photoUrl?: string;
   paymentStatus: string;
+  merchantTransactionId: string | null;
   groupInviteSent: boolean;
   groupJoined: boolean;
   admitCardDownloaded: boolean;
@@ -506,6 +507,7 @@ export function RegistrationList() {
                   <div className="mt-2 space-y-0.5">
                     {p.address && <p className="text-[11px] text-[#86868b] leading-snug">📍 {p.address}</p>}
                     {p.email && <p className="text-[11px] text-[#86868b] leading-snug">✉️ {p.email}</p>}
+                    {p.merchantTransactionId && <p className="text-[11px] text-[#86868b] leading-snug font-mono">🧾 {p.merchantTransactionId}</p>}
                   </div>
 
                   {/* Actions bar */}

@@ -545,6 +545,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         { mobileNumber: { $regex: s, $options: 'i' } },
         { guardianName: { $regex: s, $options: 'i' } },
         { email: { $regex: s, $options: 'i' } },
+        { merchantTransactionId: { $regex: s, $options: 'i' } },
       ];
     }
 
@@ -605,6 +606,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         email: p.email,
         photoUrl: p.photoUrl,
         paymentStatus: p.paymentStatus,
+        merchantTransactionId: p.merchantTransactionId || null,
         groupInviteSent: p.groupInviteSent || false,
         groupJoined: p.groupJoined || false,
         admitCardDownloaded: p.admitCardDownloaded || false,
