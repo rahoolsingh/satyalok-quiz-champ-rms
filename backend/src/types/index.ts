@@ -16,7 +16,7 @@ export interface Participant {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
-  questionPaperLanguage: 'HINDI' | 'ENGLISH';
+   questionPaperLanguage?: 'HINDI' | 'ENGLISH';
   paymentStatus: PaymentStatus;
   paymentId?: string;
   admitCardUrl?: string;

@@ -11,7 +11,7 @@ export interface IParticipant extends Document {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
-  questionPaperLanguage: 'HINDI' | 'ENGLISH';
+  questionPaperLanguage?: 'HINDI' | 'ENGLISH';
   paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED';
   paymentId?: string;
   admitCardUrl?: string;
