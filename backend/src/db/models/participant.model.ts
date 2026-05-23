@@ -41,7 +41,7 @@ const ParticipantSchema = new Schema<IParticipant>(
     mobileNumber: { type: String, required: true },
     email: { type: String },
     referralSource: { type: String },
-    questionPaperLanguage: { type: String, enum: ['HINDI', 'ENGLISH'], required: true },
+    questionPaperLanguage: { type: String, enum: ['HINDI', 'ENGLISH'] },
     paymentStatus: {
       type: String,
       enum: ['PENDING', 'COMPLETED', 'FAILED'],
