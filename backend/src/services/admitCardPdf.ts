@@ -20,6 +20,7 @@ export interface AdmitCardData {
   venue?: string;
   venueMapUrl?: string;
   participantId?: string;
+  questionPaperLanguage?: string;
 }
 
 export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer> {
@@ -70,6 +71,7 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
     systemQrCode,
     mapQrCode,
     omrQrCode,
+    paperLanguage: data.questionPaperLanguage ? (data.questionPaperLanguage === 'HINDI' ? 'Hindi' : 'English') : 'Not Selected',
     generatedDate: new Date().toLocaleDateString('en-IN', {
       day: '2-digit',
       month: '2-digit',

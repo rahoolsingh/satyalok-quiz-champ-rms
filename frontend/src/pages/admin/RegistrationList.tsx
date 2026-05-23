@@ -509,7 +509,7 @@ export function RegistrationList() {
                     {p.address && <p className="text-[11px] text-[#86868b] leading-snug">📍 {p.address}</p>}
                     {p.email && <p className="text-[11px] text-[#86868b] leading-snug">✉️ {p.email}</p>}
                     {p.merchantTransactionId && <p className="text-[11px] text-[#86868b] leading-snug font-mono">🧾 {p.merchantTransactionId}</p>}
-                    <p className="text-[11px] text-[#86868b] leading-snug">🌐 Question Paper Language: {p.questionPaperLanguage === 'HINDI' ? 'Hindi' : 'English'}</p>
+                    <p className="text-[11px] text-[#86868b] leading-snug">🌐 Question Paper Language: {p.questionPaperLanguage === 'HINDI' ? 'Hindi' : p.questionPaperLanguage === 'ENGLISH' ? 'English' : 'Not Selected'}</p>
                   </div>
 
                   {/* Actions bar */}

@@ -16,6 +16,7 @@ export interface AdmitCardData {
   venueMapUrl?: string;
   generatedAt: string;
   photoUrl?: string;
+  questionPaperLanguage?: string;
 }
 
 export function generateAdmitCardData(participant: Participant, eventDetails?: { eventDate?: string; eventTime?: string; reportingTime?: string; examTime?: string; venue?: string; venueMapUrl?: string }): AdmitCardData {
@@ -39,6 +40,7 @@ export function generateAdmitCardData(participant: Participant, eventDetails?: {
     venueMapUrl: eventDetails?.venueMapUrl,
     generatedAt: new Date().toISOString(),
     photoUrl: participant.photoUrl,
+    questionPaperLanguage: (participant as any).questionPaperLanguage,
   };
 }
 
@@ -72,7 +74,7 @@ export function generateAdmitCardHtml(data: AdmitCardData): string {
     </div>
     ${data.photoUrl ? `<div style="text-align:center;margin:16px 0"><img src="${data.photoUrl}" alt="Participant photo" style="width:100px;height:100px;object-fit:cover;border-radius:50%;border:2px solid #1a237e" /></div>` : ''}
     <div class="roll-number">
-      <div class="label">Roll Number</div>
+      <div class="label">Roll Number ${data.questionPaperLanguage ? `— Paper Language: ${data.questionPaperLanguage === 'HINDI' ? 'Hindi' : 'English'}` : ''}</div>
       <div class="number">${data.rollNumber}</div>
     </div>
     <div class="details">
