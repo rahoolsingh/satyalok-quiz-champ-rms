@@ -11,6 +11,7 @@ export interface IParticipant extends Document {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
+  questionPaperLanguage: 'HINDI' | 'ENGLISH';
   paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED';
   paymentId?: string;
   admitCardUrl?: string;
@@ -40,6 +41,7 @@ const ParticipantSchema = new Schema<IParticipant>(
     mobileNumber: { type: String, required: true },
     email: { type: String },
     referralSource: { type: String },
+    questionPaperLanguage: { type: String, enum: ['HINDI', 'ENGLISH'], required: true },
     paymentStatus: {
       type: String,
       enum: ['PENDING', 'COMPLETED', 'FAILED'],

@@ -5,7 +5,7 @@ import { BatchType, RegistrationInput } from "../types";
 import { registrationApi } from "../api/client";
 
 // --- Types ---
-type FormState = Omit<RegistrationInput, "gender"> & { gender: RegistrationInput["gender"] | "" };
+type FormState = Omit<RegistrationInput, "gender" | "questionPaperLanguage"> & { gender: RegistrationInput["gender"] | ""; questionPaperLanguage: RegistrationInput["questionPaperLanguage"] | "" };
 type Errors = Partial<Record<keyof FormState, string>>;
 
 interface Draft extends Partial<RegistrationInput> {
@@ -139,6 +139,7 @@ export function RegistrationForm({
         mobileNumber,
         email: draft?.email || "",
         referralSource: draft?.referralSource || "",
+        questionPaperLanguage: "",
     });
 
     const [errors, setErrors] = useState<Errors>({});
@@ -175,6 +176,8 @@ export function RegistrationForm({
         if (!form.address.trim()) errs.address = "Full address is required";
         if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
             errs.email = "Enter a valid email address";
+        if (!form.questionPaperLanguage)
+            errs.questionPaperLanguage = "Please select a question paper language";
 
         setErrors(errs);
         return Object.keys(errs).length === 0;
@@ -257,6 +260,7 @@ export function RegistrationForm({
             if (form.email) fd.append("email", form.email.trim());
             if (form.referralSource)
                 fd.append("referralSource", form.referralSource.trim());
+            fd.append("questionPaperLanguage", form.questionPaperLanguage);
             if (photoFile) fd.append("photo", photoFile);
 
             await registrationApi.saveDraft(fd, sessionToken);
@@ -500,6 +504,21 @@ export function RegistrationForm({
                         </select>
                     </FieldWrapper>
                 </div>
+
+                <FieldWrapper label="Choose your Question Paper Language" error={errors.questionPaperLanguage} required>
+                    <select
+                        value={form.questionPaperLanguage}
+                        onChange={(e) =>
+                            updateForm("questionPaperLanguage", e.target.value)
+                        }
+                        disabled={submitting}
+                        className={`w-full px-4 py-3 bg-white text-[#1d1d1f] rounded-xl text-base outline-none transition-all border ${errors.questionPaperLanguage ? "border-red-400 focus:ring-4 focus:ring-red-500/20" : "border-gray-300 focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/20 cursor-pointer"}`}
+                    >
+                        <option value="">Select language</option>
+                        <option value="HINDI">Hindi</option>
+                        <option value="ENGLISH">English</option>
+                    </select>
+                </FieldWrapper>
 
                 <div className="pt-4">
                     <motion.button

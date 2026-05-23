@@ -46,6 +46,10 @@ export function validateRegistration(input: Partial<RegistrationInput>): Validat
     }
   }
 
+  if (!input.questionPaperLanguage || !['HINDI', 'ENGLISH'].includes(input.questionPaperLanguage)) {
+    errors.questionPaperLanguage = 'Question paper language must be HINDI or ENGLISH';
+  }
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,

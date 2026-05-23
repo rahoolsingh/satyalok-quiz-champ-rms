@@ -12,6 +12,7 @@ interface Participant {
   address?: string;
   mobileNumber: string;
   email: string | null;
+  questionPaperLanguage: string;
   photoUrl?: string;
   paymentStatus: string;
   merchantTransactionId: string | null;
@@ -503,11 +504,12 @@ export function RegistrationList() {
                     </div>
                   </div>
 
-                  {/* Info: Address + Email (full width, no truncation) */}
+                  {/* Info: Address + Email + Language (full width, no truncation) */}
                   <div className="mt-2 space-y-0.5">
                     {p.address && <p className="text-[11px] text-[#86868b] leading-snug">📍 {p.address}</p>}
                     {p.email && <p className="text-[11px] text-[#86868b] leading-snug">✉️ {p.email}</p>}
                     {p.merchantTransactionId && <p className="text-[11px] text-[#86868b] leading-snug font-mono">🧾 {p.merchantTransactionId}</p>}
+                    <p className="text-[11px] text-[#86868b] leading-snug">🌐 Question Paper Language: {p.questionPaperLanguage === 'HINDI' ? 'Hindi' : 'English'}</p>
                   </div>
 
                   {/* Actions bar */}

@@ -40,6 +40,7 @@ export interface RegistrationInput {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
+  questionPaperLanguage: 'HINDI' | 'ENGLISH';
 }
 
 export interface AdmitCardData {
@@ -91,6 +92,7 @@ export interface ProfileData {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
+  questionPaperLanguage: 'HINDI' | 'ENGLISH';
   photoUrl?: string;
   paymentStatus: PaymentStatus;
   rollNumber?: string;

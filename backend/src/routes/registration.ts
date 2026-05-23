@@ -32,6 +32,7 @@ function draftShape(p: InstanceType<typeof Participant> | Record<string, unknown
     mobileNumber: (p as { mobileNumber: string }).mobileNumber,
     email: (p as { email?: string }).email,
     referralSource: (p as { referralSource?: string }).referralSource,
+    questionPaperLanguage: (p as { questionPaperLanguage: string }).questionPaperLanguage,
     photoUrl: (p as { photoUrl?: string }).photoUrl,
     paymentStatus: (p as { paymentStatus: string }).paymentStatus,
     merchantTransactionId: (p as { merchantTransactionId?: string }).merchantTransactionId,
@@ -66,6 +67,7 @@ registrationRouter.post(
         mobileNumber: mobile,
         email: req.body.email,
         referralSource: req.body.referralSource,
+        questionPaperLanguage: req.body.questionPaperLanguage,
       };
 
       const validation = validateRegistration(input);
@@ -101,6 +103,7 @@ registrationRouter.post(
         address: input.address.trim(),
         email: input.email?.trim() || undefined,
         referralSource: input.referralSource?.trim() || undefined,
+        questionPaperLanguage: input.questionPaperLanguage,
         paymentStatus: 'PENDING',
         otpVerifiedAt: new Date(),
       };

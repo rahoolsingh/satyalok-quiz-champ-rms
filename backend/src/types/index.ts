@@ -16,6 +16,7 @@ export interface Participant {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
+  questionPaperLanguage: 'HINDI' | 'ENGLISH';
   paymentStatus: PaymentStatus;
   paymentId?: string;
   admitCardUrl?: string;
@@ -98,6 +99,7 @@ export interface RegistrationInput {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
+  questionPaperLanguage: 'HINDI' | 'ENGLISH';
 }
 
 export interface ApiError {

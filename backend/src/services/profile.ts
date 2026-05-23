@@ -11,6 +11,7 @@ export interface ProfileData {
   mobileNumber: string;
   email?: string;
   referralSource?: string;
+  questionPaperLanguage: 'HINDI' | 'ENGLISH';
   photoUrl?: string;
   paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED';
   rollNumber?: string;
@@ -48,6 +49,7 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
     mobileNumber: participant.mobileNumber,
     email: participant.email,
     referralSource: participant.referralSource,
+    questionPaperLanguage: participant.questionPaperLanguage as 'HINDI' | 'ENGLISH',
     photoUrl: participant.photoUrl,
     paymentStatus: participant.paymentStatus,
     rollNumber: participant.rollNumber,
