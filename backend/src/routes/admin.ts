@@ -5,7 +5,7 @@ import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { parse } from 'csv-parse/sync';
 import { v4 as uuidv4 } from 'uuid';
-import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig, AdminSession } from '../db/models';
+import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfig, AdminSession, PaymentAttempt } from '../db/models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
@@ -1045,35 +1045,68 @@ adminRouter.post('/registrations/:id/verify-payment', async (req: AuthRequest, r
       return res.status(404).json({ error: 'Participant not found' });
     }
 
-    if (!participant.merchantTransactionId) {
-      return res.status(400).json({ error: 'No transaction ID found for this participant' });
-    }
-
     if (participant.paymentStatus === 'COMPLETED') {
       return res.json({ message: 'Payment already verified as COMPLETED', status: 'COMPLETED' });
     }
 
-    // Import dynamically to avoid circular deps
+    // Get all payment attempts for this participant
+    const attempts = await PaymentAttempt.find({
+      participantId: participant._id.toString(),
+      status: { $in: ['INITIATED', 'PENDING'] },
+    }).sort({ createdAt: -1 });
+
+    // Also check the current merchantTransactionId if not in attempts
+    const txIds = new Set(attempts.map(a => a.merchantTransactionId));
+    if (participant.merchantTransactionId && !txIds.has(participant.merchantTransactionId)) {
+      txIds.add(participant.merchantTransactionId);
+    }
+
+    if (txIds.size === 0) {
+      return res.status(400).json({ error: 'No transaction IDs found for this participant' });
+    }
+
     const { verifyPaymentStatus, processPaymentVerification } = await import('../services/paymentVerification');
 
-    // Check with payment gateway
-    const paymentStatus = await verifyPaymentStatus(participant.merchantTransactionId);
+    // Check all transaction IDs with the gateway
+    for (const txId of txIds) {
+      try {
+        const paymentStatus = await verifyPaymentStatus(txId);
 
-    if (paymentStatus.status === 'SUCCESS') {
-      // Process the full verification flow (update status, send notifications, etc.)
-      await processPaymentVerification(participant.merchantTransactionId);
+        if (paymentStatus.status === 'SUCCESS') {
+          // Update the participant's merchantTransactionId to the successful one
+          participant.merchantTransactionId = txId;
+          await participant.save();
 
-      return res.json({
-        message: 'Payment verified as SUCCESS. Participant status updated to COMPLETED.',
-        status: 'SUCCESS',
-        transactionId: paymentStatus.transactionId,
-      });
+          // Update attempt record
+          await PaymentAttempt.findOneAndUpdate(
+            { merchantTransactionId: txId },
+            { status: 'SUCCESS', verifiedAt: new Date(), gatewayResponse: JSON.stringify(paymentStatus) }
+          );
+
+          // Process the full verification flow
+          await processPaymentVerification(txId);
+
+          return res.json({
+            message: `Payment verified as SUCCESS (Transaction: ${txId}). Status updated to COMPLETED.`,
+            status: 'SUCCESS',
+            transactionId: txId,
+            checkedCount: txIds.size,
+          });
+        } else if (paymentStatus.status === 'FAILED') {
+          await PaymentAttempt.findOneAndUpdate(
+            { merchantTransactionId: txId },
+            { status: 'FAILED', verifiedAt: new Date() }
+          );
+        }
+      } catch (err) {
+        console.error(`[Admin] Error checking ${txId}:`, err);
+      }
     }
 
     return res.json({
-      message: `Payment status from gateway: ${paymentStatus.status}`,
-      status: paymentStatus.status,
-      transactionId: participant.merchantTransactionId,
+      message: `Checked ${txIds.size} transaction(s). No successful payment found.`,
+      status: 'PENDING',
+      checkedCount: txIds.size,
     });
   } catch (err) {
     console.error('[Admin] Failed to verify payment:', err);

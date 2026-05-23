@@ -8,3 +8,4 @@ export { OtpRateLimit, IOtpRateLimit } from './otpRateLimit.model';
 export { Result, IResult } from './result.model';
 
 export { AdminSession, IAdminSession } from './adminSession.model';
+export { PaymentAttempt, IPaymentAttempt } from './paymentAttempt.model';

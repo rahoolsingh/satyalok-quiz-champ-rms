@@ -13,6 +13,7 @@ import { otpRouter } from "./routes/otp";
 import { profileRouter } from "./routes/profile";
 import { testAdmitCardRouter } from "./routes/testAdmitCard";
 import { startPaymentReminderScheduler } from "./services/paymentReminder";
+import { startPaymentCron } from "./services/paymentCron";
 
 dotenv.config();
 
@@ -78,6 +79,9 @@ if (require.main === module) {
                 
                 // Start payment reminder scheduler
                 startPaymentReminderScheduler();
+
+                // Start payment verification cron
+                startPaymentCron();
             });
         })
         .catch((err) => {

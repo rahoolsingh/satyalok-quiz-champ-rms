@@ -6,7 +6,7 @@ import { getRegistrationFee, generateMerchantTransactionId } from '../services/p
 import { initiatePhonePePayment } from '../services/pgsClient';
 import { generateAdmitCardData, generateAdmitCardHtml } from '../services/admitCard';
 import { uploadToS3 } from '../services/storage';
-import { Participant, PortalConfig } from '../db/models';
+import { Participant, PortalConfig, PaymentAttempt } from '../db/models';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { validateImageFormat } from '../services/validation';
 import { generateAdmitCardPDF } from '../services/admitCardPdf';
@@ -166,6 +166,15 @@ registrationRouter.post(
       const merchantTransactionId = generateMerchantTransactionId();
 
       await Participant.findByIdAndUpdate(participant._id, { merchantTransactionId });
+
+      // Log payment attempt
+      await PaymentAttempt.create({
+        participantId: participant._id.toString(),
+        mobileNumber: participant.mobileNumber,
+        merchantTransactionId,
+        amount,
+        status: 'INITIATED',
+      });
 
       let pgsResponse;
       try {
