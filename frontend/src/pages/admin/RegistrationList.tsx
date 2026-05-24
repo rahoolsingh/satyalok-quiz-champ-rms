@@ -9,7 +9,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -19,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import {
   Select,
   SelectTrigger,
@@ -36,25 +36,17 @@ import {
   MessageCircle,
   Copy,
   Search,
-  ChevronUp,
-  ChevronDown,
   UserCheck,
   UserX,
   FileText,
   GraduationCap,
   TrendingUp,
-  Sun,
-  Moon,
-  Sparkles,
   CalendarDays,
   Send,
   RotateCcw,
-  Eye,
   EyeOff,
-  Download,
   Bell,
   ShieldAlert,
-  ArrowUpDown,
   Languages,
 } from 'lucide-react';
 
@@ -102,6 +94,10 @@ const STATUS_TABS = [
   { value: 'NOT_DOWNLOADED', label: 'No Download' },
 ] as const;
 
+const statusBadge: Record<string, 'default' | 'secondary' | 'destructive'> = {
+  COMPLETED: 'default', PENDING: 'secondary', FAILED: 'destructive',
+};
+
 function timeAgo(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
@@ -114,16 +110,6 @@ function timeAgo(dateStr: string): string {
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d`;
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-}
-
-function maskGuardianName(name?: string | null): string {
-  const trimmed = (name ?? '').trim();
-  if (!trimmed) return '***';
-  return trimmed.split(/\s+/).map(part => {
-    if (part.length <= 1) return '*';
-    if (part.length === 2) return `${part[0]}*`;
-    return `${part[0]}${'*'.repeat(part.length - 2)}${part[part.length - 1]}`;
-  }).join(' ');
 }
 
 function getInitials(name: string): string {
@@ -163,7 +149,7 @@ export function RegistrationList() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const observerRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getStatusFilter = useCallback(() => {
@@ -200,7 +186,7 @@ export function RegistrationList() {
       ([entry]) => { if (entry.isIntersecting && hasMore && !loading) { const np = page + 1; setPage(np); load(np, true); } },
       { threshold: 0.1 }
     );
-    if (observerRef.current) observer.observe(observerRef.current);
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [hasMore, loading, page, load]);
 
@@ -208,12 +194,6 @@ export function RegistrationList() {
     setSearch(val);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => { setPage(1); load(1); }, 400);
-  };
-
-  const copyNumber = (mobile: string, id: string) => {
-    navigator.clipboard.writeText(mobile);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 1500);
   };
 
   const execAction = async (fn: () => Promise<any>, name: string) => {
@@ -227,6 +207,14 @@ export function RegistrationList() {
     registrationsCompleted: p.registrationsCompleted,
   }));
 
+  const openWhatsApp = (mobile: string) => window.open(`https://wa.me/91${mobile}`, '_blank');
+  const openCall = (mobile: string) => window.open(`tel:+91${mobile}`);
+  const copyNumber = (mobile: string, id: string) => {
+    navigator.clipboard.writeText(mobile);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -237,9 +225,7 @@ export function RegistrationList() {
             Registrations
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {total} total participant{total !== 1 ? 's' : ''}
-            {counts.junior > 0 && ` · ${counts.junior} junior`}
-            {counts.senior > 0 && ` · ${counts.senior} senior`}
+            {total} total{counts.junior > 0 && ` · ${counts.junior} junior`}{counts.senior > 0 && ` · ${counts.senior} senior`}
           </p>
         </div>
         <Badge variant="outline" className="gap-1.5 text-xs px-3 py-1.5">
@@ -248,7 +234,7 @@ export function RegistrationList() {
         </Badge>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats */}
       <div className="flex flex-wrap gap-2">
         {statCards.map(c => {
           const Icon = c.icon;
@@ -326,7 +312,7 @@ export function RegistrationList() {
         )}
       </Card>
 
-      {/* Search & Filters */}
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
@@ -349,7 +335,7 @@ export function RegistrationList() {
         </Select>
       </div>
 
-      {/* Status Tabs + Toggles */}
+      {/* Status + Toggles */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1">
@@ -368,8 +354,8 @@ export function RegistrationList() {
               onCheckedChange={c => setHideSensitiveData(!!c)}
             />
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              {hideSensitiveData ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-              {hideSensitiveData ? 'Hidden' : 'Show'} sensitive data
+              <EyeOff className="size-3" />
+              Hide guardian
             </span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -386,221 +372,229 @@ export function RegistrationList() {
         </div>
       </div>
 
-      {/* Participant Cards */}
-      <div className="space-y-2">
-        {participants.map(p => {
-          const statusColor = p.paymentStatus === 'COMPLETED' ? 'default'
-            : p.paymentStatus === 'PENDING' ? 'secondary'
-            : 'destructive';
-          return (
-            <Card key={p.id} className="relative overflow-hidden transition-shadow hover:shadow-sm">
-              <div className={`absolute top-0 left-0 w-1 h-full ${p.batchType === 'JUNIOR' ? 'bg-blue-500' : 'bg-purple-500'}`} />
-              <CardContent className="p-3 pl-4">
-                {hideSensitiveData ? (
-                  <div className="flex items-start gap-3 py-1">
-                    <Avatar className="size-10 rounded-lg">
-                      {p.photoUrl ? <AvatarImage src={p.photoUrl} /> : null}
-                      <AvatarFallback className="rounded-lg text-xs">{getInitials(p.name)}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm leading-tight">{p.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Guardian: {maskGuardianName(p.guardianName)} · Class {p.class} · {p.batchType}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <Avatar className="size-10 rounded-lg">
+      {/* Table */}
+      <Card className="overflow-hidden border-border">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[180px]">Participant</TableHead>
+                {!hideSensitiveData && <TableHead className="min-w-[130px]">Guardian</TableHead>}
+                <TableHead className="min-w-[80px]">Class</TableHead>
+                <TableHead className="min-w-[70px]">Batch</TableHead>
+                {!hideSensitiveData && <TableHead className="min-w-[70px]">Gender</TableHead>}
+                <TableHead className="min-w-[80px]">Paper</TableHead>
+                {!hideSensitiveData && <TableHead className="min-w-[110px]">Referral</TableHead>}
+                {!hideSensitiveData && <TableHead className="min-w-[110px]">Mobile</TableHead>}
+                <TableHead className="min-w-[80px]">Status</TableHead>
+                <TableHead className="min-w-[75px]">Admit</TableHead>
+                <TableHead className="min-w-[160px]">Actions</TableHead>
+                <TableHead className="min-w-[50px]">Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {participants.map(p => (
+                <TableRow key={p.id} className="group">
+                  {/* Participant */}
+                  <TableCell>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar className="size-8 rounded-lg shrink-0">
                         {p.photoUrl ? <AvatarImage src={p.photoUrl} alt={p.name} /> : null}
-                        <AvatarFallback className="rounded-lg text-xs">{getInitials(p.name)}</AvatarFallback>
+                        <AvatarFallback className="rounded-lg text-[10px]">{getInitials(p.name)}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm">{p.name}</span>
-                          {p.rollNumber && (
-                            <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 h-4">
-                              {p.rollNumber}
-                            </Badge>
-                          )}
-                          <Badge variant={statusColor} className="text-[10px] px-1.5 py-0 h-4 leading-none">
-                            {p.paymentStatus}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          S/o {p.guardianName} · Class {p.class} · {p.batchType}
-                          {p.gender && ` · ${p.gender === 'MALE' ? 'Male' : 'Female'}`}
-                        </p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium leading-tight truncate max-w-[120px]">{p.name}</p>
+                        {p.rollNumber && <p className="text-[10px] font-mono text-primary leading-tight truncate">{p.rollNumber}</p>}
                       </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(p.createdAt)}</span>
                     </div>
-                    <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
-                      {p.address && <p>📍 {p.address}</p>}
-                      {p.email && <p>✉️ {p.email}</p>}
-                      {p.referralSource && <p>🔗 Referred by: {p.referralSource}</p>}
-                      {p.questionPaperLanguage && (
-                        <p>🌐 Paper: {p.questionPaperLanguage === 'HINDI' ? 'Hindi' : p.questionPaperLanguage === 'ENGLISH' ? 'English' : p.questionPaperLanguage}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center flex-wrap gap-1.5 mt-2 pt-2 border-t border-border">
-                      <Button variant="outline" size="xs" onClick={() => copyNumber(p.mobileNumber, p.id)} className="font-mono text-[11px]">
-                        {p.mobileNumber}
-                        {copiedId === p.id ? <CheckCircle2 className="size-3 ml-1 text-green-500" /> : <Copy className="size-3 ml-1" />}
-                      </Button>
-                      <Button variant="ghost" size="icon-xs" onClick={() => window.open(`https://wa.me/91${p.mobileNumber}`, '_blank')} className="text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10">
+                  </TableCell>
+
+                  {/* Guardian */}
+                  {!hideSensitiveData && (
+                    <TableCell className="text-sm text-muted-foreground max-w-[130px] truncate">{p.guardianName}</TableCell>
+                  )}
+
+                  {/* Class */}
+                  <TableCell className="text-sm">Class {p.class}</TableCell>
+
+                  {/* Batch */}
+                  <TableCell>
+                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 ${p.batchType === 'JUNIOR' ? 'border-blue-300 text-blue-700 dark:text-blue-300' : 'border-purple-300 text-purple-700 dark:text-purple-300'}`}>
+                      {p.batchType}
+                    </Badge>
+                  </TableCell>
+
+                  {/* Gender */}
+                  {!hideSensitiveData && (
+                    <TableCell className="text-sm text-muted-foreground">{p.gender === 'MALE' ? 'Male' : p.gender === 'FEMALE' ? 'Female' : '—'}</TableCell>
+                  )}
+
+                  {/* Paper Language */}
+                  <TableCell className="text-sm text-muted-foreground">
+                    {p.questionPaperLanguage === 'HINDI' ? 'Hindi' : p.questionPaperLanguage === 'ENGLISH' ? 'English' : '—'}
+                  </TableCell>
+
+                  {/* Referral */}
+                  {!hideSensitiveData && (
+                    <TableCell className="text-sm text-muted-foreground max-w-[110px] truncate">{p.referralSource || '—'}</TableCell>
+                  )}
+
+                  {/* Mobile */}
+                  {!hideSensitiveData && (
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-mono">{p.mobileNumber}</span>
+                        <Button variant="ghost" size="icon-xs" onClick={() => copyNumber(p.mobileNumber, p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          {copiedId === p.id ? <CheckCircle2 className="size-3 text-green-500" /> : <Copy className="size-3" />}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+
+                  {/* Payment Status */}
+                  <TableCell>
+                    <Badge variant={statusBadge[p.paymentStatus] || 'default'} className="text-[10px] px-1.5 py-0 h-5 leading-none">
+                      {p.paymentStatus}
+                    </Badge>
+                  </TableCell>
+
+                  {/* Admit Card */}
+                  <TableCell>
+                    <span className={`inline-flex items-center gap-1 text-[11px] ${p.admitCardDownloaded ? 'text-green-600' : 'text-red-500'}`}>
+                      <span className={`size-1.5 rounded-full ${p.admitCardDownloaded ? 'bg-green-500' : 'bg-red-400'}`} />
+                      {p.admitCardDownloaded ? 'Yes' : 'No'}
+                    </span>
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon-xs" onClick={() => openWhatsApp(p.mobileNumber)} className="text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10" title="WhatsApp">
                         <MessageCircle className="size-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon-xs" onClick={() => window.open(`tel:+91${p.mobileNumber}`)} className="text-blue-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30">
+                      <Button variant="ghost" size="icon-xs" onClick={() => openCall(p.mobileNumber)} className="text-blue-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30" title="Call">
                         <PhoneCall className="size-3.5" />
                       </Button>
-
-                      {p.paymentStatus === 'COMPLETED' && (
-                        <span className={`inline-flex items-center gap-1 text-[10px] ml-auto ${p.admitCardDownloaded ? 'text-green-600' : 'text-red-500'}`}>
-                          <span className={`size-1.5 rounded-full ${p.admitCardDownloaded ? 'bg-green-500' : 'bg-red-400'}`} />
-                          {p.admitCardDownloaded ? 'Downloaded' : 'Not downloaded'}
-                        </span>
-                      )}
-
                       {p.paymentStatus === 'COMPLETED' && !p.groupInviteSent && !p.groupJoined && (
-                        <Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendGroupInvite(p.id).then(() => setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, groupInviteSent: true } : x))), p.name)}>
-                          <Send className="size-3 mr-1" /> Invite
+                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(() => adminApi.sendGroupInvite(p.id).then(() => setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, groupInviteSent: true } : x))), p.name)} title="Send invite">
+                          <Send className="size-3.5" />
                         </Button>
                       )}
-                      {p.groupInviteSent && !p.groupJoined && (
-                        <Badge variant="secondary" className="text-[10px] h-5">Invited</Badge>
+                      {p.paymentStatus === 'COMPLETED' && (
+                        <>
+                          <Button variant="ghost" size="icon-xs" onClick={() => setDatesDialog({ id: p.id, name: p.name, isGodMode: godMode })} title="Send dates">
+                            <CalendarDays className="size-3.5" />
+                          </Button>
+                        </>
                       )}
-                      {p.groupJoined && (
-                        <Badge variant="default" className="text-[10px] h-5 bg-green-600">Joined</Badge>
-                      )}
-
-                      {p.paymentStatus === 'PENDING' && (
-                        <Button variant="secondary" size="xs" onClick={() => execAction(() => adminApi.sendPaymentReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)}>
-                          <Bell className="size-3 mr-1" /> Remind
+                      {!p.admitCardDownloaded && p.paymentStatus === 'COMPLETED' && (
+                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(() => adminApi.sendAdmitCardReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-orange-600" title="Remind download">
+                          <Bell className="size-3.5" />
                         </Button>
                       )}
                       {(p.paymentStatus === 'PENDING' || p.paymentStatus === 'FAILED') && (
-                        <Button variant="outline" size="xs" onClick={() => execAction(async () => {
+                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(async () => {
                           const res = await adminApi.verifyPayment(p.id);
                           alert(`${p.name}: ${res.data.message}`);
                           if (res.data.status === 'SUCCESS') setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, paymentStatus: 'COMPLETED' } : x));
-                        }, p.name)} className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-                          <RotateCcw className="size-3 mr-1" /> Verify
+                        }, p.name)} className="text-emerald-600" title="Verify payment">
+                          <RotateCcw className="size-3.5" />
                         </Button>
                       )}
-
-                      {p.paymentStatus === 'COMPLETED' && !p.admitCardDownloaded && (
-                        <Button variant="ghost" size="xs" onClick={() => execAction(() => adminApi.sendAdmitCardReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-orange-600">
-                          <Bell className="size-3 mr-1" /> Remind
+                      {p.paymentStatus === 'PENDING' && (
+                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(() => adminApi.sendPaymentReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-amber-600" title="Payment reminder">
+                          <Bell className="size-3.5" />
                         </Button>
-                      )}
-
-                      {p.paymentStatus === 'COMPLETED' && (
-                        <>
-                          <Button variant="secondary" size="xs" onClick={() => setDatesDialog({ id: p.id, name: p.name, isGodMode: godMode })}>
-                            <CalendarDays className="size-3 mr-1" /> Dates
-                          </Button>
-                          <Dialog open={datesDialog?.id === p.id} onOpenChange={open => { if (!open) setDatesDialog(null); }}>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Send Important Dates</DialogTitle>
-                                <DialogDescription>
-                                  Send important dates to <strong>{p.name}</strong>.
-                                  {godMode && <span className="block mt-1 text-red-500">⚡ God Mode active — no rate limits.</span>}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <p className="text-sm text-muted-foreground">
-                                Have the dates changed? If yes, the admit card download status will be cleared so they can download the updated version.
-                              </p>
-                              <DialogFooter showCloseButton className="flex-col sm:flex-row gap-2 mt-2">
-                                <Button variant="destructive" onClick={async () => {
-                                  await (godMode ? adminApi.resendImportantDates(p.id, true) : adminApi.sendImportantDates(p.id, true));
-                                  setDatesDialog(null);
-                                  setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, admitCardDownloaded: false } : x));
-                                  alert(`Important dates sent to ${p.name} (admit card status cleared)`);
-                                }}>
-                                  Yes, dates changed
-                                </Button>
-                                <Button onClick={async () => {
-                                  await (godMode ? adminApi.resendImportantDates(p.id, false) : adminApi.sendImportantDates(p.id, false));
-                                  setDatesDialog(null);
-                                  alert(`Important dates sent to ${p.name}`);
-                                }}>
-                                  No change — just send
-                                </Button>
-                                <DialogClose render={<Button variant="secondary">Cancel</Button>} />
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </>
-                      )}
-
-                      {godMode && p.paymentStatus === 'COMPLETED' && (
-                        <div className="w-full flex flex-wrap gap-1.5 mt-1.5 pt-1.5 border-t border-red-200">
-                          <span className="text-[9px] text-red-400 font-medium uppercase tracking-wide w-full">⚡ God Mode</span>
-                          <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendPaymentConfirmation(p.id).then(() => alert(`Confirmation resent to ${p.name}`)), p.name)}>
-                            <RotateCcw className="size-3 mr-1" /> Confirmation
-                          </Button>
-                          <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendGroupInvite(p.id).then(() => alert(`Group invite resent to ${p.name}`)), p.name)}>
-                            <RotateCcw className="size-3 mr-1" /> Group Invite
-                          </Button>
-                          <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendAdmitCardReminder(p.id).then(() => alert(`Reminder resent to ${p.name}`)), p.name)}>
-                            <RotateCcw className="size-3 mr-1" /> Admit Card
-                          </Button>
-                          <Button variant="destructive" size="xs" onClick={() => {
-                            setDatesDialog({ id: p.id, name: p.name, isGodMode: true });
-                          }}>
-                            <RotateCcw className="size-3 mr-1" /> Dates
-                          </Button>
-                        </div>
-                      )}
-
-                      {godMode && p.paymentStatus === 'PENDING' && (
-                        <div className="w-full flex flex-wrap gap-1.5 mt-1.5 pt-1.5 border-t border-red-200">
-                          <span className="text-[9px] text-red-400 font-medium uppercase tracking-wide w-full">⚡ God Mode</span>
-                          <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendPaymentReminder(p.id).then(() => alert(`Reminder resent to ${p.name}`)), p.name)}>
-                            <RotateCcw className="size-3 mr-1" /> Payment Reminder
-                          </Button>
-                        </div>
                       )}
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                  </TableCell>
 
-        {!loading && participants.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Users className="size-8 mb-2 opacity-40" />
-              <p className="text-sm">No registrations found</p>
-            </CardContent>
+                  {/* Time */}
+                  <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">{timeAgo(p.createdAt)}</TableCell>
+                </TableRow>
+              ))}
+
+              {/* Loading rows */}
+              {loading && Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  <TableCell colSpan={!hideSensitiveData ? 12 : 7}>
+                    <Skeleton className="h-8 w-full" />
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {/* Empty */}
+              {!loading && participants.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                    <Users className="size-8 mx-auto mb-2 opacity-40" />
+                    <p>No registrations found</p>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      {/* Sentinel for infinite scroll */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {/* Dates Dialog */}
+      <Dialog open={!!datesDialog} onOpenChange={open => { if (!open) setDatesDialog(null); }}>
+        {datesDialog && (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Important Dates</DialogTitle>
+              <DialogDescription>
+                Send important dates to <strong>{datesDialog.name}</strong>.
+                {godMode && <span className="block mt-1 text-red-500">⚡ God Mode active — no rate limits.</span>}
+              </DialogDescription>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Have the dates changed? If yes, the admit card download status will be cleared so they can download the updated version.
+            </p>
+            <DialogFooter showCloseButton className="flex-col sm:flex-row gap-2 mt-2">
+              <Button variant="destructive" onClick={async () => {
+                const { id, name, isGodMode } = datesDialog;
+                await (isGodMode ? adminApi.resendImportantDates(id, true) : adminApi.sendImportantDates(id, true));
+                setDatesDialog(null);
+                setParticipants(prev => prev.map(x => x.id === id ? { ...x, admitCardDownloaded: false } : x));
+                alert(`Important dates sent to ${name} (admit card status cleared)`);
+              }}>
+                Yes, dates changed
+              </Button>
+              <Button onClick={async () => {
+                const { id, name, isGodMode } = datesDialog;
+                await (isGodMode ? adminApi.resendImportantDates(id, false) : adminApi.sendImportantDates(id, false));
+                setDatesDialog(null);
+                alert(`Important dates sent to ${name}`);
+              }}>
+                No change — just send
+              </Button>
+              <DialogClose render={<Button variant="secondary">Cancel</Button>} />
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* God Mode resend buttons rendered outside table for simplicity — shown as a small floating panel */}
+      {godMode && participants.some(p => p.paymentStatus === 'COMPLETED' || p.paymentStatus === 'PENDING') && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Card className="p-3 shadow-lg border-red-200 dark:border-red-900">
+            <p className="text-[10px] text-red-500 font-medium uppercase tracking-wide mb-2">⚡ God Mode</p>
+            <div className="flex flex-wrap gap-1.5">
+              {participants.filter(p => p.paymentStatus === 'COMPLETED').slice(0, 1).map(p => (
+                <div key={p.id} className="flex flex-wrap gap-1">
+                  <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendPaymentConfirmation(p.id).then(() => alert(`Confirmation resent to ${p.name}`)), p.name)}>Resend Confirmation</Button>
+                  <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendGroupInvite(p.id).then(() => alert(`Group invite resent to ${p.name}`)), p.name)}>Resend Group Invite</Button>
+                  <Button variant="destructive" size="xs" onClick={() => execAction(() => adminApi.resendAdmitCardReminder(p.id).then(() => alert(`Reminder resent to ${p.name}`)), p.name)}>Resend Admit Card</Button>
+                </div>
+              ))}
+            </div>
           </Card>
-        )}
-
-        {loading && (
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-3">
-                    <Skeleton className="size-10 rounded-lg" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-3 w-60" />
-                      <Skeleton className="h-3 w-80" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        <div ref={observerRef} className="h-4" />
-      </div>
+        </div>
+      )}
     </div>
   );
 }
