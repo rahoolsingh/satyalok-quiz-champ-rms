@@ -331,7 +331,7 @@ export function RegistrationList() {
             className="pl-9"
           />
         </div>
-        <Select value={batch || null} onValueChange={v => setBatch(v ?? '')}>
+        <Select value={batch || ''} onValueChange={v => setBatch(v ?? '')}>
           <SelectTrigger className="w-full sm:w-36">
             <SelectValue placeholder="All Batches" />
           </SelectTrigger>

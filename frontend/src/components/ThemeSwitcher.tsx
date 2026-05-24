@@ -23,16 +23,16 @@ export function ThemeSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" aria-label="Switch theme">{icon}</Button>} />
       <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+          <DropdownMenuLabel>Theme</DropdownMenuLabel>
+          <DropdownMenuSeparator />
           <DropdownMenuRadioItem value="light">
             <Sun className="size-4" />
             Light
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark">
             <Moon className="size-4" />
-            Vampire
+            Dark
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="system">
             <Monitor className="size-4" />
