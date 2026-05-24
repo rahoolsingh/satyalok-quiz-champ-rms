@@ -21,7 +21,9 @@ export function ThemeSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" aria-label="Switch theme">{icon}</Button>} />
+      <DropdownMenuTrigger>
+        <Button variant="outline" size="icon-sm" aria-label="Switch theme">{icon}</Button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
         <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
           <DropdownMenuLabel>Theme</DropdownMenuLabel>
