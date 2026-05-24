@@ -55,6 +55,7 @@ import {
   Bell,
   ShieldAlert,
   ArrowUpDown,
+  Languages,
 } from 'lucide-react';
 
 const LIMIT = 20;
@@ -86,6 +87,7 @@ type TrendRange = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'EVENT_START';
 interface RegistrationMetrics {
   completed: number; pending: number; failed: number;
   admitCardNotDownloaded: number; female: number; male: number; formsFilled: number;
+  hindi: number; english: number;
 }
 
 interface RegistrationTrendPoint {
@@ -138,6 +140,8 @@ const statCards = [
   { key: 'female', label: 'Female', icon: UserX, color: 'text-pink-600', bg: 'bg-pink-50 dark:bg-pink-950/30' },
   { key: 'junior', label: 'Junior', icon: GraduationCap, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
   { key: 'senior', label: 'Senior', icon: GraduationCap, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/30' },
+  { key: 'hindi', label: 'Hindi', icon: Languages, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/30' },
+  { key: 'english', label: 'English', icon: Languages, color: 'text-cyan-600', bg: 'bg-cyan-50 dark:bg-cyan-950/30' },
 ];
 
 export function RegistrationList() {
@@ -145,7 +149,7 @@ export function RegistrationList() {
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState({ junior: 0, senior: 0 });
   const [metrics, setMetrics] = useState<RegistrationMetrics>({
-    completed: 0, pending: 0, failed: 0, admitCardNotDownloaded: 0, female: 0, male: 0, formsFilled: 0,
+    completed: 0, pending: 0, failed: 0, admitCardNotDownloaded: 0, female: 0, male: 0, formsFilled: 0, hindi: 0, english: 0,
   });
   const [trends, setTrends] = useState<RegistrationTrendPoint[]>([]);
   const [trendRange, setTrendRange] = useState<TrendRange>('EVENT_START');
@@ -245,11 +249,11 @@ export function RegistrationList() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-2">
         {statCards.map(c => {
           const Icon = c.icon;
-          const val = c.key === 'junior' ? counts.junior
-            : c.key === 'senior' ? counts.senior
+          const val = c.key === 'junior' || c.key === 'senior'
+            ? counts[c.key as keyof typeof counts]
             : metrics[c.key as keyof RegistrationMetrics] ?? 0;
           return (
             <Card key={c.key} className={`${c.bg} border-0 shadow-none px-2.5 py-2`}>

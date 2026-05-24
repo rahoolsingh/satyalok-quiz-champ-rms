@@ -549,7 +549,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       ];
     }
 
-    const [portalConfig, earliestParticipant, participants, total, juniorCount, seniorCount, completedCount, pendingCount, failedCount, notDownloadedCount, femaleCount, maleCount, formsFilledCount] = await Promise.all([
+    const [portalConfig, earliestParticipant, participants, total, juniorCount, seniorCount, completedCount, pendingCount, failedCount, notDownloadedCount, femaleCount, maleCount, formsFilledCount, hindiCount, englishCount] = await Promise.all([
       PortalConfig.findOne({}, { openingDate: 1 }).lean(),
       Participant.findOne({}, { createdAt: 1 }).sort({ createdAt: 1 }).lean(),
       Participant.find(filter)
@@ -567,6 +567,8 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
       Participant.countDocuments({ paymentStatus: 'COMPLETED', gender: 'FEMALE' }),
       Participant.countDocuments({ paymentStatus: 'COMPLETED', gender: 'MALE' }),
       Participant.countDocuments({}),
+      Participant.countDocuments({ questionPaperLanguage: 'HINDI' }),
+      Participant.countDocuments({ questionPaperLanguage: 'ENGLISH' }),
     ]);
 
     const eventStart = portalConfig?.openingDate || earliestParticipant?.createdAt || undefined;
@@ -626,6 +628,8 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         female: femaleCount,
         male: maleCount,
         formsFilled: formsFilledCount,
+        hindi: hindiCount,
+        english: englishCount,
       },
       trendRange: normalizedTrendRange,
       trends: trendSetup.buckets.map((bucket) => ({
