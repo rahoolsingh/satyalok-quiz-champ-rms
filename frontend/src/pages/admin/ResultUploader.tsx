@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
-import { adminApi } from '../../api/client';
+import React, { useState, useEffect } from 'react';
+import { adminApi, portalApi } from '../../api/client';
 
 export function ResultUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [pubDate, setPubDate] = useState('');
+  const [currentPubDate, setCurrentPubDate] = useState<string | null>(null);
+  const [resultsPublished, setResultsPublished] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [invalidRolls, setInvalidRolls] = useState<string[]>([]);
+
+  useEffect(() => {
+    portalApi.getStatus().then(r => {
+      setCurrentPubDate(r.data.resultPublicationDate || null);
+      setResultsPublished(r.data.resultsPublished || false);
+      if (r.data.resultPublicationDate) {
+        setPubDate(r.data.resultPublicationDate.slice(0, 16));
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,14 +67,28 @@ export function ResultUploader() {
       </div>
 
       <div className="bg-white rounded-xl p-6 border border-[#d2d2d7]">
-        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Publish Results</h3>
-        <p className="text-[#86868b] text-xs mb-4">Set a date or publish immediately.</p>
+        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Result Announcement Date & Time</h3>
+        {currentPubDate ? (
+          <div className="mb-4 p-3 bg-[#f5f5f7] rounded-lg border border-[#e8e8ed]">
+            <p className="text-sm text-[#86868b]">Current Announcement Schedule</p>
+            <p className="text-base font-semibold text-[#1d1d1f] mt-1">
+              {new Date(currentPubDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+              {' '}
+              {new Date(currentPubDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
+            </p>
+            <p className={`text-xs font-medium mt-1 ${resultsPublished ? 'text-green-600' : 'text-orange-600'}`}>
+              {resultsPublished ? '✓ Published — visible to students' : '⏳ Scheduled — not yet visible'}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-[#86868b] mb-4">No announcement date has been set yet.</p>
+        )}
         <div className="mb-3">
-          <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Publication Date (optional)</label>
+          <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Set Announcement Date & Time</label>
           <input type="datetime-local" value={pubDate} onChange={e => setPubDate(e.target.value)} className={inputCls} />
         </div>
         <button onClick={handlePublish} disabled={publishing} className="px-5 py-2 bg-[#10b981] text-white rounded-full text-sm font-semibold disabled:opacity-60">
-          {publishing ? 'Publishing…' : '🚀 Publish Results Now'}
+          {publishing ? 'Publishing…' : resultsPublished ? '🔄 Update Announcement Date' : '🚀 Publish Results Now'}
         </button>
       </div>
     </div>

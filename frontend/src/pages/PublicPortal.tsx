@@ -310,6 +310,14 @@ export function PublicPortal() {
                                             : 'Not Declared'}
                                     </span>
                                 </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[13px] text-[#86868b]">Result Announcement</span>
+                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
+                                        {status.resultPublicationDate
+                                            ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+                                            : 'Not Declared'}
+                                    </span>
+                                </div>
                             </div>
                         </motion.div>
 
