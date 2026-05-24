@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { adminApi } from '../../api/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export function AdminLogin({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState('');
@@ -20,31 +23,33 @@ export function AdminLogin({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#fbfbfd] p-6">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1d1d1f] mb-1">Quiz Champ 2026</h1>
-        <p className="text-[#86868b] text-sm mb-8">Admin Dashboard</p>
-
-        {error && <p className="text-[#ef4444] text-sm mb-4 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">{error}</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Username</label>
-            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="admin"
-              className="w-full px-3.5 py-2.5 bg-white border border-[#d2d2d7] rounded-lg text-sm focus:border-[#0071e3] focus:shadow-[0_0_0_3px_rgba(0,113,227,0.2)] outline-none transition-all" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 bg-white border border-[#d2d2d7] rounded-lg text-sm focus:border-[#0071e3] focus:shadow-[0_0_0_3px_rgba(0,113,227,0.2)] outline-none transition-all" />
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full py-2.5 bg-[#0071e3] text-white rounded-full font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
-            {loading && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
-      </div>
+    <div className="flex items-center justify-center min-h-screen bg-background p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Quiz Champ 2026</CardTitle>
+          <CardDescription>Admin Dashboard</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Username</label>
+              <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="admin" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Password</label>
+              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+            </div>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

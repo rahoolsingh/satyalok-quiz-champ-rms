@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { adminApi } from '../../api/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export function FeeConfiguration() {
   const [feeJunior, setFeeJunior] = useState('');
@@ -37,72 +40,39 @@ export function FeeConfiguration() {
     }
   };
 
-  const inputCls = "w-full px-3.5 py-2.5 bg-white border border-[#d2d2d7] rounded-lg text-sm focus:border-[#0071e3] outline-none transition-all";
-
   return (
     <div>
-      <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-6">Registration Fee Configuration</h2>
+      <h2 className="text-xl font-bold tracking-tight mb-6">Registration Fee Configuration</h2>
 
-      {message && <p className="bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-lg text-sm mb-4">{message}</p>}
-      {error && <p className="bg-red-50 border border-red-200 text-[#ef4444] px-4 py-2.5 rounded-lg text-sm mb-4">{error}</p>}
+      {message && <div className="mb-4 p-3 bg-primary/10 text-primary text-sm rounded-lg border border-primary/20">{message}</div>}
+      {error && <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">{error}</div>}
 
-      <div className="bg-white rounded-xl p-6 border border-[#d2d2d7]">
-        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Batch Fees (₹ INR)</h3>
-        <p className="text-[#86868b] text-sm mb-5">
-          Set the registration fee for each batch. Changes take effect immediately for new registrations.
-        </p>
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">
-                Junior Batch Fee (₹)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#86868b] text-sm">₹</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={feeJunior}
-                  onChange={e => setFeeJunior(e.target.value)}
-                  className={`${inputCls} pl-7`}
-                  placeholder="100"
-                />
+      <Card>
+        <CardHeader>
+          <CardTitle>Batch Fees (₹ INR)</CardTitle>
+          <CardDescription>Set the registration fee for each batch. Changes take effect immediately for new registrations.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Junior Batch Fee (₹)</label>
+                <Input type="number" min="1" step="1" value={feeJunior} onChange={e => setFeeJunior(e.target.value)} placeholder="100" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Senior Batch Fee (₹)</label>
+                <Input type="number" min="1" step="1" value={feeSenior} onChange={e => setFeeSenior(e.target.value)} placeholder="150" />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">
-                Senior Batch Fee (₹)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#86868b] text-sm">₹</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={feeSenior}
-                  onChange={e => setFeeSenior(e.target.value)}
-                  className={`${inputCls} pl-7`}
-                  placeholder="150"
-                />
-              </div>
+            <div className="flex items-center gap-4">
+              <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Fees'}</Button>
+              <p className="text-sm text-muted-foreground">
+                Current: Junior ₹{feeJunior || '—'} · Senior ₹{feeSenior || '—'}
+              </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-4 pt-1">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2 bg-[#0071e3] text-white rounded-full text-sm font-semibold disabled:opacity-60"
-            >
-              {saving ? 'Saving…' : 'Save Fees'}
-            </button>
-            <p className="text-[#86868b] text-xs">
-              Current: Junior ₹{feeJunior || '—'} · Senior ₹{feeSenior || '—'}
-            </p>
-          </div>
-        </form>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

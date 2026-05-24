@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { adminApi, portalApi } from '../../api/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export function ResultUploader() {
   const [file, setFile] = useState<File | null>(null);
@@ -41,56 +45,60 @@ export function ResultUploader() {
     catch { setError('Failed to publish results'); } finally { setPublishing(false); }
   };
 
-  const inputCls = "w-full px-3.5 py-2.5 bg-white border border-[#d2d2d7] rounded-lg text-sm focus:border-[#0071e3] outline-none transition-all";
-
   return (
     <div>
-      <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-6">Result Management</h2>
-      {message && <p className="bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-lg text-sm mb-4">{message}</p>}
-      {error && <p className="bg-red-50 border border-red-200 text-[#ef4444] px-4 py-2.5 rounded-lg text-sm mb-4">{error}</p>}
+      <h2 className="text-xl font-bold tracking-tight mb-6">Result Management</h2>
+      {message && <Alert className="mb-4 border-primary/20 bg-primary/5"><AlertTitle>{message}</AlertTitle></Alert>}
+      {error && <Alert variant="destructive" className="mb-4"><AlertTitle>{error}</AlertTitle></Alert>}
       {invalidRolls.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg text-sm mb-4">
-          <strong>Invalid Roll Numbers:</strong>
-          <ul className="mt-1 list-disc pl-4">{invalidRolls.map(r => <li key={r}>{r}</li>)}</ul>
-        </div>
+        <Alert className="mb-4 border-orange-500/20 bg-orange-50">
+          <AlertTitle>Invalid Roll Numbers:</AlertTitle>
+          <AlertDescription><ul className="mt-1 list-disc pl-4">{invalidRolls.map(r => <li key={r}>{r}</li>)}</ul></AlertDescription>
+        </Alert>
       )}
 
-      <div className="bg-white rounded-xl p-6 mb-4 border border-[#d2d2d7]">
-        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Upload Results (CSV)</h3>
-        <p className="text-[#86868b] text-xs mb-4">Format: <code className="bg-[#f5f5f7] px-1.5 py-0.5 rounded">rollNumber,score,rank,remarks</code></p>
-        <form onSubmit={handleUpload} className="space-y-3">
-          <input type="file" accept=".csv" onChange={e => setFile(e.target.files?.[0] || null)} className="text-sm text-[#86868b]" />
-          <button type="submit" disabled={uploading || !file} className="px-5 py-2 bg-[#0071e3] text-white rounded-full text-sm font-semibold disabled:opacity-60">
-            {uploading ? 'Uploading…' : 'Upload Results'}
-          </button>
-        </form>
-      </div>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Upload Results (CSV)</CardTitle>
+          <CardDescription>Format: <code className="bg-muted px-1.5 py-0.5 rounded">rollNumber,score,rank,remarks</code></CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpload} className="space-y-3">
+            <Input type="file" accept=".csv" onChange={e => setFile(e.target.files?.[0] || null)} className="file:text-sm file:text-foreground" />
+            <Button type="submit" disabled={uploading || !file}>{uploading ? 'Uploading…' : 'Upload Results'}</Button>
+          </form>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-xl p-6 border border-[#d2d2d7]">
-        <h3 className="font-semibold text-[#1d1d1f] mb-1.5">Result Announcement Date & Time</h3>
-        {currentPubDate ? (
-          <div className="mb-4 p-3 bg-[#f5f5f7] rounded-lg border border-[#e8e8ed]">
-            <p className="text-sm text-[#86868b]">Current Announcement Schedule</p>
-            <p className="text-base font-semibold text-[#1d1d1f] mt-1">
-              {new Date(currentPubDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })}
-              {' '}
-              {new Date(currentPubDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
-            </p>
-            <p className={`text-xs font-medium mt-1 ${resultsPublished ? 'text-green-600' : 'text-orange-600'}`}>
-              {resultsPublished ? '✓ Published — visible to students' : '⏳ Scheduled — not yet visible'}
-            </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Result Announcement Date & Time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {currentPubDate ? (
+            <div className="mb-4 p-3 bg-muted rounded-lg border border-border">
+              <p className="text-sm text-muted-foreground">Current Announcement Schedule</p>
+              <p className="text-base font-semibold mt-1">
+                {new Date(currentPubDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                {' '}
+                {new Date(currentPubDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
+              </p>
+              <p className={`text-xs font-medium mt-1 ${resultsPublished ? 'text-green-600' : 'text-orange-600'}`}>
+                {resultsPublished ? '✓ Published — visible to students' : '⏳ Scheduled — not yet visible'}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-4">No announcement date has been set yet.</p>
+          )}
+          <div className="space-y-1.5 mb-3">
+            <label className="text-sm font-medium">Set Announcement Date & Time</label>
+            <Input type="datetime-local" value={pubDate} onChange={e => setPubDate(e.target.value)} />
           </div>
-        ) : (
-          <p className="text-sm text-[#86868b] mb-4">No announcement date has been set yet.</p>
-        )}
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-[#1d1d1f] mb-1.5">Set Announcement Date & Time</label>
-          <input type="datetime-local" value={pubDate} onChange={e => setPubDate(e.target.value)} className={inputCls} />
-        </div>
-        <button onClick={handlePublish} disabled={publishing} className="px-5 py-2 bg-[#10b981] text-white rounded-full text-sm font-semibold disabled:opacity-60">
-          {publishing ? 'Publishing…' : resultsPublished ? '🔄 Update Announcement Date' : '🚀 Publish Results Now'}
-        </button>
-      </div>
+          <Button onClick={handlePublish} disabled={publishing}>
+            {publishing ? 'Publishing…' : resultsPublished ? '🔄 Update Announcement Date' : '🚀 Publish Results Now'}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { SliderImage } from '../../types';
 import { adminApi, portalApi } from '../../api/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export function SliderManager() {
   const [images, setImages] = useState<SliderImage[]>([]);
@@ -37,38 +39,47 @@ export function SliderManager() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold tracking-tight text-[#1d1d1f] mb-6">Slider Image Management</h2>
-      {message && <p className="bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-lg text-sm mb-4">{message}</p>}
-      {error && <p className="bg-red-50 border border-red-200 text-[#ef4444] px-4 py-2.5 rounded-lg text-sm mb-4">{error}</p>}
+      <h2 className="text-xl font-bold tracking-tight mb-6">Slider Image Management</h2>
+      {message && <div className="mb-4 p-3 bg-primary/10 text-primary text-sm rounded-lg border border-primary/20">{message}</div>}
+      {error && <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">{error}</div>}
 
-      <div className="bg-white rounded-xl p-6 mb-4 border border-[#d2d2d7]">
-        <h3 className="font-semibold text-[#1d1d1f] mb-3">Upload New Image</h3>
-        <label className="flex flex-col items-center gap-2 p-8 border-2 border-dashed border-[#d2d2d7] rounded-xl cursor-pointer hover:border-[#0071e3] transition-colors text-[#86868b] text-sm">
-          <span className="text-3xl">📁</span>
-          <span>{uploading ? 'Uploading…' : 'Click to upload (JPEG, PNG, WebP)'}</span>
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleUpload} className="hidden" disabled={uploading} />
-        </label>
-      </div>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Upload New Image</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <label className="flex flex-col items-center gap-2 p-8 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary transition-colors text-muted-foreground text-sm">
+            <span className="text-3xl">📁</span>
+            <span>{uploading ? 'Uploading...' : 'Click to upload (JPEG, PNG, WebP)'}</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleUpload} className="hidden" disabled={uploading} />
+          </label>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-xl p-6 border border-[#d2d2d7]">
-        <h3 className="font-semibold text-[#1d1d1f] mb-4">Current Images ({images.length})</h3>
-        {images.length === 0
-          ? <p className="text-[#86868b] text-sm">No images uploaded yet.</p>
-          : <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Images ({images.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {images.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No images uploaded yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {images.map((img, i) => (
-                <div key={img.id} className="border border-[#d2d2d7] rounded-xl overflow-hidden">
+                <div key={img.id} className="border border-border rounded-xl overflow-hidden">
                   <img src={img.imageUrl} alt={`Slide ${i + 1}`} className="w-full h-28 object-cover" />
                   <div className="flex items-center gap-1 p-2">
-                    <span className="bg-[#f5f5f7] text-[#1d1d1f] text-xs font-semibold px-2 py-0.5 rounded-full mr-auto">#{i + 1}</span>
-                    <button onClick={() => move(i, 'up')} disabled={i === 0} className="text-sm px-1.5 disabled:opacity-30" aria-label="Move up">↑</button>
-                    <button onClick={() => move(i, 'down')} disabled={i === images.length - 1} className="text-sm px-1.5 disabled:opacity-30" aria-label="Move down">↓</button>
-                    <button onClick={() => handleDelete(img.id)} className="text-sm px-1.5 text-[#ef4444]" aria-label="Delete">🗑</button>
+                    <span className="bg-muted text-foreground text-xs font-semibold px-2 py-0.5 rounded-full mr-auto">#{i + 1}</span>
+                    <Button variant="ghost" size="xs" onClick={() => move(i, 'up')} disabled={i === 0}>↑</Button>
+                    <Button variant="ghost" size="xs" onClick={() => move(i, 'down')} disabled={i === images.length - 1}>↓</Button>
+                    <Button variant="ghost" size="xs" onClick={() => handleDelete(img.id)} className="text-destructive">🗑</Button>
                   </div>
                 </div>
               ))}
             </div>
-        }
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
