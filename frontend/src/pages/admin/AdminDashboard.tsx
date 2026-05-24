@@ -9,6 +9,7 @@ import { SessionManager } from './SessionManager';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 
 type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results' | 'sessions';
 
@@ -84,9 +85,12 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <Separator />
         <div className="px-5 py-4 space-y-2">
           <p className="text-sidebar-foreground/50 text-xs">👤 {username}</p>
-          <Button variant="secondary" size="sm" onClick={onLogout} className="w-full text-xs">
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            <Button variant="secondary" size="sm" onClick={onLogout} className="flex-1 text-xs">
+              Sign Out
+            </Button>
+          </div>
         </div>
       </aside>
 
@@ -100,7 +104,10 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <h1 className="text-sm font-bold">
             {tabs.find(t => t.id === active)?.icon} {tabs.find(t => t.id === active)?.label}
           </h1>
-          <Button variant="link" size="sm" onClick={onLogout} className="text-destructive">Logout</Button>
+          <div className="flex items-center gap-1">
+            <ThemeSwitcher />
+            <Button variant="link" size="sm" onClick={onLogout} className="text-destructive">Logout</Button>
+          </div>
         </header>
 
         <main className="flex-1 bg-muted/30 p-4 sm:p-6 lg:p-8 overflow-y-auto">
