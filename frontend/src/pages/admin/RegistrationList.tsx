@@ -13,6 +13,7 @@ interface Participant {
   mobileNumber: string;
   email: string | null;
   questionPaperLanguage: string;
+  referralSource?: string | null;
   photoUrl?: string;
   paymentStatus: string;
   merchantTransactionId: string | null;
@@ -504,11 +505,12 @@ export function RegistrationList() {
                     </div>
                   </div>
 
-                  {/* Info: Address + Email + Language (full width, no truncation) */}
+                  {/* Info: All form fields (full width, no truncation) */}
                   <div className="mt-2 space-y-0.5">
                     {p.address && <p className="text-[11px] text-[#86868b] leading-snug">📍 {p.address}</p>}
                     {p.email && <p className="text-[11px] text-[#86868b] leading-snug">✉️ {p.email}</p>}
-                    {p.merchantTransactionId && <p className="text-[11px] text-[#86868b] leading-snug font-mono">🧾 {p.merchantTransactionId}</p>}
+                    {p.referralSource && <p className="text-[11px] text-[#86868b] leading-snug">🔗 Referred by: {p.referralSource}</p>}
+                    {p.gender && <p className="text-[11px] text-[#86868b] leading-snug">⚤ Gender: {p.gender === 'MALE' ? 'Male' : 'Female'}</p>}
                     <p className="text-[11px] text-[#86868b] leading-snug">🌐 Question Paper Language: {p.questionPaperLanguage === 'HINDI' ? 'Hindi' : p.questionPaperLanguage === 'ENGLISH' ? 'English' : 'Not Selected'}</p>
                   </div>
 

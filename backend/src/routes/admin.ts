@@ -604,6 +604,7 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
         address: p.address,
         mobileNumber: p.mobileNumber,
         email: p.email,
+        referralSource: p.referralSource,
         photoUrl: p.photoUrl,
         paymentStatus: p.paymentStatus,
         merchantTransactionId: p.merchantTransactionId || null,
