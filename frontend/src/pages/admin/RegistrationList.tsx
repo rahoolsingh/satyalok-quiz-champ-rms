@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { adminApi } from '../../api/client';
 
 interface Participant {
@@ -307,21 +308,12 @@ export function RegistrationList() {
     }
   };
 
-  const chartWidth = 100;
-  const chartHeight = 42;
-  const maxY = Math.max(
-    1,
-    ...trends.map((point) => Math.max(point.formsFilled, point.registrationsCompleted))
-  );
-
-  const toPath = (key: 'formsFilled' | 'registrationsCompleted') =>
-    trends
-      .map((point, index) => {
-        const x = trends.length > 1 ? (index / (trends.length - 1)) * chartWidth : chartWidth / 2;
-        const y = chartHeight - (point[key] / maxY) * chartHeight;
-        return `${index === 0 ? 'M' : 'L'}${x},${y}`;
-      })
-      .join(' ');
+  const chartData = trends.map(point => ({
+    label: point.label.length > 10 ? point.label.slice(0, 8) + '..' : point.label,
+    fullLabel: point.label,
+    formsFilled: point.formsFilled,
+    registrationsCompleted: point.registrationsCompleted,
+  }));
 
   return (
     <div>
@@ -364,25 +356,77 @@ export function RegistrationList() {
           </select>
         </div>
 
-        {trends.length > 0 ? (
-          <>
-            <div className="w-full overflow-hidden rounded-lg bg-[#f8f8fa] border border-[#ededf0] p-2">
-              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-28">
-                <path d={toPath('formsFilled')} fill="none" stroke="#0071e3" strokeWidth="1.8" />
-                <path d={toPath('registrationsCompleted')} fill="none" stroke="#16a34a" strokeWidth="1.8" />
-              </svg>
-            </div>
-            <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#86868b]">
-              <span>{trends[0]?.label}</span>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#0071e3]" />Forms Filled</span>
-                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-600" />Registered</span>
-              </div>
-              <span>{trends[trends.length - 1]?.label}</span>
-            </div>
-          </>
+        {chartData.length > 0 ? (
+          <div className="w-full h-56 rounded-lg bg-[#f8f8fa] border border-[#ededf0] p-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="formsFilledGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0071e3" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#0071e3" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="registeredGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: '#86868b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#86868b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: 12,
+                    borderRadius: 8,
+                    border: '1px solid #d2d2d7',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  }}
+                  labelFormatter={(label: any) => {
+                    const found = chartData.find(d => d.label === label);
+                    return found?.fullLabel || String(label);
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="formsFilled"
+                  stroke="#0071e3"
+                  strokeWidth={2}
+                  fill="url(#formsFilledGrad)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#0071e3' }}
+                  name="Forms Filled"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="registrationsCompleted"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  fill="url(#registeredGrad)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#16a34a' }}
+                  name="Registered"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
           <p className="text-xs text-[#86868b]">No trend data available.</p>
+        )}
+        {chartData.length > 0 && (
+          <div className="mt-2 flex items-center justify-end gap-3 text-[10px] text-[#86868b]">
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#0071e3]" />Forms Filled</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-600" />Registered</span>
+          </div>
         )}
       </div>
 
