@@ -249,21 +249,21 @@ export function RegistrationList() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-2">
+      <div className="flex flex-wrap gap-2">
         {statCards.map(c => {
           const Icon = c.icon;
           const val = c.key === 'junior' || c.key === 'senior'
             ? counts[c.key as keyof typeof counts]
             : metrics[c.key as keyof RegistrationMetrics] ?? 0;
           return (
-            <Card key={c.key} className={`${c.bg} border-0 shadow-none px-2.5 py-2`}>
-              <div className="flex items-center gap-2">
-                <div className={`p-1 rounded-md ${c.bg}`}>
-                  <Icon className={`size-3.5 ${c.color}`} />
+            <Card key={c.key} className={`${c.bg} border-0 shadow-none px-3 py-2 min-w-[calc(50%-0.25rem)] sm:min-w-[calc(33.333%-0.375rem)] md:min-w-[calc(25%-0.375rem)] lg:min-w-[calc(20%-0.4rem)] xl:min-w-[calc(16.666%-0.416rem)] flex-1`}>
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-md ${c.bg}`}>
+                  <Icon className={`size-4 ${c.color}`} />
                 </div>
-                <div>
-                  <p className={`text-base font-bold ${c.color}`}>{val}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{c.label}</p>
+                <div className="min-w-0">
+                  <p className={`text-lg font-bold leading-tight ${c.color}`}>{val}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight truncate">{c.label}</p>
                 </div>
               </div>
             </Card>
@@ -306,7 +306,9 @@ export function RegistrationList() {
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                   <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip
-                    contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(var(--border))', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', background: 'hsl(var(--card))' }}
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(var(--border))', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', background: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }}
+                    labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                    itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
                     labelFormatter={(l: any) => chartData.find(d => d.label === l)?.fullLabel || String(l)}
                   />
                   <Area type="monotone" dataKey="formsFilled" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#ffGrad)" dot={false} activeDot={{ r: 4, fill: 'hsl(var(--primary))' }} name="Forms Filled" />
