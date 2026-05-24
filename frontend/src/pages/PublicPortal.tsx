@@ -118,36 +118,111 @@ export function PublicPortal() {
         );
     }
 
+    const importantDatesSection = (
+        <motion.div
+            className="mb-8 bg-[#f5f5f7] rounded-[14px] border border-[#e8e8ed] p-4"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+        >
+            <h3 className="text-[13px] font-semibold text-[#424245] uppercase tracking-wide mb-3">Important Dates</h3>
+            <div className="space-y-2.5">
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#86868b]">Last Date to Apply</span>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                        {status.closingDate
+                            ? `${new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.closingDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+                            : 'Not Declared'}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#86868b]">Date of Examination</span>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                        {status.eventDate
+                            ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+                            : 'Not Declared'}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#86868b]">Reporting Time</span>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                        {status.reportingTime || 'Not Declared'}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#86868b]">Exam Time</span>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                        {status.examTime || 'Not Declared'}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#86868b]">Prize Distribution</span>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                        {status.prizeDistributionDate
+                            ? `${new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}${status.prizeDistributionTime ? ` ${status.prizeDistributionTime}` : ''}`
+                            : 'Not Declared'}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#86868b]">Result Announcement</span>
+                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                        {status.resultPublicationDate
+                            ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+                            : 'Not Declared'}
+                    </span>
+                </div>
+            </div>
+        </motion.div>
+    );
+
     if (status.state === "CLOSED") {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-[#fbfbfd] p-6">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center max-w-md w-full flex flex-col items-center"
-                >
-                    <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-3">
-                        Quiz Champ 2026
-                    </p>
-                    <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-[#1d1d1f] mb-3">
-                        Coming Soon
-                    </h1>
-                    <p className="text-[#86868b] leading-relaxed mb-10">
-                        Registration is currently closed. Stay tuned for
-                        updates.
-                    </p>
-                    <SatyalokBadge variant="footer" />
-                </motion.div>
+            <div className="min-h-[100dvh] bg-[#fbfbfd] text-[#1d1d1f]">
+                <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
+                    <div className="flex-grow flex flex-col items-center justify-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-center max-w-md w-full flex flex-col items-center"
+                        >
+                            <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-3">
+                                Quiz Champ 2026
+                            </p>
+                            <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-[#1d1d1f] mb-3">
+                                Coming Soon
+                            </h1>
+                            <p className="text-[#86868b] leading-relaxed mb-10">
+                                Registration is currently closed. Stay tuned for updates.
+                            </p>
+                        </motion.div>
+                        {importantDatesSection}
+                    </div>
+                    <footer className="mt-14 pt-6">
+                        <SatyalokBadge variant="footer" />
+                    </footer>
+                </main>
             </div>
         );
     }
 
     if (status.state === "COUNTDOWN") {
         return (
-            <CountdownTimer
-                targetDate={status.openingDate}
-                onComplete={refetch}
-            />
+            <div className="min-h-[100dvh] bg-[#fbfbfd] text-[#1d1d1f]">
+                <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
+                    <div className="flex-grow">
+                        <CountdownTimer
+                            targetDate={status.openingDate}
+                            onComplete={refetch}
+                        />
+                        <div className="mt-8">
+                            {importantDatesSection}
+                        </div>
+                    </div>
+                    <footer className="mt-14 pt-6">
+                        <SatyalokBadge variant="footer" />
+                    </footer>
+                </main>
+            </div>
         );
     }
 
@@ -277,49 +352,7 @@ export function PublicPortal() {
                             </motion.div>
                         )}
 
-                        {/* Important Dates */}
-                        <motion.div
-                            className="mb-8 bg-[#f5f5f7] rounded-[14px] border border-[#e8e8ed] p-4"
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <h3 className="text-[13px] font-semibold text-[#424245] uppercase tracking-wide mb-3">Important Dates</h3>
-                            <div className="space-y-2.5">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[13px] text-[#86868b]">Last Date to Apply</span>
-                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
-                                        {status.closingDate
-                                            ? new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
-                                            : 'Not Declared'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[13px] text-[#86868b]">Date of Examination</span>
-                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
-                                        {status.eventDate
-                                            ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
-                                            : 'Not Declared'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[13px] text-[#86868b]">Prize Distribution</span>
-                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
-                                        {status.prizeDistributionDate
-                                            ? new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
-                                            : 'Not Declared'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[13px] text-[#86868b]">Result Announcement</span>
-                                    <span className="text-[13px] font-semibold text-[#1d1d1f]">
-                                        {status.resultPublicationDate
-                                            ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
-                                            : 'Not Declared'}
-                                    </span>
-                                </div>
-                            </div>
-                        </motion.div>
+                        {importantDatesSection}
 
                         <BatchSelector
                             onSelect={(b) => {
