@@ -12,6 +12,7 @@ import { paymentRouter } from "./routes/payment";
 import { otpRouter } from "./routes/otp";
 import { profileRouter } from "./routes/profile";
 import { faqRouter } from "./routes/faq";
+import { mcqRouter } from "./routes/mcq";
 import { testAdmitCardRouter } from "./routes/testAdmitCard";
 import { startPaymentReminderScheduler } from "./services/paymentReminder";
 import { startPaymentCron } from "./services/paymentCron";
@@ -47,6 +48,7 @@ app.use("/api/registration", registrationRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/results", resultsRouter);
 app.use("/api/faq", faqRouter);
+app.use("/api/mcq", mcqRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/payment", paymentRouter);
 
