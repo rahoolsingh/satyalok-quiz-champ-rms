@@ -225,7 +225,7 @@ export function PublicPortal() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-1">
-                {faqs.map((faq) => (
+                {faqs.map((faq, idx) => (
                     <div key={faq.id} className="ring-1 ring-border rounded-lg overflow-hidden">
                         <Button
                             variant="ghost"
@@ -234,7 +234,7 @@ export function PublicPortal() {
                             className="w-full flex items-center justify-between px-4 py-3 h-auto min-h-0 text-left text-sm font-medium text-foreground whitespace-normal"
                             data-icon="inline-end"
                         >
-                            <span className="flex-1 min-w-0 text-left">{faq.question}</span>
+                            <span className="flex-1 min-w-0 text-left"><span className="font-semibold text-foreground shrink-0">Q{idx + 1}:</span> {faq.question}</span>
                             <ChevronDown
                                 className={`size-4 shrink-0 transition-transform duration-200 ${
                                     openFaq === faq.id ? 'rotate-180' : ''
