@@ -231,7 +231,7 @@ export function PublicPortal() {
                             variant="ghost"
                             size="default"
                             onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
-                            className="w-full flex items-center justify-between px-4 py-3 h-auto min-h-0 text-left text-sm font-medium text-foreground"
+                            className="w-full flex items-center justify-between px-4 py-3 h-auto min-h-0 text-left text-sm font-medium text-foreground whitespace-normal"
                             data-icon="inline-end"
                         >
                             <span className="flex-1 min-w-0 text-left">{faq.question}</span>
