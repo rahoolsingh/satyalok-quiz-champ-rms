@@ -234,7 +234,7 @@ export function PublicPortal() {
                             className="w-full flex items-center justify-between px-4 py-3 h-auto min-h-0 text-left text-sm font-medium text-foreground"
                             data-icon="inline-end"
                         >
-                            <span>{faq.question}</span>
+                            <span className="flex-1 min-w-0 text-left">{faq.question}</span>
                             <ChevronDown
                                 className={`size-4 shrink-0 transition-transform duration-200 ${
                                     openFaq === faq.id ? 'rotate-180' : ''
@@ -252,7 +252,7 @@ export function PublicPortal() {
                                     className="overflow-hidden"
                                 >
                                     <div className="px-4 pb-3 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
-                                        {faq.answer}
+                                        <span className="font-semibold text-foreground">ANS:</span> {faq.answer}
                                     </div>
                                 </motion.div>
                             )}
