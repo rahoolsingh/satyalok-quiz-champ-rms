@@ -157,7 +157,7 @@ export function PublicPortal() {
                     Important Dates
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Last Date to Apply</span>
                     <span className="text-sm font-semibold text-foreground text-right">
@@ -224,20 +224,23 @@ export function PublicPortal() {
                     Quick answers to common questions about Quiz Champ 2026.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-1">
+            <CardContent className="flex flex-col gap-1">
                 {faqs.map((faq) => (
-                    <div key={faq.id} className="border border-border rounded-lg overflow-hidden">
-                        <button
+                    <div key={faq.id} className="ring-1 ring-border rounded-lg overflow-hidden">
+                        <Button
+                            variant="ghost"
+                            size="default"
                             onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
-                            className="flex items-center justify-between w-full px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+                            className="w-full flex items-center justify-between px-4 py-3 h-auto min-h-0 text-left text-sm font-medium text-foreground"
+                            data-icon="inline-end"
                         >
                             <span>{faq.question}</span>
                             <ChevronDown
-                                className={`size-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                                className={`size-4 shrink-0 transition-transform duration-200 ${
                                     openFaq === faq.id ? 'rotate-180' : ''
                                 }`}
                             />
-                        </button>
+                        </Button>
                         <AnimatePresence initial={false}>
                             {openFaq === faq.id && (
                                 <motion.div
@@ -450,11 +453,12 @@ export function PublicPortal() {
 
                         {status.resultsPublished && (
                             <motion.div
-                                className="mt-10 pt-8 border-t border-border"
+                                className="mt-10"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.4 }}
                             >
+                                <Separator className="mb-8" />
                                 <ResultChecker />
                             </motion.div>
                         )}

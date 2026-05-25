@@ -61,8 +61,7 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: Props) {
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
         >
-            {/* Square container */}
-            <div className="relative w-full aspect-square rounded-[18px] overflow-hidden bg-[#f5f5f7] border border-[#e8e8ed]">
+            <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-muted ring-1 ring-foreground/10">
                 <AnimatePresence initial={false} custom={dir} mode="popLayout">
                     <motion.img
                         key={current}
@@ -85,33 +84,31 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: Props) {
                     />
                 </AnimatePresence>
 
-                {/* Nav buttons — desktop only */}
                 {images.length > 1 && (
                     <>
                         <button
                             onClick={prev}
                             aria-label="Previous slide"
-                            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-[#1d1d1f] rounded-full w-9 h-9 flex items-center justify-center transition-all shadow-sm opacity-0 sm:group-hover:opacity-100 focus:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background text-foreground rounded-full size-9 flex items-center justify-center transition-all shadow-sm opacity-0 sm:group-hover:opacity-100 focus:opacity-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
                         <button
                             onClick={next}
                             aria-label="Next slide"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-[#1d1d1f] rounded-full w-9 h-9 flex items-center justify-center transition-all shadow-sm opacity-0 sm:group-hover:opacity-100 focus:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background text-foreground rounded-full size-9 flex items-center justify-center transition-all shadow-sm opacity-0 sm:group-hover:opacity-100 focus:opacity-100 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                     </>
                 )}
 
-                {/* Dots overlay at bottom */}
                 {images.length > 1 && (
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/20 backdrop-blur-sm rounded-full px-2.5 py-1.5">
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-foreground/10 backdrop-blur-sm rounded-full px-2.5 py-1.5">
                         {images.map((_, i) => (
                             <button
                                 key={i}
@@ -119,7 +116,7 @@ export function ImageSlider({ images, autoPlayInterval = 5000 }: Props) {
                                 aria-label={`Go to slide ${i + 1}`}
                                 aria-current={i === current}
                                 className={`rounded-full transition-all duration-300 outline-none ${
-                                    i === current ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'
+                                    i === current ? 'w-5 h-1.5 bg-foreground' : 'size-1.5 bg-foreground/50'
                                 }`}
                             />
                         ))}
