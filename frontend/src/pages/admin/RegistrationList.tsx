@@ -19,6 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Tooltip as ShadTooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import {
   Select,
   SelectTrigger,
@@ -48,6 +49,9 @@ import {
   Bell,
   ShieldAlert,
   Languages,
+  Smartphone,
+  ExternalLink,
+  UserPlus,
 } from 'lucide-react';
 
 const LIMIT = 20;
@@ -375,6 +379,7 @@ export function RegistrationList() {
       {/* Table */}
       <Card className="overflow-hidden border-border">
         <div className="overflow-x-auto">
+          <TooltipProvider delay={300}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -469,42 +474,61 @@ export function RegistrationList() {
                   {/* Actions */}
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon-xs" onClick={() => openWhatsApp(p.mobileNumber)} className="text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10" title="WhatsApp">
-                        <MessageCircle className="size-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon-xs" onClick={() => openCall(p.mobileNumber)} className="text-blue-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30" title="Call">
-                        <PhoneCall className="size-3.5" />
-                      </Button>
+                      <ShadTooltip>
+                        <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => openWhatsApp(p.mobileNumber)} className="text-[#25D366] border-[#25D366]/30 hover:bg-[#25D366]/10 gap-1">
+                          <MessageCircle className="size-3" />WhatsApp
+                        </Button>} />
+                        <TooltipContent>WhatsApp {p.mobileNumber}</TooltipContent>
+                      </ShadTooltip>
+                      <ShadTooltip>
+                        <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => openCall(p.mobileNumber)} className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 gap-1">
+                          <PhoneCall className="size-3" />Call
+                        </Button>} />
+                        <TooltipContent>Call {p.mobileNumber}</TooltipContent>
+                      </ShadTooltip>
                       {p.paymentStatus === 'COMPLETED' && !p.groupInviteSent && !p.groupJoined && (
-                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(() => adminApi.sendGroupInvite(p.id).then(() => setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, groupInviteSent: true } : x))), p.name)} title="Send invite">
-                          <Send className="size-3.5" />
-                        </Button>
+                        <ShadTooltip>
+                          <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendGroupInvite(p.id).then(() => setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, groupInviteSent: true } : x))), p.name)} className="gap-1">
+                            <UserPlus className="size-3" />Invite
+                          </Button>} />
+                          <TooltipContent>Send WhatsApp group invite</TooltipContent>
+                        </ShadTooltip>
                       )}
                       {p.paymentStatus === 'COMPLETED' && (
-                        <>
-                          <Button variant="ghost" size="icon-xs" onClick={() => setDatesDialog({ id: p.id, name: p.name, isGodMode: godMode })} title="Send dates">
-                            <CalendarDays className="size-3.5" />
-                          </Button>
-                        </>
+                        <ShadTooltip>
+                          <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => setDatesDialog({ id: p.id, name: p.name, isGodMode: godMode })} className="gap-1">
+                            <CalendarDays className="size-3" />Dates
+                          </Button>} />
+                          <TooltipContent>Send important dates</TooltipContent>
+                        </ShadTooltip>
                       )}
                       {!p.admitCardDownloaded && p.paymentStatus === 'COMPLETED' && (
-                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(() => adminApi.sendAdmitCardReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-orange-600" title="Remind download">
-                          <Bell className="size-3.5" />
-                        </Button>
+                        <ShadTooltip>
+                          <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendAdmitCardReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 gap-1">
+                            <Bell className="size-3" />Remind
+                          </Button>} />
+                          <TooltipContent>Remind to download admit card</TooltipContent>
+                        </ShadTooltip>
                       )}
                       {(p.paymentStatus === 'PENDING' || p.paymentStatus === 'FAILED') && (
-                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(async () => {
-                          const res = await adminApi.verifyPayment(p.id);
-                          alert(`${p.name}: ${res.data.message}`);
-                          if (res.data.status === 'SUCCESS') setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, paymentStatus: 'COMPLETED' } : x));
-                        }, p.name)} className="text-emerald-600" title="Verify payment">
-                          <RotateCcw className="size-3.5" />
-                        </Button>
+                        <ShadTooltip>
+                          <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(async () => {
+                            const res = await adminApi.verifyPayment(p.id);
+                            alert(`${p.name}: ${res.data.message}`);
+                            if (res.data.status === 'SUCCESS') setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, paymentStatus: 'COMPLETED' } : x));
+                          }, p.name)} className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 gap-1">
+                            <RotateCcw className="size-3" />Verify
+                          </Button>} />
+                          <TooltipContent>Verify payment with gateway</TooltipContent>
+                        </ShadTooltip>
                       )}
                       {p.paymentStatus === 'PENDING' && (
-                        <Button variant="ghost" size="icon-xs" onClick={() => execAction(() => adminApi.sendPaymentReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-amber-600" title="Payment reminder">
-                          <Bell className="size-3.5" />
-                        </Button>
+                        <ShadTooltip>
+                          <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendPaymentReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 gap-1">
+                            <Bell className="size-3" />Remind
+                          </Button>} />
+                          <TooltipContent>Send payment reminder</TooltipContent>
+                        </ShadTooltip>
                       )}
                     </div>
                   </TableCell>
@@ -534,6 +558,7 @@ export function RegistrationList() {
               )}
             </TableBody>
           </Table>
+          </TooltipProvider>
         </div>
       </Card>
 
