@@ -6,6 +6,7 @@ import { RegistrationList } from './RegistrationList';
 import { FeeConfiguration } from './FeeConfiguration';
 import { EventConfiguration } from './EventConfiguration';
 import { SessionManager } from './SessionManager';
+import { FaqManager } from './FaqManager';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -23,6 +24,7 @@ import {
   X,
   LogOut,
   LayoutDashboard,
+  HelpCircle,
 } from 'lucide-react';
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -33,9 +35,10 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'slider', label: 'Slider Images', icon: <Image className="size-4" /> },
   { id: 'results', label: 'Results', icon: <BarChart3 className="size-4" /> },
   { id: 'sessions', label: 'Sessions', icon: <Lock className="size-4" /> },
+  { id: 'faq', label: 'FAQ', icon: <HelpCircle className="size-4" /> },
 ];
 
-type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results' | 'sessions';
+type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results' | 'sessions' | 'faq';
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [active, setActive] = useState<Tab>('registrations');
@@ -148,6 +151,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {active === 'slider' && <SliderManager />}
           {active === 'results' && <ResultUploader />}
           {active === 'sessions' && <SessionManager />}
+          {active === 'faq' && <FaqManager />}
         </main>
       </div>
     </div>

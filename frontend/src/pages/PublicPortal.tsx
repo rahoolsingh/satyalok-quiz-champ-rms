@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, HelpCircle } from "lucide-react";
 import { usePortalState } from "../hooks/usePortalState";
 import { CountdownTimer } from "../components/CountdownTimer";
 import { ImageSlider } from "../components/ImageSlider";
@@ -12,8 +13,11 @@ import { ResultChecker } from "../components/ResultChecker";
 import { SatyalokBadge } from "../components/SatyalokBadge";
 import { UserProfile } from "../components/UserProfile";
 import { WhatsAppHelp } from "../components/WhatsAppHelp";
-import { SliderImage, BatchType, PaymentSession, ProfileData } from "../types";
-import { portalApi, otpApi, profileApi, setSessionToken, clearSessionToken } from "../api/client";
+import { SliderImage, BatchType, PaymentSession, ProfileData, FaqItem } from "../types";
+import { portalApi, otpApi, profileApi, faqApi, setSessionToken, clearSessionToken } from "../api/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 type Step = "home" | "mobile-entry" | "otp" | "form" | "payment" | "profile";
 
@@ -27,8 +31,10 @@ export function PublicPortal() {
 
     // Global State
     const [images, setImages] = useState<SliderImage[]>([]);
+    const [faqs, setFaqs] = useState<FaqItem[]>([]);
     const [step, setStep] = useState<Step>("home");
     const [loadingProfile, setLoadingProfile] = useState(true);
+    const [openFaq, setOpenFaq] = useState<string | null>(null);
 
     // User Journey State
     const [batch, setBatch] = useState<BatchType | null>(null);
@@ -46,6 +52,14 @@ export function PublicPortal() {
                     .then((res) => setImages(res.data))
                     .catch((err) =>
                         console.error("Failed to load slider images:", err),
+                    );
+
+                // Fetch FAQs
+                faqApi
+                    .getPublished()
+                    .then((res) => setFaqs(res.data))
+                    .catch((err) =>
+                        console.error("Failed to load FAQs:", err),
                     );
 
                 // Fetch user profile session
@@ -96,88 +110,138 @@ export function PublicPortal() {
     // --- Loading & Error States ---
     if (portalLoading || loadingProfile) {
         return (
-            <div className="flex items-center justify-center min-h-[100dvh] bg-[#fbfbfd]">
-                <div className="w-6 h-6 border-2 border-[#d2d2d7] border-t-[#0071e3] rounded-full animate-spin" />
+            <div className="flex items-center justify-center min-h-[100dvh] bg-background">
+                <div className="size-6 border-2 border-border border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
 
     if (portalError || !status) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-[#fbfbfd] p-6">
-                <p className="text-[#86868b] mb-4 text-center">
+            <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-background p-6">
+                <p className="text-muted-foreground mb-4 text-center">
                     Unable to load portal configuration.
                 </p>
-                <button
-                    onClick={refetch}
-                    className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#005bb5] transition-colors text-white rounded-full font-semibold text-sm"
-                >
+                <Button onClick={refetch} variant="default">
                     Retry Connection
-                </button>
+                </Button>
             </div>
         );
     }
 
     const importantDatesSection = (
-        <motion.div
-            className="mb-8 bg-[#f5f5f7] rounded-[14px] border border-[#e8e8ed] p-4"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-        >
-            <h3 className="text-[13px] font-semibold text-[#424245] uppercase tracking-wide mb-3">Important Dates</h3>
-            <div className="space-y-2.5">
+        <Card className="mb-8">
+            <CardHeader>
+                <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground font-semibold">
+                    Important Dates
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-[#86868b]">Last Date to Apply</span>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                    <span className="text-sm text-muted-foreground">Last Date to Apply</span>
+                    <span className="text-sm font-semibold text-foreground text-right">
                         {status.closingDate
                             ? `${new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.closingDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
                             : 'Not Declared'}
                     </span>
                 </div>
+                <Separator />
                 <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-[#86868b]">Date of Examination</span>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                    <span className="text-sm text-muted-foreground">Date of Examination</span>
+                    <span className="text-sm font-semibold text-foreground text-right">
                         {status.eventDate
                             ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
                             : 'Not Declared'}
                     </span>
                 </div>
+                <Separator />
                 <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-[#86868b]">Reporting Time</span>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                    <span className="text-sm text-muted-foreground">Reporting Time</span>
+                    <span className="text-sm font-semibold text-foreground text-right">
                         {status.reportingTime || 'Not Declared'}
                     </span>
                 </div>
+                <Separator />
                 <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-[#86868b]">Exam Time</span>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                    <span className="text-sm text-muted-foreground">Exam Time</span>
+                    <span className="text-sm font-semibold text-foreground text-right">
                         {status.examTime || 'Not Declared'}
                     </span>
                 </div>
+                <Separator />
                 <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-[#86868b]">Prize Distribution</span>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                    <span className="text-sm text-muted-foreground">Prize Distribution</span>
+                    <span className="text-sm font-semibold text-foreground text-right">
                         {status.prizeDistributionDate
                             ? `${new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}${status.prizeDistributionTime ? ` ${status.prizeDistributionTime}` : ''}`
                             : 'Not Declared'}
                     </span>
                 </div>
+                <Separator />
                 <div className="flex justify-between items-center">
-                    <span className="text-[13px] text-[#86868b]">Result Announcement</span>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] text-right">
+                    <span className="text-sm text-muted-foreground">Result Announcement</span>
+                    <span className="text-sm font-semibold text-foreground text-right">
                         {status.resultPublicationDate
                             ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
                             : 'Not Declared'}
                     </span>
                 </div>
-            </div>
-        </motion.div>
+            </CardContent>
+        </Card>
     );
+
+    const faqSection = faqs.length > 0 ? (
+        <Card className="mt-10">
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <HelpCircle className="size-4 text-muted-foreground" />
+                    <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground font-semibold">
+                        Frequently Asked Questions
+                    </CardTitle>
+                </div>
+                <CardDescription>
+                    Quick answers to common questions about Quiz Champ 2026.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1">
+                {faqs.map((faq) => (
+                    <div key={faq.id} className="border border-border rounded-lg overflow-hidden">
+                        <button
+                            onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
+                            className="flex items-center justify-between w-full px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+                        >
+                            <span>{faq.question}</span>
+                            <ChevronDown
+                                className={`size-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                                    openFaq === faq.id ? 'rotate-180' : ''
+                                }`}
+                            />
+                        </button>
+                        <AnimatePresence initial={false}>
+                            {openFaq === faq.id && (
+                                <motion.div
+                                    key="faq-answer"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="px-4 pb-3 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
+                                        {faq.answer}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    ) : null;
 
     if (status.state === "CLOSED") {
         return (
-            <div className="min-h-[100dvh] bg-[#fbfbfd] text-[#1d1d1f]">
+            <div className="min-h-[100dvh] bg-background text-foreground">
                 <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
                     <div className="flex-grow flex flex-col items-center justify-center">
                         <motion.div
@@ -185,17 +249,18 @@ export function PublicPortal() {
                             animate={{ opacity: 1, y: 0 }}
                             className="text-center max-w-md w-full flex flex-col items-center"
                         >
-                            <p className="text-xs font-semibold text-[#0071e3] tracking-[0.1em] uppercase mb-3">
+                            <p className="text-xs font-semibold text-primary tracking-[0.1em] uppercase mb-3">
                                 Quiz Champ 2026
                             </p>
-                            <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-[#1d1d1f] mb-3">
+                            <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-foreground mb-3">
                                 Coming Soon
                             </h1>
-                            <p className="text-[#86868b] leading-relaxed mb-10">
+                            <p className="text-muted-foreground leading-relaxed mb-10">
                                 Registration is currently closed. Stay tuned for updates.
                             </p>
                         </motion.div>
                         {importantDatesSection}
+                        {faqSection}
                     </div>
                     <footer className="mt-14 pt-6">
                         <SatyalokBadge variant="footer" />
@@ -207,7 +272,7 @@ export function PublicPortal() {
 
     if (status.state === "COUNTDOWN") {
         return (
-            <div className="min-h-[100dvh] bg-[#fbfbfd] text-[#1d1d1f]">
+            <div className="min-h-[100dvh] bg-background text-foreground">
                 <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
                     <div className="flex-grow">
                         <CountdownTimer
@@ -217,6 +282,7 @@ export function PublicPortal() {
                         <div className="mt-8">
                             {importantDatesSection}
                         </div>
+                        {faqSection}
                     </div>
                     <footer className="mt-14 pt-6">
                         <SatyalokBadge variant="footer" />
@@ -326,7 +392,7 @@ export function PublicPortal() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.05 }}
-                                className="text-[clamp(1.75rem,6vw,2.5rem)] font-bold tracking-tight text-[#1d1d1f] leading-[1.1] mb-2"
+                                className="text-[clamp(1.75rem,6vw,2.5rem)] font-bold tracking-tight text-foreground leading-[1.1] mb-2"
                             >
                                 Quiz Champ 2026
                             </motion.h1>
@@ -334,7 +400,7 @@ export function PublicPortal() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="text-[15px] text-[#86868b] leading-relaxed"
+                                className="text-[15px] text-muted-foreground leading-relaxed"
                             >
                                 The ultimate knowledge championship for students
                                 across all classes.
@@ -361,9 +427,11 @@ export function PublicPortal() {
                             }}
                         />
 
+                        {faqSection}
+
                         {status.resultsPublished && (
                             <motion.div
-                                className="mt-10 pt-8 border-t border-[#e8e8ed]"
+                                className="mt-10 pt-8 border-t border-border"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.4 }}
@@ -377,23 +445,24 @@ export function PublicPortal() {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-[#fbfbfd] text-[#1d1d1f] selection:bg-[#0071e3]/20">
+        <div className="min-h-[100dvh] bg-background text-foreground selection:bg-primary/20">
             <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
                 {/* Authenticated Header */}
                 {profile && step !== "home" && (
-                    <header className="flex justify-between items-center mb-7 pb-4 border-b border-[#e8e8ed]">
-                        <div className="text-[14px]">
-                            <span className="font-semibold text-[#1d1d1f]">
+                    <header className="flex justify-between items-center mb-7 pb-4 border-b border-border">
+                        <div className="text-sm">
+                            <span className="font-semibold text-foreground">
                                 {mobile}
                             </span>
                         </div>
-                        <button
+                        <Button
                             onClick={handleLogout}
-                            className="text-[14px] text-red-500 hover:text-red-600 transition-colors font-medium"
-                            aria-label="Logout"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
                         >
                             Logout
-                        </button>
+                        </Button>
                     </header>
                 )}
 

@@ -107,6 +107,19 @@ export const profileApi = {
   checkPendingPayments: () => api.post('/profile/check-pending-payments'),
 };
 
+export const faqApi = {
+  getPublished: () => api.get('/faq'),
+};
+
+export const adminFaqApi = {
+  getAll: () => api.get('/faq/admin'),
+  create: (data: { question: string; answer: string; displayOrder?: number; isPublished?: boolean }) =>
+    api.post('/faq/admin', data),
+  update: (id: string, data: { question?: string; answer?: string; displayOrder?: number; isPublished?: boolean }) =>
+    api.put(`/faq/admin/${id}`, data),
+  delete: (id: string) => api.delete(`/faq/admin/${id}`),
+};
+
 export const adminApi = {
   login: (username: string, password: string) =>
     api.post('/admin/login', { username, password }),

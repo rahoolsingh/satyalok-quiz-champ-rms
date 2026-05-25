@@ -81,6 +81,16 @@ export interface PaymentSession {
   providerOrderId?: string;
 }
 
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  displayOrder: number;
+  isPublished?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ProfileData {
   participantId: string;
   name: string;
