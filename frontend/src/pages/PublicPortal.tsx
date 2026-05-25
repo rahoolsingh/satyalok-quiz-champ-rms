@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
+import { useTheme } from "next-themes";
 import { usePortalState } from "../hooks/usePortalState";
 import { CountdownTimer } from "../components/CountdownTimer";
 import { ImageSlider } from "../components/ImageSlider";
@@ -22,6 +23,17 @@ import { Separator } from "@/components/ui/separator";
 type Step = "home" | "mobile-entry" | "otp" | "form" | "payment" | "profile";
 
 export function PublicPortal() {
+    const { setTheme } = useTheme();
+    const themeSet = useRef(false);
+
+    // Force light theme for the public portal
+    useEffect(() => {
+        if (!themeSet.current) {
+            setTheme("light");
+            themeSet.current = true;
+        }
+    }, [setTheme]);
+
     const {
         status,
         loading: portalLoading,
@@ -62,19 +74,29 @@ export function PublicPortal() {
                         console.error("Failed to load FAQs:", err),
                     );
 
-                // Fetch user profile session
+                // Check existing session via auth/me
                 const response = await profileApi.getMe();
-                const profileData = response.data.profile;
+                const { authenticated, mobile: sessionMobile, profile: sessionProfile } = response.data;
 
-                setProfile(profileData);
-                setMobile(profileData.mobileNumber);
-                setBatch(profileData.batchType as BatchType);
+                if (authenticated && sessionMobile) {
+                    setMobile(sessionMobile);
 
-                setStep(
-                    profileData.paymentStatus === "COMPLETED"
-                        ? "profile"
-                        : "form",
-                );
+                    if (sessionProfile) {
+                        setProfile(sessionProfile);
+                        if (sessionProfile.batchType) {
+                            setBatch(sessionProfile.batchType as BatchType);
+                        }
+                        setStep(
+                            sessionProfile.paymentStatus === "COMPLETED"
+                                ? "profile"
+                                : "form",
+                        );
+                    } else {
+                        // Valid session, but user hasn't registered yet
+                        // Stay on home so they can select batch and register
+                        console.info("Session valid, no registration found yet.");
+                    }
+                }
             } catch (error) {
                 // No active session, user remains on 'home'
                 console.info("No active user session found.");
@@ -92,7 +114,6 @@ export function PublicPortal() {
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
-            // Always clear state locally even if API fails to prevent ghost sessions
             clearSessionToken();
             setMobile("");
             setBatch(null);
@@ -319,7 +340,7 @@ export function PublicPortal() {
                     <RegistrationForm
                         batchType={batch}
                         mobileNumber={mobile}
-                        sessionToken="" // Backend uses HTTP-only cookie
+                        sessionToken=""
                         draft={profile}
                         onSuccess={(paymentSession) => {
                             setSession(paymentSession);
@@ -334,15 +355,13 @@ export function PublicPortal() {
                     <OTPVerification
                         mobileNumber={mobile}
                         onSuccess={async (result) => {
-                            // Store session token for cross-domain auth (Safari/Samsung fix)
                             if (result.sessionToken) {
                                 setSessionToken(result.sessionToken);
                             }
                             const profileData = result.profile;
                             setProfile(profileData);
-                            
+
                             if (profileData?.paymentStatus === "COMPLETED") {
-                                // Fetch complete profile data including admit card
                                 try {
                                     const response = await profileApi.getMe();
                                     setProfile(response.data.profile);
