@@ -356,3 +356,18 @@ export async function sendEventLocation(
     },
   ]);
 }
+
+/**
+ * Sends a custom text message via Meta WhatsApp Cloud API.
+ * Only works within 24-hour conversation window.
+ */
+export async function sendCustomMessage(mobileNumber: string, message: string): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Custom message → ${mobileNumber}: ${message}`);
+    return;
+  }
+
+  await sendMetaTextMessage(mobileNumber, message);
+}

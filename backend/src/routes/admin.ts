@@ -1119,3 +1119,83 @@ adminRouter.post('/registrations/:id/verify-payment', async (req: AuthRequest, r
     return res.status(500).json({ error: 'Failed to verify payment with gateway' });
   }
 });
+
+// ─── FAQ MANAGEMENT ───────────────────────────────────────────────────────────
+
+// GET /api/admin/faqs
+adminRouter.get('/faqs', async (_req: AuthRequest, res: Response) => {
+  try {
+    const faqs = await (await import('../db/models')).FAQ.find().sort({ order: 1 }).lean();
+    return res.json({ faqs: faqs.map(f => ({ id: f._id.toString(), question: f.question, answer: f.answer, isPublished: f.isPublished, order: f.order })) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to get FAQs' });
+  }
+});
+
+// POST /api/admin/faqs
+adminRouter.post('/faqs', async (req: AuthRequest, res: Response) => {
+  try {
+    const { question, answer } = req.body;
+    if (!question || !answer) return res.status(400).json({ error: 'Question and answer are required' });
+    const maxOrder = await (await import('../db/models')).FAQ.findOne().sort({ order: -1 }).lean();
+    const faq = await (await import('../db/models')).FAQ.create({ question, answer, order: (maxOrder?.order ?? 0) + 1 });
+    return res.status(201).json({ id: faq._id.toString(), question: faq.question, answer: faq.answer, isPublished: faq.isPublished, order: faq.order });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to create FAQ' });
+  }
+});
+
+// PUT /api/admin/faqs/:id
+adminRouter.put('/faqs/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const { question, answer, isPublished, order } = req.body;
+    const update: Record<string, unknown> = {};
+    if (question !== undefined) update.question = question;
+    if (answer !== undefined) update.answer = answer;
+    if (isPublished !== undefined) update.isPublished = isPublished;
+    if (order !== undefined) update.order = order;
+    await (await import('../db/models')).FAQ.findByIdAndUpdate(req.params.id, update);
+    return res.json({ message: 'FAQ updated' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update FAQ' });
+  }
+});
+
+// DELETE /api/admin/faqs/:id
+adminRouter.delete('/faqs/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    await (await import('../db/models')).FAQ.findByIdAndDelete(req.params.id);
+    return res.json({ message: 'FAQ deleted' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to delete FAQ' });
+  }
+});
+
+// ─── CUSTOM MESSAGE ───────────────────────────────────────────────────────────
+
+// POST /api/admin/registrations/:id/send-custom-message
+adminRouter.post('/registrations/:id/send-custom-message', async (req: AuthRequest, res: Response) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    const { sendCustomMessage } = await import('../services/whatsapp');
+    await sendCustomMessage(participant.mobileNumber, message.trim());
+
+    return res.json({ message: 'Custom message sent successfully' });
+  } catch (err) {
+    console.error('[Admin] Failed to send custom message:', err);
+    return res.status(500).json({ error: 'Failed to send custom message' });
+  }
+});

@@ -149,6 +149,8 @@ export function RegistrationList() {
   const [hideSensitiveData, setHideSensitiveData] = useState(false);
   const [godMode, setGodMode] = useState(false);
   const [datesDialog, setDatesDialog] = useState<{ id: string; name: string; isGodMode: boolean } | null>(null);
+  const [customMsgDialog, setCustomMsgDialog] = useState<{ id: string; name: string } | null>(null);
+  const [customMsgText, setCustomMsgText] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -502,6 +504,11 @@ export function RegistrationList() {
                           <TooltipContent>Send important dates</TooltipContent>
                         </ShadTooltip>
                       )}
+                      {godMode && (
+                        <Button variant="outline" size="xs" onClick={() => setCustomMsgDialog({ id: p.id, name: p.name })} className="gap-1">
+                          💬 Message
+                        </Button>
+                      )}
                       {!p.admitCardDownloaded && p.paymentStatus === 'COMPLETED' && (
                         <ShadTooltip>
                           <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendAdmitCardReminder(p.id).then(() => alert(`Reminder sent to ${p.name}`)), p.name)} className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 gap-1">
@@ -618,6 +625,48 @@ export function RegistrationList() {
               ))}
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* Custom Message Dialog */}
+      {customMsgDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">Send Custom Message</h3>
+            <p className="text-xs text-gray-500 mb-4">to {customMsgDialog.name}</p>
+            <textarea
+              value={customMsgText}
+              onChange={e => setCustomMsgText(e.target.value)}
+              placeholder="Type your message here..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={async () => {
+                  if (!customMsgText.trim()) return;
+                  try {
+                    await adminApi.sendCustomMessage(customMsgDialog.id, customMsgText.trim());
+                    alert(`Message sent to ${customMsgDialog.name}`);
+                  } catch (err: any) {
+                    alert(err.response?.data?.error || 'Failed to send');
+                  }
+                  setCustomMsgDialog(null);
+                  setCustomMsgText('');
+                }}
+                disabled={!customMsgText.trim()}
+                className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Send
+              </button>
+              <button
+                onClick={() => { setCustomMsgDialog(null); setCustomMsgText(''); }}
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

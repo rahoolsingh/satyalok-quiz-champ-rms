@@ -1,23 +1,23 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export interface IFaq extends Document {
+export interface IFAQ extends Document {
   question: string;
   answer: string;
-  displayOrder: number;
   isPublished: boolean;
+  order: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const FaqSchema = new Schema<IFaq>(
+const FAQSchema = new Schema<IFAQ>(
   {
     question: { type: String, required: true },
     answer: { type: String, required: true },
-    displayOrder: { type: Number, default: 0 },
     isPublished: { type: Boolean, default: true },
+    order: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
-export const Faq: Model<IFaq> =
-  mongoose.models.Faq || mongoose.model<IFaq>('Faq', FaqSchema);
+export const FAQ: Model<IFAQ> =
+  mongoose.models.FAQ || mongoose.model<IFAQ>('FAQ', FAQSchema);

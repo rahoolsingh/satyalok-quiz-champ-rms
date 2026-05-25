@@ -6,11 +6,11 @@ import { getRegistrationFee, generateMerchantTransactionId } from '../services/p
 import { initiatePhonePePayment } from '../services/pgsClient';
 import { generateAdmitCardData, generateAdmitCardHtml } from '../services/admitCard';
 import { uploadToS3 } from '../services/storage';
-import { Participant, PortalConfig, PaymentAttempt } from '../db/models';
+import { Participant, PortalConfig, PaymentAttempt, FAQ } from '../db/models';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { validateImageFormat } from '../services/validation';
 import { generateAdmitCardPDF } from '../services/admitCardPdf';
-import { sendEventLocation, sendImportantDates } from '../services/whatsapp';
+import { sendEventLocation, sendImportantDates, sendCustomMessage } from '../services/whatsapp';
 
 export const registrationRouter = Router();
 
@@ -430,6 +430,19 @@ registrationRouter.get('/admit-card/:id/download', async (req: SessionRequest, r
         }
       } catch (locErr) {
         console.error('[Admit Card] Failed to send location:', locErr);
+      }
+
+      // 3. Send published FAQs as text message
+      try {
+        const faqs = await FAQ.find({ isPublished: true }).sort({ order: 1 }).lean();
+        if (faqs.length > 0) {
+          const faqText = faqs.map((f, i) => `*Q${i + 1}: ${f.question}*\n${f.answer}`).join('\n\n');
+          const message = `📋 *Quiz Champ 2026 - FAQs*\n\n${faqText}\n\nFor more queries, contact support.`;
+          await sendCustomMessage(participant.mobileNumber, message);
+          console.log(`[Admit Card] FAQs sent to ${participant.mobileNumber}`);
+        }
+      } catch (faqErr) {
+        console.error('[Admit Card] Failed to send FAQs:', faqErr);
       }
     }
 

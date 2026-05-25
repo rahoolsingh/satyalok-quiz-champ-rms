@@ -171,4 +171,11 @@ export const adminApi = {
   expireSession: (sessionId: string) => api.post(`/admin/sessions/${sessionId}/expire`),
   verifyPayment: (participantId: string) =>
     api.post(`/admin/registrations/${participantId}/verify-payment`),
+  sendCustomMessage: (participantId: string, message: string) =>
+    api.post(`/admin/registrations/${participantId}/send-custom-message`, { message }),
+  getFaqs: () => api.get('/admin/faqs'),
+  createFaq: (question: string, answer: string) => api.post('/admin/faqs', { question, answer }),
+  updateFaq: (id: string, data: { question?: string; answer?: string; isPublished?: boolean; order?: number }) =>
+    api.put(`/admin/faqs/${id}`, data),
+  deleteFaq: (id: string) => api.delete(`/admin/faqs/${id}`),
 };
