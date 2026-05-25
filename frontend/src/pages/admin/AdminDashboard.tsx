@@ -7,7 +7,6 @@ import { FeeConfiguration } from './FeeConfiguration';
 import { EventConfiguration } from './EventConfiguration';
 import { SessionManager } from './SessionManager';
 import { FaqManager } from './FaqManager';
-import { McqManager } from './McqManager';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -26,7 +25,6 @@ import {
   LogOut,
   LayoutDashboard,
   HelpCircle,
-  ClipboardList,
 } from 'lucide-react';
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -38,10 +36,9 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'results', label: 'Results', icon: <BarChart3 className="size-4" /> },
   { id: 'sessions', label: 'Sessions', icon: <Lock className="size-4" /> },
   { id: 'faq', label: 'FAQ', icon: <HelpCircle className="size-4" /> },
-  { id: 'mcq', label: 'MCQs', icon: <ClipboardList className="size-4" /> },
 ];
 
-type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results' | 'sessions' | 'faq' | 'mcq';
+type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results' | 'sessions' | 'faq';
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [active, setActive] = useState<Tab>('registrations');
@@ -155,7 +152,6 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {active === 'results' && <ResultUploader />}
           {active === 'sessions' && <SessionManager />}
           {active === 'faq' && <FaqManager />}
-          {active === 'mcq' && <McqManager />}
         </main>
       </div>
     </div>

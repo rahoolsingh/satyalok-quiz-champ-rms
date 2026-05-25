@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaqItem } from '../../types';
 import { adminFaqApi } from '../../api/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -16,7 +15,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Upload, Download } from 'lucide-react';
 
 export function FaqManager() {
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
@@ -25,6 +24,13 @@ export function FaqManager() {
   const [editing, setEditing] = useState<FaqItem | null>(null);
   const [form, setForm] = useState({ question: '', answer: '', isPublished: true });
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importMode, setImportMode] = useState<'append' | 'replace'>('append');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     try {
@@ -97,25 +103,65 @@ export function FaqManager() {
     }
   };
 
+  const handleImport = async () => {
+    if (!importFile) { setError('Please select a CSV file'); return; }
+    setImporting(true); setError(''); setMessage('');
+    const fd = new FormData();
+    fd.append('file', importFile);
+    fd.append('mode', importMode);
+    try {
+      const r = await adminFaqApi.importCsv(fd);
+      setMessage(r.data.message);
+      setImportDialogOpen(false);
+      setImportFile(null);
+      if (fileRef.current) fileRef.current.value = '';
+      await load();
+    } catch (err: unknown) {
+      const data = (err as { response?: { data?: { error?: string; rowErrors?: Array<{ row: number; error: string }> } } })?.response?.data;
+      if (data?.rowErrors) {
+        setError(`${data.error}\n${data.rowErrors.map((e) => `Row ${e.row}: ${e.error}`).join('\n')}`);
+      } else {
+        setError(data?.error || 'Failed to import FAQs');
+      }
+    } finally { setImporting(false); }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const r = await adminFaqApi.exportCsv();
+      const url = window.URL.createObjectURL(new Blob([r.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'faqs.csv'; a.click();
+      window.URL.revokeObjectURL(url);
+      setMessage('FAQs exported');
+    } catch {
+      setError('Failed to export FAQs');
+    } finally { setExporting(false); }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold tracking-tight">FAQ Management</h2>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="size-4 mr-1" />
-          Add FAQ
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="size-4 mr-1" />Import
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+            <Download className="size-4 mr-1" />{exporting ? 'Exporting...' : 'Export'}
+          </Button>
+          <Button onClick={openCreate} size="sm">
+            <Plus className="size-4 mr-1" />Add FAQ
+          </Button>
+        </div>
       </div>
 
       {message && (
-        <div className="mb-4 p-3 bg-primary/10 text-primary text-sm rounded-lg border border-primary/20">
-          {message}
-        </div>
+        <div className="mb-4 p-3 bg-primary/10 text-primary text-sm rounded-lg border border-primary/20">{message}</div>
       )}
       {error && (
-        <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">
-          {error}
-        </div>
+        <div className="mb-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 whitespace-pre-line">{error}</div>
       )}
 
       <Card>
@@ -128,23 +174,12 @@ export function FaqManager() {
           ) : (
             <div className="space-y-2">
               {faqs.map((faq, i) => (
-                <div
-                  key={faq.id}
-                  className="flex items-start gap-3 p-3 border border-border rounded-lg"
-                >
+                <div key={faq.id} className="flex items-start gap-3 p-3 border border-border rounded-lg">
                   <div className="flex flex-col gap-0.5 pt-0.5">
-                    <button
-                      onClick={() => move(i, 'up')}
-                      disabled={i === 0}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
-                    >
+                    <button onClick={() => move(i, 'up')} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none">
                       <GripVertical className="size-3 rotate-90" />
                     </button>
-                    <button
-                      onClick={() => move(i, 'down')}
-                      disabled={i === faqs.length - 1}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
-                    >
+                    <button onClick={() => move(i, 'down')} disabled={i === faqs.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none">
                       <GripVertical className="size-3 rotate-90" />
                     </button>
                   </div>
@@ -183,35 +218,56 @@ export function FaqManager() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Question</label>
-              <Input
-                value={form.question}
-                onChange={(e) => setForm({ ...form, question: e.target.value })}
-                placeholder="Enter the question..."
-              />
+              <Input value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} placeholder="Enter the question..." />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Answer</label>
-              <Textarea
-                value={form.answer}
-                onChange={(e) => setForm({ ...form, answer: e.target.value })}
-                placeholder="Enter the answer..."
-                rows={4}
-              />
+              <Textarea value={form.answer} onChange={(e) => setForm({ ...form, answer: e.target.value })} placeholder="Enter the answer..." rows={4} />
             </div>
             <div className="flex items-center gap-2">
-              <Switch
-                checked={form.isPublished}
-                onCheckedChange={(v) => setForm({ ...form, isPublished: v })}
-                id="faq-published"
-              />
-              <label htmlFor="faq-published" className="text-sm text-muted-foreground">
-                Published
-              </label>
+              <Switch checked={form.isPublished} onCheckedChange={(v) => setForm({ ...form, isPublished: v })} id="faq-published" />
+              <label htmlFor="faq-published" className="text-sm text-muted-foreground">Published</label>
             </div>
           </div>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
             <Button onClick={handleSave}>{editing ? 'Update' : 'Create'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import FAQs from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file with columns: question, answer, isPublished (optional)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium">Import mode:</label>
+              <div className="flex gap-2">
+                <Button variant={importMode === 'append' ? 'default' : 'outline'} size="sm" onClick={() => setImportMode('append')}>Append</Button>
+                <Button variant={importMode === 'replace' ? 'destructive' : 'outline'} size="sm" onClick={() => setImportMode('replace')}>Replace All</Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {importMode === 'append'
+                ? 'New FAQs will be added to the existing list.'
+                : 'All existing FAQs will be deleted before importing.'}
+            </p>
+            <label className="flex flex-col items-center gap-2 p-6 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary transition-colors text-muted-foreground text-sm">
+              <Upload className="size-6" />
+              <span>{importFile ? importFile.name : 'Click to select CSV file'}</span>
+              <input ref={fileRef} type="file" accept=".csv" onChange={(e) => setImportFile(e.target.files?.[0] || null)} className="hidden" />
+            </label>
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
+            <Button onClick={handleImport} disabled={!importFile || importing}>
+              {importing ? 'Importing...' : `Import (${importMode === 'replace' ? 'Replace' : 'Append'})`}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -111,17 +111,6 @@ export const faqApi = {
   getPublished: () => api.get('/faq'),
 };
 
-export const mcqApi = {
-  list: (params?: object) => api.get('/mcq/admin', { params }),
-  create: (data: object) => api.post('/mcq/admin', data),
-  update: (id: string, data: object) => api.put(`/mcq/admin/${id}`, data),
-  delete: (id: string) => api.delete(`/mcq/admin/${id}`),
-  importCsv: (formData: FormData) => api.post('/mcq/admin/import', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  exportCsv: () => api.get('/mcq/admin/export', { responseType: 'blob' }),
-};
-
 export const adminFaqApi = {
   getAll: () => api.get('/faq/admin'),
   create: (data: { question: string; answer: string; displayOrder?: number; isPublished?: boolean }) =>
@@ -129,6 +118,10 @@ export const adminFaqApi = {
   update: (id: string, data: { question?: string; answer?: string; displayOrder?: number; isPublished?: boolean }) =>
     api.put(`/faq/admin/${id}`, data),
   delete: (id: string) => api.delete(`/faq/admin/${id}`),
+  importCsv: (formData: FormData) => api.post('/faq/admin/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  exportCsv: () => api.get('/faq/admin/export', { responseType: 'blob' }),
 };
 
 export const adminApi = {

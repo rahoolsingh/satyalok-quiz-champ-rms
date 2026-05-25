@@ -81,19 +81,6 @@ export interface PaymentSession {
   providerOrderId?: string;
 }
 
-export interface McqItem {
-  id: string;
-  question: string;
-  options: { A: string; B: string; C: string; D: string };
-  correctAnswer: 'A' | 'B' | 'C' | 'D';
-  class?: string;
-  batchType?: 'JUNIOR' | 'SENIOR' | 'BOTH';
-  subject?: string;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface FaqItem {
   id: string;
   question: string;

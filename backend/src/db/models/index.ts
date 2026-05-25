@@ -10,4 +10,3 @@ export { Result, IResult } from './result.model';
 export { AdminSession, IAdminSession } from './adminSession.model';
 export { PaymentAttempt, IPaymentAttempt } from './paymentAttempt.model';
 export { Faq, IFaq } from './faq.model';
-export { Mcq, IMcq } from './mcq.model';
