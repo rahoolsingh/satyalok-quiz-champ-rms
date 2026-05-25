@@ -4,7 +4,7 @@ export interface IFAQ extends Document {
   question: string;
   answer: string;
   isPublished: boolean;
-  order: number;
+  displayOrder: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,7 +14,7 @@ const FAQSchema = new Schema<IFAQ>(
     question: { type: String, required: true },
     answer: { type: String, required: true },
     isPublished: { type: Boolean, default: true },
-    order: { type: Number, default: 0 },
+    displayOrder: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -1125,8 +1125,8 @@ adminRouter.post('/registrations/:id/verify-payment', async (req: AuthRequest, r
 // GET /api/admin/faqs
 adminRouter.get('/faqs', async (_req: AuthRequest, res: Response) => {
   try {
-    const faqs = await (await import('../db/models')).FAQ.find().sort({ order: 1 }).lean();
-    return res.json({ faqs: faqs.map(f => ({ id: f._id.toString(), question: f.question, answer: f.answer, isPublished: f.isPublished, order: f.order })) });
+    const faqs = await (await import('../db/models')).FAQ.find().sort({ displayOrder: 1 }).lean();
+    return res.json({ faqs: faqs.map(f => ({ id: f._id.toString(), question: f.question, answer: f.answer, isPublished: f.isPublished, displayOrder: f.displayOrder })) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to get FAQs' });
@@ -1138,9 +1138,9 @@ adminRouter.post('/faqs', async (req: AuthRequest, res: Response) => {
   try {
     const { question, answer } = req.body;
     if (!question || !answer) return res.status(400).json({ error: 'Question and answer are required' });
-    const maxOrder = await (await import('../db/models')).FAQ.findOne().sort({ order: -1 }).lean();
-    const faq = await (await import('../db/models')).FAQ.create({ question, answer, order: (maxOrder?.order ?? 0) + 1 });
-    return res.status(201).json({ id: faq._id.toString(), question: faq.question, answer: faq.answer, isPublished: faq.isPublished, order: faq.order });
+    const maxOrder = await (await import('../db/models')).FAQ.findOne().sort({ displayOrder: -1 }).lean();
+    const faq = await (await import('../db/models')).FAQ.create({ question, answer, displayOrder: (maxOrder?.displayOrder ?? 0) + 1 });
+    return res.status(201).json({ id: faq._id.toString(), question: faq.question, answer: faq.answer, isPublished: faq.isPublished, displayOrder: faq.displayOrder });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to create FAQ' });
@@ -1150,12 +1150,12 @@ adminRouter.post('/faqs', async (req: AuthRequest, res: Response) => {
 // PUT /api/admin/faqs/:id
 adminRouter.put('/faqs/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const { question, answer, isPublished, order } = req.body;
+    const { question, answer, isPublished, displayOrder } = req.body;
     const update: Record<string, unknown> = {};
     if (question !== undefined) update.question = question;
     if (answer !== undefined) update.answer = answer;
     if (isPublished !== undefined) update.isPublished = isPublished;
-    if (order !== undefined) update.order = order;
+    if (displayOrder !== undefined) update.displayOrder = displayOrder;
     await (await import('../db/models')).FAQ.findByIdAndUpdate(req.params.id, update);
     return res.json({ message: 'FAQ updated' });
   } catch (err) {

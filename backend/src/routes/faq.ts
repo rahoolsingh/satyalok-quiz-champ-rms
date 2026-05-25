@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
-import { Faq } from '../db/models';
+import { FAQ } from '../db/models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -11,7 +11,7 @@ export const faqRouter = Router();
 // GET /api/faq — public, returns published FAQs
 faqRouter.get('/', async (_req: Request, res: Response) => {
   try {
-    const faqs = await Faq.find({ isPublished: true })
+    const faqs = await FAQ.find({ isPublished: true })
       .sort({ displayOrder: 1 })
       .lean();
     return res.json(
@@ -31,7 +31,7 @@ faqRouter.get('/', async (_req: Request, res: Response) => {
 // Admin routes (protected)
 faqRouter.get('/admin', authMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
-    const faqs = await Faq.find().sort({ displayOrder: 1 }).lean();
+    const faqs = await FAQ.find().sort({ displayOrder: 1 }).lean();
     return res.json(
       faqs.map((f) => ({
         id: f._id.toString(),
@@ -57,10 +57,10 @@ faqRouter.post('/admin', authMiddleware, async (req: AuthRequest, res: Response)
       return res.status(400).json({ error: 'Question and answer are required' });
     }
 
-    const maxDoc = await Faq.findOne().sort({ displayOrder: -1 });
+    const maxDoc = await FAQ.findOne().sort({ displayOrder: -1 });
     const nextOrder = displayOrder ?? (maxDoc ? maxDoc.displayOrder + 1 : 0);
 
-    const faq = await Faq.create({
+    const faq = await FAQ.create({
       question,
       answer,
       displayOrder: nextOrder,
@@ -92,7 +92,7 @@ faqRouter.put('/admin/:id', authMiddleware, async (req: AuthRequest, res: Respon
     if (displayOrder !== undefined) updateData.displayOrder = displayOrder;
     if (isPublished !== undefined) updateData.isPublished = isPublished;
 
-    const faq = await Faq.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    const faq = await FAQ.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!faq) {
       return res.status(404).json({ error: 'FAQ not found' });
     }
@@ -115,7 +115,7 @@ faqRouter.put('/admin/:id', authMiddleware, async (req: AuthRequest, res: Respon
 // DELETE /api/admin/faq/:id — delete FAQ
 faqRouter.delete('/admin/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const faq = await Faq.findByIdAndDelete(req.params.id);
+    const faq = await FAQ.findByIdAndDelete(req.params.id);
     if (!faq) {
       return res.status(404).json({ error: 'FAQ not found' });
     }
@@ -157,7 +157,7 @@ faqRouter.post('/admin/import', upload.single('file'), async (req: AuthRequest, 
     const errors: Array<{ row: number; error: string }> = [];
     const toInsert: Array<Record<string, unknown>> = [];
 
-    const maxDoc = await Faq.findOne().sort({ displayOrder: -1 });
+    const maxDoc = await FAQ.findOne().sort({ displayOrder: -1 });
     let nextOrder = maxDoc ? maxDoc.displayOrder + 1 : 0;
 
     for (let i = 0; i < records.length; i++) {
@@ -184,10 +184,10 @@ faqRouter.post('/admin/import', upload.single('file'), async (req: AuthRequest, 
     }
 
     if (mode === 'replace') {
-      await Faq.deleteMany({});
+      await FAQ.deleteMany({});
     }
 
-    const result = await Faq.insertMany(toInsert);
+    const result = await FAQ.insertMany(toInsert);
 
     return res.json({
       message: `${result.length} FAQ(s) imported successfully (mode: ${mode})`,
@@ -202,7 +202,7 @@ faqRouter.post('/admin/import', upload.single('file'), async (req: AuthRequest, 
 // GET /api/admin/faq/export — export all FAQs as CSV
 faqRouter.get('/admin/export', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const faqs = await Faq.find().sort({ displayOrder: 1 }).lean();
+    const faqs = await FAQ.find().sort({ displayOrder: 1 }).lean();
 
     const header = 'question,answer,isPublished';
     const rows = faqs.map((f) => {
