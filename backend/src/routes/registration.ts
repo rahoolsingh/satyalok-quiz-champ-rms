@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
+import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { validateRegistration } from '../services/validation';
 import { getRegistrationFee, generateMerchantTransactionId } from '../services/payment';
@@ -16,7 +17,7 @@ export const registrationRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB — compressed before S3 upload
 });
 
 // ─── Helper: build draft response shape ──────────────────────────────────────
@@ -81,9 +82,13 @@ registrationRouter.post(
         if (!validateImageFormat(req.file.mimetype)) {
           return res.status(400).json({ error: 'Accepted photo formats: JPEG, PNG, WebP' });
         }
-        const ext = req.file.mimetype.split('/')[1].replace('jpeg', 'jpg');
-        const key = `photos/${uuidv4()}.${ext}`;
-        const result = await uploadToS3(key, req.file.buffer, req.file.mimetype);
+        // Compress and resize to JPEG (max 800x800, quality 80) regardless of input size/format
+        const compressedBuffer = await sharp(req.file.buffer)
+          .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toBuffer();
+        const key = `photos/${uuidv4()}.jpg`;
+        const result = await uploadToS3(key, compressedBuffer, 'image/jpeg');
         photoUrl = result.url;
       }
 

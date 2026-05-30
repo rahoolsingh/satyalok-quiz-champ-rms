@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Required for sharp (libvips) native compilation on alpine
+RUN apk add --no-cache python3 make g++ vips-dev
+
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
@@ -20,12 +23,13 @@ ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# Install Chromium and fonts for PDF rendering
+# Install Chromium, fonts for PDF rendering, and libvips for sharp
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-noto \
     fonts-noto-cjk \
     fonts-freefont-ttf \
+    libvips \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
