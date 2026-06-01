@@ -28,7 +28,7 @@ export function MobileEntry({ batchType, onSuccess, onBack }: Props) {
     const batchLabel =
         batchType === "JUNIOR"
             ? "Junior Batch (Class 5-10)"
-            : "Senior Batch (Class 10+)";
+            : "Senior Batch (Class 11+ (Inter, Graduation & Govt. Exam Aspirants))";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

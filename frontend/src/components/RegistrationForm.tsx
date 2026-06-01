@@ -315,7 +315,7 @@ export function RegistrationForm({
                 <div className="flex items-center gap-2.5 px-4 py-3 bg-[#f5f5f7] rounded-[12px] mt-4 border border-[#e8e8ed]">
                     <div className={`w-2.5 h-2.5 rounded-full ${batchType === 'JUNIOR' ? 'bg-blue-500' : 'bg-purple-500'}`} />
                     <span className="text-[14px] font-medium text-[#1d1d1f]">
-                        {batchType === "JUNIOR" ? "Junior Batch (Class 5-10)" : "Senior Batch (Class 10+)"}
+                        {batchType === "JUNIOR" ? "Junior Batch (Class 5-10)" : "Senior Batch (Class 11+ (Inter, Graduation & Govt. Exam Aspirants))"}
                     </span>
                 </div>
             </header>

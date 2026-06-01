@@ -12,7 +12,7 @@ const batches = [
     {
         type: "SENIOR" as BatchType,
         label: "Senior Batch",
-        sub: "Class 10+",
+        sub: "Class 11+ (Inter, Graduation & Govt. Exam Aspirants)",
         icon: Trophy,
     },
 ];
