@@ -175,8 +175,8 @@ export const adminApi = {
     api.post(`/admin/registrations/${participantId}/send-custom-message`, { message }),
   downloadAdmitCard: (participantId: string) =>
     api.get(`/admin/registrations/${participantId}/download-admit-card`, { responseType: 'blob' }),
-  sendAdmitCardWhatsApp: (participantId: string) =>
-    api.post(`/admin/registrations/${participantId}/send-admit-card-whatsapp`),
+  sendAdmitCardWhatsApp: (participantId: string, godMode = false) =>
+    api.post(`/admin/registrations/${participantId}/send-admit-card-whatsapp`, { godMode }),
   admitCardQueueStart: () => api.post('/admin/admit-card-queue/start'),
   admitCardQueueStatus: () => api.get('/admin/admit-card-queue/status'),
   admitCardQueueStop: () => api.post('/admin/admit-card-queue/stop'),

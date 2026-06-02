@@ -52,6 +52,7 @@ import {
   Smartphone,
   ExternalLink,
   UserPlus,
+  Loader2,
 } from 'lucide-react';
 
 const LIMIT = 20;
@@ -152,6 +153,7 @@ export function RegistrationList() {
   const [customMsgDialog, setCustomMsgDialog] = useState<{ id: string; name: string } | null>(null);
   const [customMsgText, setCustomMsgText] = useState('');
   const [queueStatus, setQueueStatus] = useState<{ running: boolean; total: number; sent: number; failed: number; currentParticipant?: string } | null>(null);
+  const [loadingActions, setLoadingActions] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -550,20 +552,29 @@ export function RegistrationList() {
                       {p.paymentStatus === 'COMPLETED' && p.rollNumber && (
                         <>
                           <ShadTooltip>
-                            <TooltipTrigger render={<Button variant="outline" size="xs" onClick={async () => {
+                            <TooltipTrigger render={<Button variant="outline" size="xs" disabled={!!loadingActions[`pdf-${p.id}`]} onClick={async () => {
+                              setLoadingActions(prev => ({ ...prev, [`pdf-${p.id}`]: 'downloading' }));
                               try {
                                 const res = await adminApi.downloadAdmitCard(p.id);
                                 const url = URL.createObjectURL(res.data);
                                 const a = document.createElement('a'); a.href = url; a.download = `AdmitCard_${p.rollNumber}.pdf`; a.click(); URL.revokeObjectURL(url);
                               } catch (err: any) { alert(`Download failed: ${err.response?.data?.error || 'Error'}`); }
+                              finally { setLoadingActions(prev => { const n = { ...prev }; delete n[`pdf-${p.id}`]; return n; }); }
                             }} className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30 gap-1">
-                              <FileDown className="size-3" />PDF
+                              {loadingActions[`pdf-${p.id}`] ? <Loader2 className="size-3 animate-spin" /> : <FileDown className="size-3" />}PDF
                             </Button>} />
                             <TooltipContent>Download admit card PDF</TooltipContent>
                           </ShadTooltip>
                           <ShadTooltip>
-                            <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendAdmitCardWhatsApp(p.id).then(() => alert(`Admit card sent to ${p.name} on WhatsApp`)), p.name)} className="text-[#25D366] border-[#25D366]/30 hover:bg-[#25D366]/10 gap-1">
-                              <Send className="size-3" />Card
+                            <TooltipTrigger render={<Button variant="outline" size="xs" disabled={!!loadingActions[`wa-${p.id}`]} onClick={async () => {
+                              setLoadingActions(prev => ({ ...prev, [`wa-${p.id}`]: 'sending' }));
+                              try {
+                                await adminApi.sendAdmitCardWhatsApp(p.id, godMode);
+                                alert(`Admit card sent to ${p.name} on WhatsApp`);
+                              } catch (err: any) { alert(`${p.name}: ${err.response?.data?.error || 'Failed'}`); }
+                              finally { setLoadingActions(prev => { const n = { ...prev }; delete n[`wa-${p.id}`]; return n; }); }
+                            }} className="text-[#25D366] border-[#25D366]/30 hover:bg-[#25D366]/10 gap-1">
+                              {loadingActions[`wa-${p.id}`] ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}Card
                             </Button>} />
                             <TooltipContent>Send admit card on WhatsApp</TooltipContent>
                           </ShadTooltip>
