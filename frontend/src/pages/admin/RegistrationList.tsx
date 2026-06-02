@@ -151,6 +151,7 @@ export function RegistrationList() {
   const [datesDialog, setDatesDialog] = useState<{ id: string; name: string; isGodMode: boolean } | null>(null);
   const [customMsgDialog, setCustomMsgDialog] = useState<{ id: string; name: string } | null>(null);
   const [customMsgText, setCustomMsgText] = useState('');
+  const [queueStatus, setQueueStatus] = useState<{ running: boolean; total: number; sent: number; failed: number; currentParticipant?: string } | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -378,6 +379,35 @@ export function RegistrationList() {
         </div>
       </div>
 
+      {/* Admit Card Queue Controls */}
+      {godMode && (
+        <Card className="border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/10">
+          <CardContent className="py-3 px-4 flex flex-wrap items-center gap-3">
+            <span className="text-xs font-medium text-red-600 flex items-center gap-1"><Send className="size-3" />Admit Card Queue</span>
+            <Button size="xs" variant="outline" className="text-emerald-600 border-emerald-300" onClick={async () => {
+              const res = await adminApi.admitCardQueueStart();
+              alert(res.data.message);
+              const s = await adminApi.admitCardQueueStatus();
+              setQueueStatus(s.data);
+            }}>Start Queue</Button>
+            <Button size="xs" variant="outline" className="text-red-600 border-red-300" onClick={async () => {
+              await adminApi.admitCardQueueStop();
+              setQueueStatus(prev => prev ? { ...prev, running: false } : null);
+            }}>Stop Queue</Button>
+            <Button size="xs" variant="outline" onClick={async () => {
+              const s = await adminApi.admitCardQueueStatus();
+              setQueueStatus(s.data);
+            }}>Refresh Status</Button>
+            {queueStatus && (
+              <span className="text-xs text-muted-foreground">
+                {queueStatus.running ? '🟢 Running' : '⚪ Stopped'} — Sent: {queueStatus.sent}/{queueStatus.total} | Failed: {queueStatus.failed}
+                {queueStatus.currentParticipant && ` | Current: ${queueStatus.currentParticipant}`}
+              </span>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Table */}
       <Card className="overflow-hidden border-border">
         <div className="overflow-x-auto">
@@ -516,6 +546,28 @@ export function RegistrationList() {
                           </Button>} />
                           <TooltipContent>Remind to download admit card</TooltipContent>
                         </ShadTooltip>
+                      )}
+                      {p.paymentStatus === 'COMPLETED' && p.rollNumber && (
+                        <>
+                          <ShadTooltip>
+                            <TooltipTrigger render={<Button variant="outline" size="xs" onClick={async () => {
+                              try {
+                                const res = await adminApi.downloadAdmitCard(p.id);
+                                const url = URL.createObjectURL(res.data);
+                                const a = document.createElement('a'); a.href = url; a.download = `AdmitCard_${p.rollNumber}.pdf`; a.click(); URL.revokeObjectURL(url);
+                              } catch (err: any) { alert(`Download failed: ${err.response?.data?.error || 'Error'}`); }
+                            }} className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30 gap-1">
+                              <FileDown className="size-3" />PDF
+                            </Button>} />
+                            <TooltipContent>Download admit card PDF</TooltipContent>
+                          </ShadTooltip>
+                          <ShadTooltip>
+                            <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(() => adminApi.sendAdmitCardWhatsApp(p.id).then(() => alert(`Admit card sent to ${p.name} on WhatsApp`)), p.name)} className="text-[#25D366] border-[#25D366]/30 hover:bg-[#25D366]/10 gap-1">
+                              <Send className="size-3" />Card
+                            </Button>} />
+                            <TooltipContent>Send admit card on WhatsApp</TooltipContent>
+                          </ShadTooltip>
+                        </>
                       )}
                       {(p.paymentStatus === 'PENDING' || p.paymentStatus === 'FAILED') && (
                         <ShadTooltip>

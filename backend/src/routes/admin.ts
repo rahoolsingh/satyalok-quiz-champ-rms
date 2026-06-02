@@ -11,6 +11,7 @@ import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
 import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
+import { startAdmitCardQueue, getAdmitCardQueueStatus, stopAdmitCardQueue } from '../services/admitCardQueue';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
 
@@ -1197,5 +1198,123 @@ adminRouter.post('/registrations/:id/send-custom-message', async (req: AuthReque
   } catch (err) {
     console.error('[Admin] Failed to send custom message:', err);
     return res.status(500).json({ error: 'Failed to send custom message' });
+  }
+});
+
+// ─── ADMIT CARD WHATSAPP QUEUE ────────────────────────────────────────────────
+
+// GET /api/admin/registrations/:id/download-admit-card
+adminRouter.get('/registrations/:id/download-admit-card', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) return res.status(404).json({ error: 'Participant not found' });
+    if (!participant.rollNumber) return res.status(400).json({ error: 'Roll number not assigned' });
+
+    const { generateAdmitCardPDF } = await import('../services/admitCardPdf');
+    const portalConfig = await PortalConfig.findOne().lean();
+
+    const pdfBuffer = await generateAdmitCardPDF({
+      rollNumber: participant.rollNumber,
+      name: participant.name,
+      class: participant.class,
+      batchType: participant.batchType,
+      guardianName: participant.guardianName,
+      mobileNumber: participant.mobileNumber,
+      photoUrl: participant.photoUrl,
+      eventName: 'Quiz Champ 2026',
+      eventDate: portalConfig?.eventDate
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+        : undefined,
+      eventTime: portalConfig?.eventTime,
+      reportingTime: portalConfig?.reportingTime,
+      examTime: portalConfig?.examTime,
+      venue: portalConfig?.venue,
+      venueMapUrl: portalConfig?.venueMapUrl,
+      participantId: participant._id.toString(),
+      questionPaperLanguage: participant.questionPaperLanguage,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="AdmitCard_${participant.rollNumber}.pdf"`);
+    return res.send(pdfBuffer);
+  } catch (err) {
+    console.error('[Admin] Failed to download admit card:', err);
+    return res.status(500).json({ error: 'Failed to generate admit card' });
+  }
+});
+
+// POST /api/admin/admit-card-queue/start
+adminRouter.post('/admit-card-queue/start', async (_req: AuthRequest, res: Response) => {
+  try {
+    const result = await startAdmitCardQueue();
+    return res.json(result);
+  } catch (err) {
+    console.error('[Admin] Failed to start admit card queue:', err);
+    return res.status(500).json({ error: 'Failed to start queue' });
+  }
+});
+
+// GET /api/admin/admit-card-queue/status
+adminRouter.get('/admit-card-queue/status', async (_req: AuthRequest, res: Response) => {
+  return res.json(getAdmitCardQueueStatus());
+});
+
+// POST /api/admin/admit-card-queue/stop
+adminRouter.post('/admit-card-queue/stop', async (_req: AuthRequest, res: Response) => {
+  stopAdmitCardQueue();
+  return res.json({ message: 'Queue stop requested' });
+});
+
+// POST /api/admin/registrations/:id/send-admit-card-whatsapp
+adminRouter.post('/registrations/:id/send-admit-card-whatsapp', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) return res.status(404).json({ error: 'Participant not found' });
+    if (participant.paymentStatus !== 'COMPLETED') return res.status(400).json({ error: 'Payment not completed' });
+    if (!participant.rollNumber) return res.status(400).json({ error: 'Roll number not assigned' });
+
+    const { generateAdmitCardPDF } = await import('../services/admitCardPdf');
+    const { sendAdmitCardWhatsApp } = await import('../services/whatsapp');
+    const portalConfig = await PortalConfig.findOne().lean();
+
+    const pdfBuffer = await generateAdmitCardPDF({
+      rollNumber: participant.rollNumber,
+      name: participant.name,
+      class: participant.class,
+      batchType: participant.batchType,
+      guardianName: participant.guardianName,
+      mobileNumber: participant.mobileNumber,
+      photoUrl: participant.photoUrl,
+      eventName: 'Quiz Champ 2026',
+      eventDate: portalConfig?.eventDate
+        ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+        : undefined,
+      eventTime: portalConfig?.eventTime,
+      reportingTime: portalConfig?.reportingTime,
+      examTime: portalConfig?.examTime,
+      venue: portalConfig?.venue,
+      venueMapUrl: portalConfig?.venueMapUrl,
+      participantId: participant._id.toString(),
+      questionPaperLanguage: participant.questionPaperLanguage,
+    });
+
+    const examDate = portalConfig?.eventDate
+      ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'To be announced';
+
+    await sendAdmitCardWhatsApp(
+      participant.mobileNumber,
+      pdfBuffer,
+      `AdmitCard_${participant.rollNumber}.pdf`,
+      { name: participant.name, rollNumber: participant.rollNumber, batchType: participant.batchType, examDate }
+    );
+
+    participant.admitCardWhatsappSent = true;
+    await participant.save();
+
+    return res.json({ message: 'Admit card sent on WhatsApp' });
+  } catch (err) {
+    console.error('[Admin] Failed to send admit card on WhatsApp:', err);
+    return res.status(500).json({ error: 'Failed to send admit card' });
   }
 });

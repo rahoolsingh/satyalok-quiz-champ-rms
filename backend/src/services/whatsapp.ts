@@ -358,6 +358,73 @@ export async function sendEventLocation(
 }
 
 /**
+ * Uploads media to Meta WhatsApp Cloud API and returns the media ID.
+ */
+async function uploadMediaToMeta(pdfBuffer: Buffer, filename: string): Promise<string> {
+  const { phoneNumberId, accessToken } = getMetaConfig();
+  const uploadUrl = `${META_API_BASE}/${phoneNumberId}/media`;
+  const FormData = (await import('form-data')).default;
+  const form = new FormData();
+  form.append('file', pdfBuffer, { filename, contentType: 'application/pdf' });
+  form.append('messaging_product', 'whatsapp');
+
+  const uploadRes = await axios.post(uploadUrl, form, {
+    headers: { Authorization: `Bearer ${accessToken}`, ...form.getHeaders() },
+    timeout: 30000,
+  });
+
+  console.log(`[Meta WhatsApp] Media uploaded, id: ${uploadRes.data.id}`);
+  return uploadRes.data.id;
+}
+
+/**
+ * Sends admit card PDF via approved template: quizchamp_admit_card
+ * Template structure:
+ *   Header: DOCUMENT (PDF attachment)
+ *   Body: {{1}} name, {{2}} roll number, {{3}} batch, {{4}} exam date
+ *   Footer: "Team @ Satyalok - A New Hope"
+ */
+export interface AdmitCardWhatsAppData {
+  name: string;
+  rollNumber: string;
+  batchType: string;
+  examDate: string;
+}
+
+export async function sendAdmitCardWhatsApp(
+  mobileNumber: string,
+  pdfBuffer: Buffer,
+  filename: string,
+  data: AdmitCardWhatsAppData
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Admit card template → ${mobileNumber} (${filename})`);
+    return;
+  }
+
+  const mediaId = await uploadMediaToMeta(pdfBuffer, filename);
+  const batchLabel = data.batchType === 'JUNIOR' ? 'Junior' : 'Senior';
+
+  await sendMetaTemplate(mobileNumber, 'quizchamp_admit_card', 'en', [
+    {
+      type: 'header',
+      parameters: [{ type: 'document', document: { id: mediaId, filename } }],
+    },
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: data.rollNumber },
+        { type: 'text', text: batchLabel },
+        { type: 'text', text: data.examDate },
+      ],
+    },
+  ]);
+}
+
+/**
  * Sends a custom text message via Meta WhatsApp Cloud API.
  * Only works within 24-hour conversation window.
  */
