@@ -360,12 +360,12 @@ export async function sendEventLocation(
 /**
  * Uploads media to Meta WhatsApp Cloud API and returns the media ID.
  */
-async function uploadMediaToMeta(pdfBuffer: Buffer, filename: string): Promise<string> {
+async function uploadMediaToMeta(buffer: Buffer, filename: string, mimeType: string): Promise<string> {
   const { phoneNumberId, accessToken } = getMetaConfig();
   const uploadUrl = `${META_API_BASE}/${phoneNumberId}/media`;
   const FormData = (await import('form-data')).default;
   const form = new FormData();
-  form.append('file', pdfBuffer, { filename, contentType: 'application/pdf' });
+  form.append('file', buffer, { filename, contentType: mimeType });
   form.append('messaging_product', 'whatsapp');
 
   const uploadRes = await axios.post(uploadUrl, form, {
@@ -378,11 +378,8 @@ async function uploadMediaToMeta(pdfBuffer: Buffer, filename: string): Promise<s
 }
 
 /**
- * Sends admit card PDF via approved template: quizchamp_admit_card
- * Template structure:
- *   Header: DOCUMENT (PDF attachment)
- *   Body: {{1}} name, {{2}} roll number, {{3}} batch, {{4}} exam date
- *   Footer: "Team @ Satyalok - A New Hope"
+ * Sends admit card PDF directly as a document message.
+ * After this send, a 24-hour conversation window opens, allowing re-sends.
  */
 export interface AdmitCardWhatsAppData {
   name: string;
@@ -400,28 +397,27 @@ export async function sendAdmitCardWhatsApp(
   const provider = process.env.WHATSAPP_PROVIDER || 'mock';
 
   if (provider === 'mock') {
-    console.log(`[MOCK WhatsApp] Admit card template → ${mobileNumber} (${filename})`);
+    console.log(`[MOCK WhatsApp] Admit card PDF → ${mobileNumber} (${filename})`);
     return;
   }
 
-  const mediaId = await uploadMediaToMeta(pdfBuffer, filename);
+  const { phoneNumberId, accessToken } = getMetaConfig();
+  const mediaId = await uploadMediaToMeta(pdfBuffer, `${filename}.pdf`, 'application/pdf');
   const batchLabel = data.batchType === 'JUNIOR' ? 'Junior' : 'Senior';
 
-  await sendMetaTemplate(mobileNumber, 'quizchamp_admit_card', 'en', [
-    {
-      type: 'header',
-      parameters: [{ type: 'document', document: { id: mediaId, filename } }],
+  await axios.post(`${META_API_BASE}/${phoneNumberId}/messages`, {
+    messaging_product: 'whatsapp',
+    to: `91${mobileNumber}`,
+    type: 'document',
+    document: {
+      id: mediaId,
+      filename: `${filename}.pdf`,
+      caption: `🎓 *Quiz Champ 2026 — Admit Card*\n\n👤 ${data.name}\n📋 Roll No: *${data.rollNumber}*\n📚 Batch: ${batchLabel}\n📅 Exam: ${data.examDate}\n\nPlease save this and bring it on exam day.`,
     },
-    {
-      type: 'body',
-      parameters: [
-        { type: 'text', text: data.name },
-        { type: 'text', text: data.rollNumber },
-        { type: 'text', text: batchLabel },
-        { type: 'text', text: data.examDate },
-      ],
-    },
-  ]);
+  }, {
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    timeout: 15000,
+  });
 }
 
 /**

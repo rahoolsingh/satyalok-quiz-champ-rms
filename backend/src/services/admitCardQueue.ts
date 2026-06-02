@@ -51,7 +51,7 @@ export async function startAdmitCardQueue(): Promise<{ message: string }> {
   const totalPending = await Participant.countDocuments({
     paymentStatus: 'COMPLETED',
     rollNumber: { $exists: true, $ne: null },
-    admitCardWhatsappSent: { $ne: true },
+    admitCardWhatsappSentAt: { $exists: false },
   });
   state.total = totalPending;
 
@@ -73,7 +73,7 @@ async function processQueue(): Promise<void> {
     const participant = await Participant.findOne({
       paymentStatus: 'COMPLETED',
       rollNumber: { $exists: true, $ne: null },
-      admitCardWhatsappSent: { $ne: true },
+      admitCardWhatsappSentAt: { $exists: false },
     });
 
     if (!participant) {
@@ -108,8 +108,8 @@ async function processQueue(): Promise<void> {
 
       const pdfBuffer = await generateAdmitCardPDF(pdfData);
 
-      // Send via WhatsApp template
-      const filename = `AdmitCard_${participant.rollNumber}.pdf`;
+      // Send via WhatsApp (PDF with caption)
+      const filename = `AdmitCard_${participant.rollNumber}`;
       const examDate = portalConfig?.eventDate
         ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
         : 'To be announced';
@@ -122,7 +122,7 @@ async function processQueue(): Promise<void> {
       });
 
       // Mark as sent
-      participant.admitCardWhatsappSent = true;
+      participant.admitCardWhatsappSentAt = new Date();
       await participant.save();
       state.sent++;
 

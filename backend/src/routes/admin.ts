@@ -1273,11 +1273,22 @@ adminRouter.post('/registrations/:id/send-admit-card-whatsapp', async (req: Auth
     if (participant.paymentStatus !== 'COMPLETED') return res.status(400).json({ error: 'Payment not completed' });
     if (!participant.rollNumber) return res.status(400).json({ error: 'Roll number not assigned' });
 
+    const isGodMode = req.body?.godMode === true;
+
+    // 24-hour rate limit (bypass in god mode)
+    if (!isGodMode && participant.admitCardWhatsappSentAt) {
+      const hoursAgo = (Date.now() - new Date(participant.admitCardWhatsappSentAt).getTime()) / 3600000;
+      if (hoursAgo < 24) {
+        const hoursLeft = Math.ceil(24 - hoursAgo);
+        return res.status(429).json({ error: `Admit card already sent. Resend available in ${hoursLeft}h.` });
+      }
+    }
+
     const { generateAdmitCardPDF } = await import('../services/admitCardPdf');
     const { sendAdmitCardWhatsApp } = await import('../services/whatsapp');
     const portalConfig = await PortalConfig.findOne().lean();
 
-    const pdfBuffer = await generateAdmitCardPDF({
+    const admitCardData = {
       rollNumber: participant.rollNumber,
       name: participant.name,
       class: participant.class,
@@ -1296,8 +1307,9 @@ adminRouter.post('/registrations/:id/send-admit-card-whatsapp', async (req: Auth
       venueMapUrl: portalConfig?.venueMapUrl,
       participantId: participant._id.toString(),
       questionPaperLanguage: participant.questionPaperLanguage,
-    });
+    };
 
+    const pdfBuffer = await generateAdmitCardPDF(admitCardData);
     const examDate = portalConfig?.eventDate
       ? new Date(portalConfig.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
       : 'To be announced';
@@ -1305,11 +1317,11 @@ adminRouter.post('/registrations/:id/send-admit-card-whatsapp', async (req: Auth
     await sendAdmitCardWhatsApp(
       participant.mobileNumber,
       pdfBuffer,
-      `AdmitCard_${participant.rollNumber}.pdf`,
+      `AdmitCard_${participant.rollNumber}`,
       { name: participant.name, rollNumber: participant.rollNumber, batchType: participant.batchType, examDate }
     );
 
-    participant.admitCardWhatsappSent = true;
+    participant.admitCardWhatsappSentAt = new Date();
     await participant.save();
 
     return res.json({ message: 'Admit card sent on WhatsApp' });

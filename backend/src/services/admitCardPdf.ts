@@ -124,3 +124,65 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
     await browser.close();
   }
 }
+
+/**
+ * Generates the admit card as a JPEG image (for WhatsApp inline preview).
+ * Returns a Buffer containing the JPEG image.
+ */
+export async function generateAdmitCardImage(data: AdmitCardData): Promise<Buffer> {
+  const systemData = JSON.stringify({ id: data.participantId || 'N/A', roll: data.rollNumber, name: data.name, batch: data.batchType });
+  const omrData = JSON.stringify({ id: data.participantId || 'N/A', roll: data.rollNumber, name: data.name, guardian: data.guardianName, class: data.class, batch: data.batchType, mobile: data.mobileNumber });
+
+  const [systemQrCode, mapQrCode, omrQrCode] = await Promise.all([
+    QRCode.toDataURL(systemData, { width: 150, margin: 1 }),
+    data.venueMapUrl ? QRCode.toDataURL(data.venueMapUrl, { width: 150, margin: 1 }) : Promise.resolve(null),
+    QRCode.toDataURL(omrData, { width: 500, margin: 1 }),
+  ]);
+
+  const templateVars = {
+    admitCardType: data.batchType === 'JUNIOR' ? 'JUNIOR ADMIT CARD' : 'SENIOR ADMIT CARD',
+    competitionYear: '2026',
+    organizationName: 'Satyalok - A New Hope',
+    examDate: data.eventDate || 'To be announced',
+    reportingTime: data.reportingTime || 'TBA',
+    examTime: data.examTime || 'TBA',
+    rollNumber: data.rollNumber,
+    candidateName: data.name,
+    studentClass: data.class,
+    batchCategory: data.batchType === 'JUNIOR' ? 'Junior Batch (5-10)' : 'Senior Batch (10+)',
+    batchType: data.batchType === 'JUNIOR' ? 'Junior' : 'Senior',
+    guardianName: data.guardianName,
+    mobileNumber: `+91 ${data.mobileNumber}`,
+    centreDetails: data.venue || 'To be announced',
+    candidatePhotoUrl: data.photoUrl || null,
+    systemQrCode,
+    mapQrCode,
+    omrQrCode,
+    paperLanguage: data.questionPaperLanguage ? (data.questionPaperLanguage === 'HINDI' ? 'Hindi' : 'English') : 'Not Selected',
+    generatedDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
+    systemId: data.participantId ? data.participantId.slice(-8).toUpperCase() : 'N/A',
+  };
+
+  const templatePath = path.join(__dirname, '..', 'admit-card.ejs');
+  const distTemplatePath = path.join(process.cwd(), 'dist', 'admit-card.ejs');
+  const templateContent = fs.readFileSync(fs.existsSync(templatePath) ? templatePath : distTemplatePath, 'utf-8');
+  const html = ejs.render(templateContent, templateVars);
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+  });
+
+  try {
+    const page = await browser.newPage();
+    // A4 width at 96dpi = 794px; use 1.5x for sharper image
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1.5 });
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+
+    const screenshot = await page.screenshot({ type: 'jpeg', quality: 90, fullPage: true });
+    return Buffer.from(screenshot);
+  } finally {
+    await browser.close();
+  }
+}
