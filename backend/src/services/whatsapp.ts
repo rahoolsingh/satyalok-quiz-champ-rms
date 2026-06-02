@@ -423,42 +423,6 @@ export async function sendAdmitCardWhatsApp(
 }
 
 /**
- * Sends the admit card PDF as a plain document message.
- * Only call this inside a 24-hour window (i.e., after user replied to the template).
- */
-export async function sendAdmitCardPdfDirect(
-  mobileNumber: string,
-  pdfBuffer: Buffer,
-  filename: string,
-  data: AdmitCardWhatsAppData
-): Promise<void> {
-  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
-
-  if (provider === 'mock') {
-    console.log(`[MOCK WhatsApp] Admit card PDF direct → ${mobileNumber}`);
-    return;
-  }
-
-  const { phoneNumberId, accessToken } = getMetaConfig();
-  const mediaId = await uploadMediaToMeta(pdfBuffer, `${filename}.pdf`, 'application/pdf');
-  const batchLabel = data.batchType === 'JUNIOR' ? 'Junior' : 'Senior';
-
-  await axios.post(`${META_API_BASE}/${phoneNumberId}/messages`, {
-    messaging_product: 'whatsapp',
-    to: `91${mobileNumber}`,
-    type: 'document',
-    document: {
-      id: mediaId,
-      filename: `${filename}.pdf`,
-      caption: `🎓 *Quiz Champ 2026 — Admit Card*\n\n👤 ${data.name}\n📋 Roll No: *${data.rollNumber}*\n📚 Batch: ${batchLabel}\n📅 Exam: ${data.examDate}\n\nPlease save this and bring it on exam day.`,
-    },
-  }, {
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    timeout: 15000,
-  });
-}
-
-/**
  * Sends a custom text message via Meta WhatsApp Cloud API.
  * Only works within 24-hour conversation window.
  */
