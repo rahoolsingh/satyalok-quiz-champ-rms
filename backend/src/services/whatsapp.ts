@@ -403,21 +403,11 @@ export async function sendAdmitCardWhatsApp(
   }
 
   const mediaId = await uploadMediaToMeta(pdfBuffer, `${filename}.pdf`, 'application/pdf');
-  const batchLabel = data.batchType === 'JUNIOR' ? 'Junior' : 'Senior';
 
-  await sendMetaTemplate(mobileNumber, 'quizchamp_admit_card', 'en', [
+  await sendMetaTemplate(mobileNumber, 'quizchamp_admit_card_only', 'en', [
     {
       type: 'header',
       parameters: [{ type: 'document', document: { id: mediaId, filename: `${filename}.pdf` } }],
-    },
-    {
-      type: 'body',
-      parameters: [
-        { type: 'text', text: data.name },
-        { type: 'text', text: data.rollNumber },
-        { type: 'text', text: batchLabel },
-        { type: 'text', text: data.examDate },
-      ],
     },
   ]);
 }
