@@ -14,6 +14,7 @@ import { profileRouter } from "./routes/profile";
 import { authRouter } from "./routes/auth";
 import { faqRouter } from "./routes/faq";
 import { testAdmitCardRouter } from "./routes/testAdmitCard";
+import { whatsappWebhookRouter } from "./routes/whatsappWebhook";
 import { startPaymentReminderScheduler } from "./services/paymentReminder";
 import { startPaymentCron } from "./services/paymentCron";
 
@@ -51,6 +52,7 @@ app.use("/api/results", resultsRouter);
 app.use("/api/faq", faqRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/payment", paymentRouter);
+app.use("/api/whatsapp", whatsappWebhookRouter);
 
 // Test routes (only in development)
 if (process.env.NODE_ENV !== "production") {

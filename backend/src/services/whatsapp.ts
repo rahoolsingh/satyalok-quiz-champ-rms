@@ -378,8 +378,9 @@ async function uploadMediaToMeta(buffer: Buffer, filename: string, mimeType: str
 }
 
 /**
- * Sends admit card PDF directly as a document message.
- * After this send, a 24-hour conversation window opens, allowing re-sends.
+ * Sends admit card via the approved quizchamp_admit_card template.
+ * This is the FIRST send — opens a conversation, user can reply to get the PDF directly.
+ * Template: DOCUMENT header + body with name, roll, batch, examDate.
  */
 export interface AdmitCardWhatsAppData {
   name: string;
@@ -397,7 +398,44 @@ export async function sendAdmitCardWhatsApp(
   const provider = process.env.WHATSAPP_PROVIDER || 'mock';
 
   if (provider === 'mock') {
-    console.log(`[MOCK WhatsApp] Admit card PDF → ${mobileNumber} (${filename})`);
+    console.log(`[MOCK WhatsApp] Admit card template → ${mobileNumber} (${filename})`);
+    return;
+  }
+
+  const mediaId = await uploadMediaToMeta(pdfBuffer, `${filename}.pdf`, 'application/pdf');
+  const batchLabel = data.batchType === 'JUNIOR' ? 'Junior' : 'Senior';
+
+  await sendMetaTemplate(mobileNumber, 'quizchamp_admit_card', 'en', [
+    {
+      type: 'header',
+      parameters: [{ type: 'document', document: { id: mediaId, filename: `${filename}.pdf` } }],
+    },
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: data.rollNumber },
+        { type: 'text', text: batchLabel },
+        { type: 'text', text: data.examDate },
+      ],
+    },
+  ]);
+}
+
+/**
+ * Sends the admit card PDF as a plain document message.
+ * Only call this inside a 24-hour window (i.e., after user replied to the template).
+ */
+export async function sendAdmitCardPdfDirect(
+  mobileNumber: string,
+  pdfBuffer: Buffer,
+  filename: string,
+  data: AdmitCardWhatsAppData
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Admit card PDF direct → ${mobileNumber}`);
     return;
   }
 

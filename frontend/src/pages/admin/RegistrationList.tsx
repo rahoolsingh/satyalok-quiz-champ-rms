@@ -406,6 +406,17 @@ export function RegistrationList() {
                 {queueStatus.currentParticipant && ` | Current: ${queueStatus.currentParticipant}`}
               </span>
             )}
+            <div className="w-full border-t border-red-200 dark:border-red-900/40 mt-1 pt-2 flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-muted-foreground font-medium">WhatsApp Webhook URL:</span>
+              <code className="text-[11px] bg-muted px-2 py-0.5 rounded select-all">
+                {`${window.location.origin.replace(':5173', ':3001')}/api/whatsapp/webhook`}
+              </code>
+              <Button size="xs" variant="outline" className="gap-1 text-[11px]" onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin.replace(':5173', ':3001')}/api/whatsapp/webhook`);
+              }}>
+                <Copy className="size-3" />Copy
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
