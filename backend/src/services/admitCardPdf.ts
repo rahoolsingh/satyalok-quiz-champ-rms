@@ -27,6 +27,7 @@ type PuppeteerBrowser = Awaited<ReturnType<typeof puppeteer.launch>>;
 
 let sharedBrowser: PuppeteerBrowser | null = null;
 let launchPromise: Promise<PuppeteerBrowser> | null = null;
+let renderQueue: Promise<void> = Promise.resolve();
 
 const chromiumArgs = [
   '--no-sandbox',
@@ -69,11 +70,35 @@ async function newPageWithRecovery() {
     const browser = await getBrowser();
     return await browser.newPage();
   } catch (err) {
+    if (isBrowserResourceError(err)) throw err;
+
     sharedBrowser = null;
     launchPromise = null;
     const browser = await getBrowser();
     return await browser.newPage();
   }
+}
+
+async function runSerialized<T>(task: () => Promise<T>): Promise<T> {
+  const previous = renderQueue;
+  let release!: () => void;
+
+  renderQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  await previous.catch(() => undefined);
+
+  try {
+    return await task();
+  } finally {
+    release();
+  }
+}
+
+export function isBrowserResourceError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /Cannot fork|Resource temporarily unavailable|chrome_crashpad_handler|Failed to launch the browser process|posix_spawn/i.test(message);
 }
 
 export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer> {
@@ -150,21 +175,23 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
 
   const html = ejs.render(templateContent, templateVars);
 
-  const page = await newPageWithRecovery();
+  return runSerialized(async () => {
+    const page = await newPageWithRecovery();
 
-  try {
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+    try {
+      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0', bottom: '0', left: '0', right: '0' },
-    });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '0', bottom: '0', left: '0', right: '0' },
+      });
 
-    return Buffer.from(pdfBuffer);
-  } finally {
-    await page.close().catch(() => undefined);
-  }
+      return Buffer.from(pdfBuffer);
+    } finally {
+      await page.close().catch(() => undefined);
+    }
+  });
 }
 
 /**
@@ -210,16 +237,18 @@ export async function generateAdmitCardImage(data: AdmitCardData): Promise<Buffe
   const templateContent = fs.readFileSync(fs.existsSync(templatePath) ? templatePath : distTemplatePath, 'utf-8');
   const html = ejs.render(templateContent, templateVars);
 
-  const page = await newPageWithRecovery();
+  return runSerialized(async () => {
+    const page = await newPageWithRecovery();
 
-  try {
-    // A4 width at 96dpi = 794px; use 1.5x for sharper image
-    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1.5 });
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+    try {
+      // A4 width at 96dpi = 794px; use 1.5x for sharper image
+      await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1.5 });
+      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
-    const screenshot = await page.screenshot({ type: 'jpeg', quality: 90, fullPage: true });
-    return Buffer.from(screenshot);
-  } finally {
-    await page.close().catch(() => undefined);
-  }
+      const screenshot = await page.screenshot({ type: 'jpeg', quality: 90, fullPage: true });
+      return Buffer.from(screenshot);
+    } finally {
+      await page.close().catch(() => undefined);
+    }
+  });
 }

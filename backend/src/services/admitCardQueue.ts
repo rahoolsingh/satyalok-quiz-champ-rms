@@ -1,5 +1,5 @@
 import { Participant, PortalConfig } from '../db/models';
-import { generateAdmitCardPDF, AdmitCardData } from './admitCardPdf';
+import { generateAdmitCardPDF, AdmitCardData, isBrowserResourceError } from './admitCardPdf';
 import { sendAdmitCardWhatsApp } from './whatsapp';
 
 interface QueueStatus {
@@ -139,6 +139,11 @@ async function processQueue(): Promise<void> {
         error: err.message || 'Unknown error',
       });
       console.error(`[AdmitCardQueue] ❌ Failed for ${participant.name}:`, err.message);
+
+      if (isBrowserResourceError(err)) {
+        console.error('[AdmitCardQueue] Browser resource exhaustion detected. Stopping queue so the server can recover.');
+        state.running = false;
+      }
     }
 
     // Delay between sends
