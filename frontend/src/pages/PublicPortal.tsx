@@ -13,7 +13,7 @@ import { PaymentGateway } from "../components/PaymentGateway";
 import { ResultChecker } from "../components/ResultChecker";
 import { SatyalokBadge } from "../components/SatyalokBadge";
 import { UserProfile } from "../components/UserProfile";
-import { WhatsAppHelp } from "../components/WhatsAppHelp";
+import { WhatsAppHelp, HelpSection } from "../components/WhatsAppHelp";
 import { SliderImage, BatchType, PaymentSession, ProfileData, FaqItem } from "../types";
 import { portalApi, otpApi, profileApi, faqApi, setSessionToken, clearSessionToken } from "../api/client";
 import { Button } from "@/components/ui/button";
@@ -284,6 +284,7 @@ export function PublicPortal() {
                             </p>
                         </motion.div>
                         {importantDatesSection}
+                        <HelpSection />
                         {faqSection}
                     </div>
                     <footer className="mt-14 pt-6">
@@ -306,6 +307,7 @@ export function PublicPortal() {
                         <div className="mt-8">
                             {importantDatesSection}
                         </div>
+                        <HelpSection />
                         {faqSection}
                     </div>
                     <footer className="mt-14 pt-6">
@@ -448,6 +450,8 @@ export function PublicPortal() {
                                 setStep("mobile-entry");
                             }}
                         />
+
+                        <HelpSection />
 
                         {faqSection}
 
