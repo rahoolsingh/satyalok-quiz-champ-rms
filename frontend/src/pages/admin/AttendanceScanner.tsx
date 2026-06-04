@@ -5,9 +5,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Camera, CheckCircle2, Keyboard, Loader2, RotateCcw, ScanLine, ShieldAlert, XCircle } from 'lucide-react';
+import { Camera, CheckCircle2, Clock, Keyboard, Loader2, RotateCcw, ScanLine, ShieldAlert, XCircle } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -45,6 +53,18 @@ interface Feedback {
   title: string;
   message: string;
   participant?: AttendanceResult;
+}
+
+interface RecentAttendance {
+  attendanceId?: string;
+  participantId: string;
+  rollNumber: string;
+  name: string;
+  class: string;
+  batchType: BatchType;
+  photoUrl?: string;
+  checkInTime?: string;
+  scanMethod?: 'QR' | 'MANUAL';
 }
 
 function getInitials(name = 'Participant') {
@@ -85,6 +105,8 @@ export function AttendanceScanner() {
   const [manualRoll, setManualRoll] = useState('');
   const [qrCandidate, setQrCandidate] = useState<{ raw: string; parsed: ParsedQR } | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [recent, setRecent] = useState<RecentAttendance[]>([]);
+  const [recentLoading, setRecentLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -101,6 +123,28 @@ export function AttendanceScanner() {
     setProcessing(false);
     lastScanRef.current = '';
   }, []);
+
+  const loadRecent = useCallback(async () => {
+    setRecentLoading(true);
+    try {
+      const response = await attendanceApi.getList({
+        status: 'PRESENT',
+        sortBy: 'checkInTime',
+        sortOrder: 'desc',
+        page: 1,
+        limit: 10,
+      });
+      setRecent(response.data.records || []);
+    } catch {
+      setRecent([]);
+    } finally {
+      setRecentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRecent();
+  }, [loadRecent]);
 
   const showApiError = useCallback((err: any) => {
     const data = err.response?.data;
@@ -145,6 +189,7 @@ export function AttendanceScanner() {
         },
       });
       setQrCandidate(null);
+      loadRecent();
       vibrate(80);
       window.setTimeout(reset, 3000);
     } catch (err: any) {
@@ -152,7 +197,7 @@ export function AttendanceScanner() {
     } finally {
       setProcessing(false);
     }
-  }, [qrCandidate, reset, showApiError]);
+  }, [loadRecent, qrCandidate, reset, showApiError]);
 
   const markManual = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -181,6 +226,7 @@ export function AttendanceScanner() {
         },
       });
       setManualRoll('');
+      loadRecent();
       vibrate(80);
       window.setTimeout(reset, 3000);
     } catch (err: any) {
@@ -341,40 +387,89 @@ export function AttendanceScanner() {
         </Card>
       )}
 
-      {qrCandidate && (
-        <Card className="border-primary/30">
-          <CardHeader>
-            <CardTitle>Confirm Participant</CardTitle>
-            <CardDescription>Verify the details before marking attendance.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <Avatar size="lg">
-                <AvatarFallback>{getInitials(qrCandidate.parsed.name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{qrCandidate.parsed.name || 'Participant'}</p>
-                <p className="text-sm text-muted-foreground">{qrCandidate.parsed.roll}</p>
+      <Dialog open={!!qrCandidate} onOpenChange={open => { if (!open && !processing) setQrCandidate(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Attendance</DialogTitle>
+            <DialogDescription>Verify the admit-card details before marking this participant present.</DialogDescription>
+          </DialogHeader>
+          {qrCandidate && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
+                <Avatar size="lg">
+                  <AvatarFallback>{getInitials(qrCandidate.parsed.name)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{qrCandidate.parsed.name || 'Participant'}</p>
+                  <p className="text-sm text-muted-foreground">{qrCandidate.parsed.roll}</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{qrCandidate.parsed.batch}</Badge>
               </div>
-              <Badge variant="secondary" className="ml-auto">{qrCandidate.parsed.batch}</Badge>
+              <div className="grid gap-2 text-sm sm:grid-cols-2">
+                <div className="rounded-lg border px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Class</p>
+                  <p className="font-medium">{qrCandidate.parsed.class || '-'}</p>
+                </div>
+                <div className="rounded-lg border px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Mobile</p>
+                  <p className="font-medium">{qrCandidate.parsed.mobile || '-'}</p>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <div className="rounded-lg bg-muted px-3 py-2">Class {qrCandidate.parsed.class || '-'}</div>
-              <div className="rounded-lg bg-muted px-3 py-2">{qrCandidate.parsed.mobile || '-'}</div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={reset} disabled={processing}>
+              <XCircle data-icon="inline-start" />
+              Cancel
+            </Button>
+            <Button onClick={markFromQR} disabled={processing}>
+              {processing ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <CheckCircle2 data-icon="inline-start" />}
+              Mark Present
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock data-icon="inline-start" />
+            Recent Check-ins
+          </CardTitle>
+          <CardDescription>Latest 10 participants marked present today.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          {recentLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="animate-spin" />
+              Loading recent attendance
             </div>
-            <div className="flex gap-2">
-              <Button onClick={markFromQR} disabled={processing}>
-                {processing ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <CheckCircle2 data-icon="inline-start" />}
-                Confirm Attendance
-              </Button>
-              <Button variant="outline" onClick={reset} disabled={processing}>
-                <XCircle data-icon="inline-start" />
-                Cancel
-              </Button>
+          )}
+          {!recentLoading && recent.length === 0 && (
+            <div className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+              No attendance marked yet.
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          {!recentLoading && recent.map(record => (
+            <div key={record.attendanceId || record.participantId} className="flex items-center gap-3 rounded-lg border px-3 py-2">
+              <Avatar>
+                <AvatarImage src={record.photoUrl} />
+                <AvatarFallback>{getInitials(record.name)}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{record.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {record.rollNumber} · Class {record.class} · {formatTime(record.checkInTime)}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant="secondary">{record.batchType}</Badge>
+                <Badge variant="outline">{record.scanMethod}</Badge>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {feedback && (
         <Alert variant={activeFeedbackVariant}>
