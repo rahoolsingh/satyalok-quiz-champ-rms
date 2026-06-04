@@ -23,6 +23,59 @@ export interface AdmitCardData {
   questionPaperLanguage?: string;
 }
 
+type PuppeteerBrowser = Awaited<ReturnType<typeof puppeteer.launch>>;
+
+let sharedBrowser: PuppeteerBrowser | null = null;
+let launchPromise: Promise<PuppeteerBrowser> | null = null;
+
+const chromiumArgs = [
+  '--no-sandbox',
+  '--disable-setuid-sandbox',
+  '--disable-dev-shm-usage',
+  '--disable-gpu',
+  '--disable-extensions',
+  '--disable-crash-reporter',
+  '--disable-crashpad',
+  '--no-zygote',
+  '--single-process',
+];
+
+async function getBrowser(): Promise<PuppeteerBrowser> {
+  if (sharedBrowser) return sharedBrowser;
+
+  if (!launchPromise) {
+    launchPromise = puppeteer.launch({
+      headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: chromiumArgs,
+    });
+  }
+
+  try {
+    sharedBrowser = await launchPromise;
+    sharedBrowser.once('disconnected', () => {
+      sharedBrowser = null;
+      launchPromise = null;
+    });
+    return sharedBrowser;
+  } catch (err) {
+    launchPromise = null;
+    throw err;
+  }
+}
+
+async function newPageWithRecovery() {
+  try {
+    const browser = await getBrowser();
+    return await browser.newPage();
+  } catch (err) {
+    sharedBrowser = null;
+    launchPromise = null;
+    const browser = await getBrowser();
+    return await browser.newPage();
+  }
+}
+
 export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer> {
   // Generate QR codes
   const systemData = JSON.stringify({
@@ -97,20 +150,9 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
 
   const html = ejs.render(templateContent, templateVars);
 
-  // Launch Puppeteer and generate PDF
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-    ],
-  });
+  const page = await newPageWithRecovery();
 
   try {
-    const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
     const pdfBuffer = await page.pdf({
@@ -121,7 +163,7 @@ export async function generateAdmitCardPDF(data: AdmitCardData): Promise<Buffer>
 
     return Buffer.from(pdfBuffer);
   } finally {
-    await browser.close();
+    await page.close().catch(() => undefined);
   }
 }
 
@@ -168,14 +210,9 @@ export async function generateAdmitCardImage(data: AdmitCardData): Promise<Buffe
   const templateContent = fs.readFileSync(fs.existsSync(templatePath) ? templatePath : distTemplatePath, 'utf-8');
   const html = ejs.render(templateContent, templateVars);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-  });
+  const page = await newPageWithRecovery();
 
   try {
-    const page = await browser.newPage();
     // A4 width at 96dpi = 794px; use 1.5x for sharper image
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1.5 });
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
@@ -183,6 +220,6 @@ export async function generateAdmitCardImage(data: AdmitCardData): Promise<Buffe
     const screenshot = await page.screenshot({ type: 'jpeg', quality: 90, fullPage: true });
     return Buffer.from(screenshot);
   } finally {
-    await browser.close();
+    await page.close().catch(() => undefined);
   }
 }

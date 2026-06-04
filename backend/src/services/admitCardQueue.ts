@@ -68,12 +68,14 @@ export async function startAdmitCardQueue(): Promise<{ message: string }> {
 
 async function processQueue(): Promise<void> {
   const portalConfig = await PortalConfig.findOne().lean();
+  const failedParticipantIds = new Set<string>();
 
   while (state.running) {
     const participant = await Participant.findOne({
       paymentStatus: 'COMPLETED',
       rollNumber: { $exists: true, $ne: null },
       admitCardWhatsappSentAt: { $exists: false },
+      ...(failedParticipantIds.size > 0 ? { _id: { $nin: Array.from(failedParticipantIds) } } : {}),
     });
 
     if (!participant) {
@@ -82,6 +84,7 @@ async function processQueue(): Promise<void> {
     }
 
     state.currentParticipant = participant.name;
+    const participantId = participant._id.toString();
 
     try {
       // Generate PDF
@@ -128,9 +131,10 @@ async function processQueue(): Promise<void> {
 
       console.log(`[AdmitCardQueue] ✅ Sent to ${participant.name} (${participant.rollNumber}). Progress: ${state.sent}/${state.total}`);
     } catch (err: any) {
+      failedParticipantIds.add(participantId);
       state.failed++;
       state.errors.push({
-        participantId: participant._id.toString(),
+        participantId,
         name: participant.name,
         error: err.message || 'Unknown error',
       });
