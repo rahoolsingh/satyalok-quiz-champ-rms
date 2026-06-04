@@ -124,6 +124,16 @@ export const adminFaqApi = {
   exportCsv: () => api.get('/faq/admin/export', { responseType: 'blob' }),
 };
 
+export const attendanceApi = {
+  scan: (qrData: string) => api.post('/attendance/scan', { qrData }),
+  manual: (rollNumber: string, notes?: string) =>
+    api.post('/attendance/manual', { rollNumber, notes }),
+  getStats: () => api.get('/attendance/stats'),
+  getList: (params?: object) => api.get('/attendance/list', { params }),
+  exportCsv: (params?: object) =>
+    api.get('/attendance/export', { params, responseType: 'blob' }),
+};
+
 export const adminApi = {
   login: (username: string, password: string) =>
     api.post('/admin/login', { username, password }),

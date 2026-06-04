@@ -26,6 +26,9 @@ export interface IParticipant extends Document {
   admitCardWhatsappSentAt?: Date;
   lastAdmitCardReminderAt?: Date;
   lastImportantDatesSentAt?: Date;
+  // Attendance fields
+  attendanceMarked?: boolean;
+  lastAttendanceDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +64,8 @@ const ParticipantSchema = new Schema<IParticipant>(
     admitCardWhatsappSentAt: { type: Date },
     lastAdmitCardReminderAt: { type: Date },
     lastImportantDatesSentAt: { type: Date },
+    attendanceMarked: { type: Boolean, default: false },
+    lastAttendanceDate: { type: Date },
   },
   { timestamps: true }
 );

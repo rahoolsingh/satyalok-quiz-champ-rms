@@ -7,6 +7,9 @@ import { FeeConfiguration } from './FeeConfiguration';
 import { EventConfiguration } from './EventConfiguration';
 import { SessionManager } from './SessionManager';
 import { FaqManager } from './FaqManager';
+import { AttendanceDashboard } from './AttendanceDashboard';
+import { AttendanceScanner } from './AttendanceScanner';
+import { AttendanceList } from './AttendanceList';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -25,10 +28,16 @@ import {
   LogOut,
   LayoutDashboard,
   HelpCircle,
+  ClipboardCheck,
+  ScanLine,
+  ListChecks,
 } from 'lucide-react';
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'registrations', label: 'Registrations', icon: <Users className="size-4" /> },
+  { id: 'attendance', label: 'Attendance', icon: <ClipboardCheck className="size-4" /> },
+  { id: 'scanner', label: 'Scanner', icon: <ScanLine className="size-4" /> },
+  { id: 'attendanceList', label: 'Attendance List', icon: <ListChecks className="size-4" /> },
   { id: 'dates', label: 'Portal Dates', icon: <CalendarDays className="size-4" /> },
   { id: 'fees', label: 'Fees', icon: <Banknote className="size-4" /> },
   { id: 'event', label: 'Event Details', icon: <MapPin className="size-4" /> },
@@ -38,7 +47,18 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'faq', label: 'FAQ', icon: <HelpCircle className="size-4" /> },
 ];
 
-type Tab = 'registrations' | 'dates' | 'fees' | 'event' | 'slider' | 'results' | 'sessions' | 'faq';
+type Tab =
+  | 'registrations'
+  | 'attendance'
+  | 'scanner'
+  | 'attendanceList'
+  | 'dates'
+  | 'fees'
+  | 'event'
+  | 'slider'
+  | 'results'
+  | 'sessions'
+  | 'faq';
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [active, setActive] = useState<Tab>('registrations');
@@ -145,6 +165,9 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {active === 'registrations' && <RegistrationList />}
+          {active === 'attendance' && <AttendanceDashboard />}
+          {active === 'scanner' && <AttendanceScanner />}
+          {active === 'attendanceList' && <AttendanceList />}
           {active === 'dates' && <DateConfiguration />}
           {active === 'fees' && <FeeConfiguration />}
           {active === 'event' && <EventConfiguration />}

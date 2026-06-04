@@ -10,3 +10,5 @@ export { Result, IResult } from './result.model';
 export { AdminSession, IAdminSession } from './adminSession.model';
 export { PaymentAttempt, IPaymentAttempt } from './paymentAttempt.model';
 export { FAQ, IFAQ } from './faq.model';
+export { Attendance, IAttendance } from './attendance.model';
+export { AttendanceLog, IAttendanceLog, AttendanceLogAction } from './attendanceLog.model';
