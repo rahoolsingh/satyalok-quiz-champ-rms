@@ -120,6 +120,8 @@ export function PublicPortal() {
             setProfile(null);
             setSession(null);
             setStep("home");
+            // Force page reload to reset state completely
+            window.location.href = "/";
         }
     }, []);
 
@@ -264,6 +266,125 @@ export function PublicPortal() {
     ) : null;
 
     if (status.state === "CLOSED") {
+        // Allow registered users with completed payment to access their profile
+        if (profile && profile.paymentStatus === "COMPLETED") {
+            // User is authenticated and has completed payment - show their profile
+            return (
+                <div className="min-h-[100dvh] bg-background text-foreground selection:bg-primary/20">
+                    <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
+                        {/* Authenticated Header */}
+                        <header className="flex justify-between items-center mb-7 pb-4 border-b border-border">
+                            <div className="text-sm">
+                                <span className="font-semibold text-foreground">
+                                    {mobile}
+                                </span>
+                            </div>
+                            <Button
+                                onClick={handleLogout}
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                            >
+                                Logout
+                            </Button>
+                        </header>
+
+                        {/* Main Content */}
+                        <div className="flex-grow">
+                            <UserProfile
+                                profile={profile}
+                                portalStatus={status}
+                                onLogout={handleLogout}
+                                onCompletePayment={() => {}} // No action needed when registration is closed
+                                onProfileUpdate={(updatedProfile) => setProfile(updatedProfile)}
+                            />
+                        </div>
+
+                        {/* Footer */}
+                        <footer className="mt-14 pt-6">
+                            <SatyalokBadge variant="footer" />
+                        </footer>
+                    </main>
+
+                    <WhatsAppHelp />
+                </div>
+            );
+        }
+
+        // Allow login flow for users trying to access their admit card
+        if (step === "mobile-entry" || step === "otp") {
+            return (
+                <div className="min-h-[100dvh] bg-background text-foreground selection:bg-primary/20">
+                    <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
+                        {/* Main Content */}
+                        <div className="flex-grow">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={step}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                                >
+                                    {step === "otp" && mobile ? (
+                                        <OTPVerification
+                                            mobileNumber={mobile}
+                                            onSuccess={async (result) => {
+                                                if (result.sessionToken) {
+                                                    setSessionToken(result.sessionToken);
+                                                }
+                                                const profileData = result.profile;
+                                                setProfile(profileData);
+
+                                                if (profileData?.paymentStatus === "COMPLETED") {
+                                                    try {
+                                                        const response = await profileApi.getMe();
+                                                        setProfile(response.data.profile);
+                                                    } catch (error) {
+                                                        console.error("Failed to fetch complete profile:", error);
+                                                    }
+                                                    setStep("profile");
+                                                } else {
+                                                    // Registration not completed - show message and go back
+                                                    alert("Your registration is not complete. Admit card is only available for users with completed payment.");
+                                                    setMobile("");
+                                                    setProfile(null);
+                                                    setBatch(null);
+                                                    setStep("home");
+                                                }
+                                            }}
+                                            onBack={() => setStep("mobile-entry")}
+                                        />
+                                    ) : (
+                                        <MobileEntry
+                                            batchType={batch || "JUNIOR"}
+                                            onSuccess={(mobileNumber) => {
+                                                setMobile(mobileNumber);
+                                                setStep("otp");
+                                            }}
+                                            onBack={() => {
+                                                setStep("home");
+                                                setBatch(null);
+                                                setMobile("");
+                                            }}
+                                        />
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Footer */}
+                        <footer className="mt-14 pt-6">
+                            <SatyalokBadge variant="footer" />
+                        </footer>
+                    </main>
+
+                    <WhatsAppHelp />
+                </div>
+            );
+        }
+
+        // Show closed message for non-authenticated users
         return (
             <div className="min-h-[100dvh] bg-background text-foreground">
                 <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
@@ -277,11 +398,20 @@ export function PublicPortal() {
                                 Quiz Champ 2026
                             </p>
                             <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-foreground mb-3">
-                                Coming Soon
+                                Registration Closed
                             </h1>
                             <p className="text-muted-foreground leading-relaxed mb-10">
-                                Registration is currently closed. Stay tuned for updates.
+                                Registration is currently closed. If you have already registered, please login to access your admit card.
                             </p>
+                            
+                            {/* Login option for registered users */}
+                            <Button
+                                onClick={() => setStep("mobile-entry")}
+                                variant="default"
+                                className="mb-10"
+                            >
+                                Login to Access Admit Card
+                            </Button>
                         </motion.div>
                         {importantDatesSection}
                         <HelpSection />
