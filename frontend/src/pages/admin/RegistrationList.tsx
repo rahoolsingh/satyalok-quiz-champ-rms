@@ -152,7 +152,7 @@ export function RegistrationList() {
   const [datesDialog, setDatesDialog] = useState<{ id: string; name: string; isGodMode: boolean } | null>(null);
   const [customMsgDialog, setCustomMsgDialog] = useState<{ id: string; name: string } | null>(null);
   const [customMsgText, setCustomMsgText] = useState('');
-  const [paymentLinkDialog, setPaymentLinkDialog] = useState<{ name: string; link: string; validTill: string } | null>(null);
+  const [paymentLinkDialog, setPaymentLinkDialog] = useState<{ id: string; name: string; link: string; validTill: string } | null>(null);
   const [queueStatus, setQueueStatus] = useState<{ running: boolean; total: number; sent: number; failed: number; currentParticipant?: string } | null>(null);
   const [loadingActions, setLoadingActions] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
@@ -597,7 +597,7 @@ export function RegistrationList() {
                           <ShadTooltip>
                             <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(async () => {
                               const res = await adminApi.generatePaymentToken(p.id);
-                              setPaymentLinkDialog({ name: p.name, link: res.data.paymentLink, validTill: res.data.validTill });
+                              setPaymentLinkDialog({ id: p.id, name: p.name, link: res.data.paymentLink, validTill: res.data.validTill });
                             }, p.name)} className="text-indigo-600 border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 gap-1">
                               <ExternalLink className="size-3" />Link
                             </Button>} />
@@ -725,6 +725,29 @@ export function RegistrationList() {
                 className="w-full sm:w-auto gap-1.5"
               >
                 <Copy className="size-4" /> Copy Message
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (!confirm(`Are you sure you want to regenerate the link for ${paymentLinkDialog.name}? This will immediately invalidate the current active link.`)) {
+                    return;
+                  }
+                  try {
+                    const res = await adminApi.generatePaymentToken(paymentLinkDialog.id, true);
+                    setPaymentLinkDialog({
+                      id: paymentLinkDialog.id,
+                      name: paymentLinkDialog.name,
+                      link: res.data.paymentLink,
+                      validTill: res.data.validTill
+                    });
+                    alert('New payment link generated successfully!');
+                  } catch (err: any) {
+                    alert(err.response?.data?.error || 'Failed to regenerate link');
+                  }
+                }}
+                className="w-full sm:w-auto gap-1.5"
+              >
+                <RotateCcw className="size-4" /> Regenerate
               </Button>
               <DialogClose render={<Button variant="secondary" className="w-full sm:w-auto">Close</Button>} />
             </DialogFooter>

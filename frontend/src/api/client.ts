@@ -197,6 +197,6 @@ export const adminApi = {
   updateFaq: (id: string, data: { question?: string; answer?: string; isPublished?: boolean; order?: number }) =>
     api.put(`/admin/faqs/${id}`, data),
   deleteFaq: (id: string) => api.delete(`/admin/faqs/${id}`),
-  generatePaymentToken: (participantId: string) =>
-    api.post(`/admin/registrations/${participantId}/generate-payment-token`),
+  generatePaymentToken: (participantId: string, force = false) =>
+    api.post(`/admin/registrations/${participantId}/generate-payment-token`, { force }),
 };

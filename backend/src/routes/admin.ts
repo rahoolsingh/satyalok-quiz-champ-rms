@@ -1133,17 +1133,44 @@ adminRouter.post('/registrations/:id/generate-payment-token', async (req: AuthRe
       return res.status(400).json({ error: 'Cannot generate payment link for a completed registration' });
     }
 
-    // Generate unique token
-    const token = uuidv4().replace(/-/g, '') + Date.now().toString(36);
+    const { force } = req.body;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const tokenAgeLimit = 5 * 60 * 60 * 1000; // 5 hours
+
+    let token = participant.paymentToken;
+    let createdAt = participant.paymentTokenCreatedAt;
+
+    const isTokenValid = token && createdAt && (Date.now() - createdAt.getTime() < tokenAgeLimit);
+
+    if (isTokenValid && !force) {
+      // Return existing valid token and its expiration
+      const validTillDate = new Date(createdAt.getTime() + tokenAgeLimit);
+      const validTill = validTillDate.toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour12: true,
+        hour: 'numeric',
+        minute: '2-digit',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      return res.json({
+        success: true,
+        token,
+        paymentLink: `${frontendUrl}/checkout/${token}`,
+        validTill,
+        message: 'Retrieved existing valid payment link.'
+      });
+    }
+
+    // Generate new token if not valid or forced
+    token = uuidv4().replace(/-/g, '') + Date.now().toString(36);
     participant.paymentToken = token;
     participant.paymentTokenCreatedAt = new Date();
     await participant.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const paymentLink = `${frontendUrl}/checkout/${token}`;
-    
-    // Calculate expiration time (5 hours from now)
-    const validTillDate = new Date(Date.now() + 5 * 60 * 60 * 1000);
+    const validTillDate = new Date(participant.paymentTokenCreatedAt.getTime() + tokenAgeLimit);
     const validTill = validTillDate.toLocaleString('en-US', {
       timeZone: 'Asia/Kolkata',
       hour12: true,
@@ -1157,9 +1184,9 @@ adminRouter.post('/registrations/:id/generate-payment-token', async (req: AuthRe
     return res.json({
       success: true,
       token,
-      paymentLink,
+      paymentLink: `${frontendUrl}/checkout/${token}`,
       validTill,
-      message: 'Payment link generated successfully.'
+      message: force ? 'Regenerated fresh payment link.' : 'Generated new payment link.'
     });
   } catch (err) {
     console.error('[Admin] Failed to generate payment token:', err);
