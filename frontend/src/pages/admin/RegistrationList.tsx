@@ -152,6 +152,7 @@ export function RegistrationList() {
   const [datesDialog, setDatesDialog] = useState<{ id: string; name: string; isGodMode: boolean } | null>(null);
   const [customMsgDialog, setCustomMsgDialog] = useState<{ id: string; name: string } | null>(null);
   const [customMsgText, setCustomMsgText] = useState('');
+  const [paymentLinkDialog, setPaymentLinkDialog] = useState<{ name: string; link: string; validTill: string } | null>(null);
   const [queueStatus, setQueueStatus] = useState<{ running: boolean; total: number; sent: number; failed: number; currentParticipant?: string } | null>(null);
   const [loadingActions, setLoadingActions] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
@@ -581,16 +582,28 @@ export function RegistrationList() {
                         </>
                       )}
                       {(p.paymentStatus === 'PENDING' || p.paymentStatus === 'FAILED') && (
-                        <ShadTooltip>
-                          <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(async () => {
-                            const res = await adminApi.verifyPayment(p.id);
-                            alert(`${p.name}: ${res.data.message}`);
-                            if (res.data.status === 'SUCCESS') setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, paymentStatus: 'COMPLETED' } : x));
-                          }, p.name)} className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 gap-1">
-                            <RotateCcw className="size-3" />Verify
-                          </Button>} />
-                          <TooltipContent>Verify payment with gateway</TooltipContent>
-                        </ShadTooltip>
+                        <>
+                          <ShadTooltip>
+                            <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(async () => {
+                              const res = await adminApi.verifyPayment(p.id);
+                              alert(`${p.name}: ${res.data.message}`);
+                              if (res.data.status === 'SUCCESS') setParticipants(prev => prev.map(x => x.id === p.id ? { ...x, paymentStatus: 'COMPLETED' } : x));
+                            }, p.name)} className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 gap-1">
+                              <RotateCcw className="size-3" />Verify
+                            </Button>} />
+                            <TooltipContent>Verify payment with gateway</TooltipContent>
+                          </ShadTooltip>
+
+                          <ShadTooltip>
+                            <TooltipTrigger render={<Button variant="outline" size="xs" onClick={() => execAction(async () => {
+                              const res = await adminApi.generatePaymentToken(p.id);
+                              setPaymentLinkDialog({ name: p.name, link: res.data.paymentLink, validTill: res.data.validTill });
+                            }, p.name)} className="text-indigo-600 border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 gap-1">
+                              <ExternalLink className="size-3" />Link
+                            </Button>} />
+                            <TooltipContent>Generate special payment bypass link</TooltipContent>
+                          </ShadTooltip>
+                        </>
                       )}
                       {p.paymentStatus === 'PENDING' && (
                         <ShadTooltip>
@@ -668,6 +681,52 @@ export function RegistrationList() {
                 No change — just send
               </Button>
               <DialogClose render={<Button variant="secondary">Cancel</Button>} />
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* Payment Link Dialog */}
+      <Dialog open={!!paymentLinkDialog} onOpenChange={open => { if (!open) setPaymentLinkDialog(null); }}>
+        {paymentLinkDialog && (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bypass Payment Link</DialogTitle>
+              <DialogDescription>
+                A unique link has been generated for <strong>{paymentLinkDialog.name}</strong> to make the payment even when registration is closed.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">Generated Link:</span>
+                <span className="text-xs font-mono break-all select-all text-gray-700 dark:text-gray-300">
+                  {paymentLinkDialog.link}
+                </span>
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  Valid till: {paymentLinkDialog.validTill} IST (5 hours only)
+                </span>
+              </div>
+              
+              <div className="p-3 bg-blue-50/50 dark:bg-blue-950/10 rounded-lg border border-blue-100 dark:border-blue-900/50 flex flex-col gap-1.5">
+                <span className="text-[11px] font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide">Copy Message Preview:</span>
+                <p className="text-xs text-blue-900 dark:text-blue-200 leading-relaxed font-sans">
+                  Hi {paymentLinkDialog.name} here is the link to complete your payment, {paymentLinkDialog.link}, this is valid till {paymentLinkDialog.validTill} IST.
+                </p>
+              </div>
+            </div>
+            
+            <DialogFooter showCloseButton className="mt-4 flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => {
+                  const message = `Hi ${paymentLinkDialog.name} here is the link to complete your payment, ${paymentLinkDialog.link}, this is valid till ${paymentLinkDialog.validTill} IST.`;
+                  navigator.clipboard.writeText(message);
+                  alert('Copied formatted message to clipboard!');
+                }}
+                className="w-full sm:w-auto gap-1.5"
+              >
+                <Copy className="size-4" /> Copy Message
+              </Button>
+              <DialogClose render={<Button variant="secondary" className="w-full sm:w-auto">Close</Button>} />
             </DialogFooter>
           </DialogContent>
         )}

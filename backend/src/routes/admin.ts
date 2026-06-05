@@ -1121,6 +1121,52 @@ adminRouter.post('/registrations/:id/verify-payment', async (req: AuthRequest, r
   }
 });
 
+// POST /api/admin/registrations/:id/generate-payment-token — generate a unique link for a pending user
+adminRouter.post('/registrations/:id/generate-payment-token', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    if (participant.paymentStatus === 'COMPLETED') {
+      return res.status(400).json({ error: 'Cannot generate payment link for a completed registration' });
+    }
+
+    // Generate unique token
+    const token = uuidv4().replace(/-/g, '') + Date.now().toString(36);
+    participant.paymentToken = token;
+    participant.paymentTokenCreatedAt = new Date();
+    await participant.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const paymentLink = `${frontendUrl}/checkout/${token}`;
+    
+    // Calculate expiration time (5 hours from now)
+    const validTillDate = new Date(Date.now() + 5 * 60 * 60 * 1000);
+    const validTill = validTillDate.toLocaleString('en-US', {
+      timeZone: 'Asia/Kolkata',
+      hour12: true,
+      hour: 'numeric',
+      minute: '2-digit',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+
+    return res.json({
+      success: true,
+      token,
+      paymentLink,
+      validTill,
+      message: 'Payment link generated successfully.'
+    });
+  } catch (err) {
+    console.error('[Admin] Failed to generate payment token:', err);
+    return res.status(500).json({ error: 'Failed to generate payment token' });
+  }
+});
+
 // ─── FAQ MANAGEMENT ───────────────────────────────────────────────────────────
 
 // GET /api/admin/faqs

@@ -479,3 +479,110 @@ registrationRouter.post('/group-joined/:id', async (req, res) => {
     return res.status(500).json({ error: 'Failed to record group join' });
   }
 });
+
+// GET /api/registration/token/:token — retrieve participant details for token-based payment bypass
+registrationRouter.get('/token/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const participant = await Participant.findOne({ paymentToken: token });
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Invalid or expired payment link token' });
+    }
+
+    // Check if token is older than 5 hours (18,000,000 ms)
+    const tokenAgeLimit = 5 * 60 * 60 * 1000;
+    if (participant.paymentTokenCreatedAt && (Date.now() - participant.paymentTokenCreatedAt.getTime() > tokenAgeLimit)) {
+      return res.status(400).json({ error: 'This payment link has expired (links are valid for 5 hours only).' });
+    }
+
+    const amount = await getRegistrationFee(participant.batchType);
+
+    return res.json({
+      participant: {
+        id: participant._id.toString(),
+        name: participant.name,
+        class: participant.class,
+        batchType: participant.batchType,
+        gender: participant.gender,
+        guardianName: participant.guardianName,
+        address: participant.address,
+        mobileNumber: participant.mobileNumber,
+        email: participant.email,
+        photoUrl: participant.photoUrl,
+        paymentStatus: participant.paymentStatus,
+        createdAt: participant.createdAt,
+      },
+      amount,
+    });
+  } catch (err) {
+    console.error('[registration/token GET]', err);
+    return res.status(500).json({ error: 'Failed to retrieve participant details' });
+  }
+});
+
+// POST /api/registration/token/:token/pay — initiate payment via token bypass
+registrationRouter.post('/token/:token/pay', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const participant = await Participant.findOne({ paymentToken: token });
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Invalid or expired payment link token' });
+    }
+
+    // Check if token is older than 5 hours (18,000,000 ms)
+    const tokenAgeLimit = 5 * 60 * 60 * 1000;
+    if (participant.paymentTokenCreatedAt && (Date.now() - participant.paymentTokenCreatedAt.getTime() > tokenAgeLimit)) {
+      return res.status(400).json({ error: 'This payment link has expired (links are valid for 5 hours only).' });
+    }
+
+    if (participant.paymentStatus === 'COMPLETED') {
+      return res.status(400).json({ error: 'Payment has already been completed for this participant.' });
+    }
+
+    const amount = await getRegistrationFee(participant.batchType);
+    const merchantTransactionId = generateMerchantTransactionId();
+
+    // Update participant with new merchant transaction ID
+    participant.merchantTransactionId = merchantTransactionId;
+    await participant.save();
+
+    // Log payment attempt
+    await PaymentAttempt.create({
+      participantId: participant._id.toString(),
+      mobileNumber: participant.mobileNumber,
+      merchantTransactionId,
+      amount,
+      status: 'INITIATED',
+    });
+
+    let pgsResponse;
+    try {
+      pgsResponse = await initiatePhonePePayment({
+        name: participant.name,
+        mobileNumber: participant.mobileNumber,
+        group: participant.batchType,
+        amount,
+        merchantTransactionId,
+        email: participant.email,
+        class: participant.class,
+      });
+    } catch (pgsErr: any) {
+      console.error('PGS initiation failed for token pay:', pgsErr);
+      return res.status(502).json({ error: 'Payment gateway unavailable. Please try again.' });
+    }
+
+    return res.json({
+      redirectUrl: pgsResponse.redirectUrl,
+      merchantTransactionId,
+      amount,
+      currency: 'INR',
+      participantId: participant._id.toString(),
+      provider: 'phonepe',
+    });
+  } catch (err) {
+    console.error('[registration/token/pay POST]', err);
+    return res.status(500).json({ error: 'Failed to initiate payment' });
+  }
+});

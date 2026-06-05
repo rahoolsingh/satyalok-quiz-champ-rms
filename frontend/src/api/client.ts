@@ -94,6 +94,8 @@ export const registrationApi = {
     api.post('/registration/initiate-payment', {}, { headers: { Authorization: `Bearer ${token}` } }),
   track: (mobile: string) => api.get('/registration/track', { params: { mobile } }),
   getAdmitCard: (id: string) => api.get(`/registration/admit-card/${id}`),
+  getParticipantByToken: (token: string) => api.get(`/registration/token/${token}`),
+  initiatePaymentByToken: (token: string) => api.post(`/registration/token/${token}/pay`),
 };
 
 export const resultsApi = {
@@ -195,4 +197,6 @@ export const adminApi = {
   updateFaq: (id: string, data: { question?: string; answer?: string; isPublished?: boolean; order?: number }) =>
     api.put(`/admin/faqs/${id}`, data),
   deleteFaq: (id: string) => api.delete(`/admin/faqs/${id}`),
+  generatePaymentToken: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/generate-payment-token`),
 };

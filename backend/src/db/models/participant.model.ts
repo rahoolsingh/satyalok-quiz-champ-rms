@@ -29,6 +29,8 @@ export interface IParticipant extends Document {
   // Attendance fields
   attendanceMarked?: boolean;
   lastAttendanceDate?: Date;
+  paymentToken?: string;
+  paymentTokenCreatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +68,8 @@ const ParticipantSchema = new Schema<IParticipant>(
     lastImportantDatesSentAt: { type: Date },
     attendanceMarked: { type: Boolean, default: false },
     lastAttendanceDate: { type: Date },
+    paymentToken: { type: String },
+    paymentTokenCreatedAt: { type: Date },
   },
   { timestamps: true }
 );
@@ -74,6 +78,7 @@ ParticipantSchema.index({ mobileNumber: 1 });
 ParticipantSchema.index({ merchantTransactionId: 1 }, { unique: true, sparse: true });
 ParticipantSchema.index({ batchType: 1 });
 ParticipantSchema.index({ rollNumber: 1 }, { unique: true, sparse: true });
+ParticipantSchema.index({ paymentToken: 1 }, { unique: true, sparse: true });
 
 export const Participant: Model<IParticipant> =
   mongoose.models.Participant || mongoose.model<IParticipant>('Participant', ParticipantSchema);

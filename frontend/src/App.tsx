@@ -6,6 +6,7 @@ import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { PaymentStatus } from './pages/PaymentStatus';
 import { GroupJoin } from './pages/GroupJoin';
+import { Checkout } from './pages/Checkout';
 
 function AdminRoute() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('adminToken'));
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/payment-success" element={<PaymentStatus />} />
             <Route path="/payment-failed" element={<PaymentStatus />} />
             <Route path="/admin" element={<AdminRoute />} />
+            <Route path="/checkout/:token" element={<Checkout />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
