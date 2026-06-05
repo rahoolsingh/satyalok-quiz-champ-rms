@@ -1133,14 +1133,14 @@ adminRouter.post('/registrations/:id/generate-payment-token', async (req: AuthRe
       return res.status(400).json({ error: 'Cannot generate payment link for a completed registration' });
     }
 
-    const { force } = req.body;
+    const force = req.body.force === true || req.body.force === 'true';
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const tokenAgeLimit = 5 * 60 * 60 * 1000; // 5 hours
 
     let token = participant.paymentToken;
     let createdAt = participant.paymentTokenCreatedAt;
 
-    const isTokenValid = token && createdAt && (Date.now() - createdAt.getTime() < tokenAgeLimit);
+    const isTokenValid = token && createdAt && (Date.now() - new Date(createdAt).getTime() < tokenAgeLimit);
 
     if (isTokenValid && !force) {
       // Return existing valid token and its expiration
@@ -1168,6 +1168,8 @@ adminRouter.post('/registrations/:id/generate-payment-token', async (req: AuthRe
     token = uuidv4().replace(/-/g, '') + Date.now().toString(36);
     participant.paymentToken = token;
     participant.paymentTokenCreatedAt = new Date();
+    participant.markModified('paymentToken');
+    participant.markModified('paymentTokenCreatedAt');
     await participant.save();
 
     const validTillDate = new Date(participant.paymentTokenCreatedAt.getTime() + tokenAgeLimit);
