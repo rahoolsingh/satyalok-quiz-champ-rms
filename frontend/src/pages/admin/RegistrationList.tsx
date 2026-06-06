@@ -397,6 +397,14 @@ export function RegistrationList() {
               await adminApi.admitCardQueueStop();
               setQueueStatus(prev => prev ? { ...prev, running: false } : null);
             }}>Stop Queue</Button>
+            <Button size="xs" variant="destructive" onClick={async () => {
+              const confirmed = window.confirm('Reset admit card queue? This will clear sent status so bulk admit cards can be sent again.');
+              if (!confirmed) return;
+              const res = await adminApi.admitCardQueueReset();
+              alert(res.data.message);
+              const s = await adminApi.admitCardQueueStatus();
+              setQueueStatus(s.data);
+            }}>Reset Queue</Button>
             <Button size="xs" variant="outline" onClick={async () => {
               const s = await adminApi.admitCardQueueStatus();
               setQueueStatus(s.data);

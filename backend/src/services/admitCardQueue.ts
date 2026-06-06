@@ -35,6 +35,17 @@ export function stopAdmitCardQueue(): void {
   console.log('[AdmitCardQueue] Stop requested');
 }
 
+export function resetAdmitCardQueueState(): void {
+  state.running = false;
+  state.total = 0;
+  state.sent = 0;
+  state.failed = 0;
+  state.errors = [];
+  state.startedAt = undefined;
+  state.currentParticipant = undefined;
+  console.log('[AdmitCardQueue] State reset');
+}
+
 export async function startAdmitCardQueue(): Promise<{ message: string }> {
   if (state.running) {
     return { message: 'Queue is already running' };
