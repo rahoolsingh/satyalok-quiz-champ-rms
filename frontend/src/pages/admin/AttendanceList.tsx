@@ -54,6 +54,15 @@ function formatTime(value?: string) {
   });
 }
 
+function getTodayISTDateString() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
 function timeAgo(value?: string) {
   if (!value) return '';
   const diff = Date.now() - new Date(value).getTime();
@@ -75,6 +84,7 @@ export function AttendanceList() {
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 50, pages: 0 });
   const [batch, setBatch] = useState<BatchFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('PRESENT');
+  const [date, setDate] = useState(getTodayISTDateString());
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('checkInTime');
@@ -93,12 +103,13 @@ export function AttendanceList() {
   const params = useMemo(() => ({
     batchType: batch === 'ALL' ? undefined : batch,
     status,
+    date: date || undefined,
     search: debouncedSearch || undefined,
     sortBy,
     sortOrder,
     page,
     limit,
-  }), [batch, debouncedSearch, limit, page, sortBy, sortOrder, status]);
+  }), [batch, date, debouncedSearch, limit, page, sortBy, sortOrder, status]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,7 +131,7 @@ export function AttendanceList() {
 
   useEffect(() => {
     setPage(1);
-  }, [batch, debouncedSearch, limit, sortBy, sortOrder, status]);
+  }, [batch, date, debouncedSearch, limit, sortBy, sortOrder, status]);
 
   const toggleSort = (field: SortBy) => {
     if (sortBy === field) setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -136,6 +147,7 @@ export function AttendanceList() {
       const response = await attendanceApi.exportCsv({
         batchType: batch === 'ALL' ? undefined : batch,
         status,
+        date: date || undefined,
       });
       const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -159,7 +171,7 @@ export function AttendanceList() {
             <UserCheck className="size-5 text-primary" />
             Attendance List
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{pagination.total} {status.toLowerCase()} participant records</p>
+          <p className="mt-1 text-sm text-muted-foreground">{pagination.total} {status.toLowerCase()} participant records on {date || 'selected date'}</p>
         </div>
         <Button variant="outline" onClick={exportCsv} disabled={exporting}>
           {exporting ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Download data-icon="inline-start" />}
@@ -183,6 +195,12 @@ export function AttendanceList() {
                 className="pl-9"
               />
             </div>
+            <Input
+              type="date"
+              value={date}
+              onChange={event => setDate(event.target.value)}
+              className="w-full xl:w-44"
+            />
             <Tabs value={batch} onValueChange={value => setBatch(value as BatchFilter)}>
               <TabsList>
                 <TabsTrigger value="ALL">All</TabsTrigger>
