@@ -130,7 +130,7 @@ export const attendanceApi = {
   scan: (qrData: string) => api.post('/attendance/scan', { qrData }),
   manual: (rollNumber: string, notes?: string) =>
     api.post('/attendance/manual', { rollNumber, notes }),
-  getStats: () => api.get('/attendance/stats'),
+  getStats: (params?: object) => api.get('/attendance/stats', { params }),
   getList: (params?: object) => api.get('/attendance/list', { params }),
   exportCsv: (params?: object) =>
     api.get('/attendance/export', { params, responseType: 'blob' }),

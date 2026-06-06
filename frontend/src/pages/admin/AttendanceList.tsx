@@ -76,6 +76,7 @@ export function AttendanceList() {
   const [batch, setBatch] = useState<BatchFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('PRESENT');
   const [search, setSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('checkInTime');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -94,11 +95,12 @@ export function AttendanceList() {
     batchType: batch === 'ALL' ? undefined : batch,
     status,
     search: debouncedSearch || undefined,
+    date: dateFilter || undefined,
     sortBy,
     sortOrder,
     page,
     limit,
-  }), [batch, debouncedSearch, limit, page, sortBy, sortOrder, status]);
+  }), [batch, debouncedSearch, limit, page, sortBy, sortOrder, status, dateFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,7 +122,7 @@ export function AttendanceList() {
 
   useEffect(() => {
     setPage(1);
-  }, [batch, debouncedSearch, limit, sortBy, sortOrder, status]);
+  }, [batch, debouncedSearch, limit, sortBy, sortOrder, status, dateFilter]);
 
   const toggleSort = (field: SortBy) => {
     if (sortBy === field) setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -136,12 +138,13 @@ export function AttendanceList() {
       const response = await attendanceApi.exportCsv({
         batchType: batch === 'ALL' ? undefined : batch,
         status,
+        date: dateFilter || undefined,
       });
       const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `attendance-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `attendance-${dateFilter || new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -159,12 +162,20 @@ export function AttendanceList() {
             <UserCheck className="size-5 text-primary" />
             Attendance List
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{pagination.total} {status.toLowerCase()} participant records</p>
+          <p className="mt-1 text-sm text-muted-foreground">{pagination.total} {status.toLowerCase()} participant records for {dateFilter || 'today'}</p>
         </div>
-        <Button variant="outline" onClick={exportCsv} disabled={exporting}>
-          {exporting ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Download data-icon="inline-start" />}
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-[140px] h-9"
+          />
+          <Button variant="outline" onClick={exportCsv} disabled={exporting}>
+            {exporting ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Download data-icon="inline-start" />}
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <Card>

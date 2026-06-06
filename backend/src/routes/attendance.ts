@@ -287,10 +287,11 @@ attendanceRouter.post('/manual', async (req: AuthRequest, res: Response) => {
 });
 
 // ─── GET /api/attendance/stats ────────────────────────────────────────────────
-// Get real-time attendance statistics for today
-attendanceRouter.get('/stats', async (_req: AuthRequest, res: Response) => {
+// Get real-time attendance statistics for a given date
+attendanceRouter.get('/stats', async (req: AuthRequest, res: Response) => {
   try {
-    const todayDate = getTodayIST();
+    const { date } = req.query as Record<string, string>;
+    const targetDate = date || getTodayIST();
 
     const [
       totalRegistrations,
@@ -303,9 +304,9 @@ attendanceRouter.get('/stats', async (_req: AuthRequest, res: Response) => {
       Participant.countDocuments({ paymentStatus: 'COMPLETED' }),
       Participant.countDocuments({ paymentStatus: 'COMPLETED', batchType: 'JUNIOR' }),
       Participant.countDocuments({ paymentStatus: 'COMPLETED', batchType: 'SENIOR' }),
-      Attendance.countDocuments({ checkInDate: todayDate }),
-      Attendance.countDocuments({ checkInDate: todayDate, batchType: 'JUNIOR' }),
-      Attendance.countDocuments({ checkInDate: todayDate, batchType: 'SENIOR' }),
+      Attendance.countDocuments({ checkInDate: targetDate }),
+      Attendance.countDocuments({ checkInDate: targetDate, batchType: 'JUNIOR' }),
+      Attendance.countDocuments({ checkInDate: targetDate, batchType: 'SENIOR' }),
     ]);
 
     const attendancePercentage =
@@ -317,7 +318,7 @@ attendanceRouter.get('/stats', async (_req: AuthRequest, res: Response) => {
 
     return res.json({
       stats: {
-        date: todayDate,
+        date: targetDate,
         totalRegistrations,
         totalAttendance,
         attendancePercentage,

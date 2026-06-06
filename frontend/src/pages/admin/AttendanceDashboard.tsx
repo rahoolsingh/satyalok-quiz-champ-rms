@@ -4,6 +4,7 @@ import { attendanceApi } from '@/api/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, ClipboardCheck, RefreshCw, ScanLine, Users } from 'lucide-react';
 
@@ -78,12 +79,15 @@ export function AttendanceDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  
+  // Default to today's date in IST format YYYY-MM-DD
+  const [dateFilter, setDateFilter] = useState('');
 
   const loadStats = useCallback(async (quiet = false) => {
     if (quiet) setRefreshing(true);
     else setLoading(true);
     try {
-      const response = await attendanceApi.getStats();
+      const response = await attendanceApi.getStats({ date: dateFilter || undefined });
       setStats(response.data.stats);
       setError('');
     } catch (err: any) {
@@ -92,7 +96,7 @@ export function AttendanceDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [dateFilter]);
 
   useEffect(() => {
     loadStats();
@@ -136,6 +140,12 @@ export function AttendanceDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline">Updated {formatUpdated(stats?.lastUpdated)}</Badge>
+          <Input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-[140px] h-9"
+          />
           <Button variant="outline" size="sm" onClick={() => loadStats(true)} disabled={refreshing}>
             <RefreshCw data-icon="inline-start" className={refreshing ? 'animate-spin' : ''} />
             Refresh
