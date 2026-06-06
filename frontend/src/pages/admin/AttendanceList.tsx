@@ -54,7 +54,7 @@ function formatTime(value?: string) {
   });
 }
 
-function getTodayISTDateString() {
+function getTodayIndianDateString() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',
@@ -84,7 +84,7 @@ export function AttendanceList() {
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 50, pages: 0 });
   const [batch, setBatch] = useState<BatchFilter>('ALL');
   const [status, setStatus] = useState<StatusFilter>('PRESENT');
-  const [date, setDate] = useState(getTodayISTDateString());
+  const [date, setDate] = useState(getTodayIndianDateString());
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('checkInTime');
@@ -171,7 +171,7 @@ export function AttendanceList() {
             <UserCheck className="size-5 text-primary" />
             Attendance List
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{pagination.total} {status.toLowerCase()} participant records on {date || 'selected date'}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{pagination.total} {status.toLowerCase()} participant records on {date}</p>
         </div>
         <Button variant="outline" onClick={exportCsv} disabled={exporting}>
           {exporting ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Download data-icon="inline-start" />}
@@ -198,7 +198,7 @@ export function AttendanceList() {
             <Input
               type="date"
               value={date}
-              onChange={event => setDate(event.target.value)}
+              onChange={event => setDate(event.target.value || getTodayIndianDateString())}
               className="w-full xl:w-44"
             />
             <Tabs value={batch} onValueChange={value => setBatch(value as BatchFilter)}>
