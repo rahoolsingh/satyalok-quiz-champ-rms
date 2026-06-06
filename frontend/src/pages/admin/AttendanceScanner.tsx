@@ -38,6 +38,17 @@ interface ParsedQR {
   mobile?: string;
 }
 
+type QRAttendanceState = 'loading' | 'eligible' | 'already_marked' | 'error';
+
+interface QRCandidate {
+  raw: string;
+  parsed: ParsedQR;
+  attendanceState: QRAttendanceState;
+  existingAttendance?: {
+    checkInTime?: string;
+  };
+}
+
 interface AttendanceResult {
   name: string;
   rollNumber: string;
@@ -103,7 +114,7 @@ export function AttendanceScanner() {
   const [cameraError, setCameraError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [manualRoll, setManualRoll] = useState('');
-  const [qrCandidate, setQrCandidate] = useState<{ raw: string; parsed: ParsedQR } | null>(null);
+  const [qrCandidate, setQrCandidate] = useState<QRCandidate | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [recent, setRecent] = useState<RecentAttendance[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
@@ -168,7 +179,7 @@ export function AttendanceScanner() {
   }, []);
 
   const markFromQR = useCallback(async () => {
-    if (!qrCandidate) return;
+    if (!qrCandidate || qrCandidate.attendanceState === 'loading' || qrCandidate.attendanceState === 'already_marked') return;
     setProcessing(true);
     try {
       const response = await attendanceApi.scan(qrCandidate.raw);
@@ -198,6 +209,61 @@ export function AttendanceScanner() {
       setProcessing(false);
     }
   }, [loadRecent, qrCandidate, reset, showApiError]);
+
+  useEffect(() => {
+    if (!qrCandidate) return;
+
+    let cancelled = false;
+    const checkAttendanceStatus = async () => {
+      setQrCandidate(current => {
+        if (!current || current.raw !== qrCandidate.raw) return current;
+        return { ...current, attendanceState: 'loading', existingAttendance: undefined };
+      });
+
+      try {
+        const response = await attendanceApi.getList({
+          status: 'PRESENT',
+          search: qrCandidate.parsed.roll,
+          page: 1,
+          limit: 50,
+        });
+        if (cancelled) return;
+
+        const records: RecentAttendance[] = response.data.records || [];
+        const participantId = qrCandidate.parsed.id;
+        const rollNumber = qrCandidate.parsed.roll.trim().toUpperCase();
+        const exactMatch = records.find(record => (
+          (participantId && record.participantId === participantId) ||
+          record.rollNumber.trim().toUpperCase() === rollNumber
+        ));
+
+        setQrCandidate(current => {
+          if (!current || current.raw !== qrCandidate.raw) return current;
+          if (!exactMatch) {
+            return { ...current, attendanceState: 'eligible', existingAttendance: undefined };
+          }
+          return {
+            ...current,
+            attendanceState: 'already_marked',
+            existingAttendance: {
+              checkInTime: exactMatch.checkInTime,
+            },
+          };
+        });
+      } catch {
+        if (cancelled) return;
+        setQrCandidate(current => {
+          if (!current || current.raw !== qrCandidate.raw) return current;
+          return { ...current, attendanceState: 'error', existingAttendance: undefined };
+        });
+      }
+    };
+
+    checkAttendanceStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [qrCandidate?.raw]);
 
   const markManual = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -306,7 +372,7 @@ export function AttendanceScanner() {
           vibrate([120, 80, 120]);
           return;
         }
-        setQrCandidate({ raw, parsed });
+        setQrCandidate({ raw, parsed, attendanceState: 'loading' });
         vibrate(50);
       } catch {
         setCameraError('Unable to read QR codes from the camera stream. Use manual entry.');
@@ -391,7 +457,11 @@ export function AttendanceScanner() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Attendance</DialogTitle>
-            <DialogDescription>Verify the admit-card details before marking this participant present.</DialogDescription>
+            <DialogDescription>
+              {qrCandidate?.attendanceState === 'already_marked'
+                ? 'Attendance is already marked for this participant today.'
+                : 'Verify the admit-card details before marking this participant present.'}
+            </DialogDescription>
           </DialogHeader>
           {qrCandidate && (
             <div className="flex flex-col gap-4">
@@ -415,6 +485,22 @@ export function AttendanceScanner() {
                   <p className="font-medium">{qrCandidate.parsed.mobile || '-'}</p>
                 </div>
               </div>
+              {qrCandidate.attendanceState === 'loading' && (
+                <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  Checking today&apos;s attendance status...
+                </div>
+              )}
+              {qrCandidate.attendanceState === 'already_marked' && (
+                <Alert>
+                  <Clock />
+                  <AlertTitle>Already Marked</AlertTitle>
+                  <AlertDescription>
+                    Attendance was already marked
+                    {qrCandidate.existingAttendance?.checkInTime ? ` at ${formatTime(qrCandidate.existingAttendance.checkInTime)}` : ''}.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -422,10 +508,19 @@ export function AttendanceScanner() {
               <XCircle data-icon="inline-start" />
               Cancel
             </Button>
-            <Button onClick={markFromQR} disabled={processing}>
-              {processing ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <CheckCircle2 data-icon="inline-start" />}
-              Mark Present
-            </Button>
+            {qrCandidate?.attendanceState === 'already_marked' ? (
+              <Button disabled>
+                <CheckCircle2 data-icon="inline-start" />
+                Already Marked
+              </Button>
+            ) : (
+              <Button onClick={markFromQR} disabled={processing || qrCandidate?.attendanceState === 'loading'}>
+                {(processing || qrCandidate?.attendanceState === 'loading')
+                  ? <Loader2 data-icon="inline-start" className="animate-spin" />
+                  : <CheckCircle2 data-icon="inline-start" />}
+                {qrCandidate?.attendanceState === 'loading' ? 'Checking...' : 'Mark Present'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
