@@ -488,7 +488,7 @@ export function AttendanceScanner() {
               {qrCandidate.attendanceState === 'loading' && (
                 <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
-                  Checking today&apos;s attendance status...
+                  Checking today's attendance status...
                 </div>
               )}
               {qrCandidate.attendanceState === 'already_marked' && (
