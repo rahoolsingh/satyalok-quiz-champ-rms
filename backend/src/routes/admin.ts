@@ -151,6 +151,15 @@ const manualPaymentReminderLimiter = rateLimit({
   keyGenerator: (req) => (req as AuthRequest).adminId || req.ip || 'unknown',
 });
 
+const admitCardQueueResetLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many queue reset requests. Please try again later.' },
+  keyGenerator: (req) => (req as AuthRequest).adminId || req.ip || 'unknown',
+});
+
 // POST /api/admin/login
 adminRouter.post('/login', async (req: Request, res: Response) => {
   try {
@@ -1341,9 +1350,13 @@ adminRouter.post('/admit-card-queue/stop', async (_req: AuthRequest, res: Respon
 });
 
 // POST /api/admin/admit-card-queue/reset
-adminRouter.post('/admit-card-queue/reset', async (_req: AuthRequest, res: Response) => {
+adminRouter.post('/admit-card-queue/reset', admitCardQueueResetLimiter, async (_req: AuthRequest, res: Response) => {
   try {
-    stopAdmitCardQueue();
+    const queueStatus = getAdmitCardQueueStatus();
+    if (queueStatus.running) {
+      return res.status(409).json({ error: 'Queue is running. Stop the queue before reset.' });
+    }
+    resetAdmitCardQueueState();
     const result = await Participant.updateMany(
       {
         paymentStatus: 'COMPLETED',
@@ -1354,7 +1367,6 @@ adminRouter.post('/admit-card-queue/reset', async (_req: AuthRequest, res: Respo
         $unset: { admitCardWhatsappSentAt: 1 },
       }
     );
-    resetAdmitCardQueueState();
 
     return res.json({
       message: `Queue reset complete. ${result.modifiedCount} admit card send statuses cleared.`,
