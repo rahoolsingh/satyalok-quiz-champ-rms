@@ -103,7 +103,7 @@ export function AttendanceList() {
   const params = useMemo(() => ({
     batchType: batch === 'ALL' ? undefined : batch,
     status,
-    date: date || undefined,
+    date,
     search: debouncedSearch || undefined,
     sortBy,
     sortOrder,
@@ -147,7 +147,7 @@ export function AttendanceList() {
       const response = await attendanceApi.exportCsv({
         batchType: batch === 'ALL' ? undefined : batch,
         status,
-        date: date || undefined,
+        date,
       });
       const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
