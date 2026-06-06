@@ -192,6 +192,7 @@ export const adminApi = {
   admitCardQueueStart: () => api.post('/admin/admit-card-queue/start'),
   admitCardQueueStatus: () => api.get('/admin/admit-card-queue/status'),
   admitCardQueueStop: () => api.post('/admin/admit-card-queue/stop'),
+  admitCardQueueReset: () => api.post('/admin/admit-card-queue/reset'),
   getFaqs: () => api.get('/admin/faqs'),
   createFaq: (question: string, answer: string) => api.post('/admin/faqs', { question, answer }),
   updateFaq: (id: string, data: { question?: string; answer?: string; isPublished?: boolean; order?: number }) =>

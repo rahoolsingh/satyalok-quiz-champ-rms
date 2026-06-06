@@ -11,7 +11,7 @@ import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
 import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
-import { startAdmitCardQueue, getAdmitCardQueueStatus, stopAdmitCardQueue } from '../services/admitCardQueue';
+import { startAdmitCardQueue, getAdmitCardQueueStatus, stopAdmitCardQueue, resetAdmitCardQueueState } from '../services/admitCardQueue';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
 
@@ -1338,6 +1338,32 @@ adminRouter.get('/admit-card-queue/status', async (_req: AuthRequest, res: Respo
 adminRouter.post('/admit-card-queue/stop', async (_req: AuthRequest, res: Response) => {
   stopAdmitCardQueue();
   return res.json({ message: 'Queue stop requested' });
+});
+
+// POST /api/admin/admit-card-queue/reset
+adminRouter.post('/admit-card-queue/reset', async (_req: AuthRequest, res: Response) => {
+  try {
+    stopAdmitCardQueue();
+    const result = await Participant.updateMany(
+      {
+        paymentStatus: 'COMPLETED',
+        rollNumber: { $exists: true, $ne: null },
+        admitCardWhatsappSentAt: { $exists: true },
+      },
+      {
+        $unset: { admitCardWhatsappSentAt: 1 },
+      }
+    );
+    resetAdmitCardQueueState();
+
+    return res.json({
+      message: `Queue reset complete. ${result.modifiedCount} admit card send statuses cleared.`,
+      resetCount: result.modifiedCount,
+    });
+  } catch (err) {
+    console.error('[Admin] Failed to reset admit card queue:', err);
+    return res.status(500).json({ error: 'Failed to reset queue' });
+  }
 });
 
 // POST /api/admin/registrations/:id/send-admit-card-whatsapp
