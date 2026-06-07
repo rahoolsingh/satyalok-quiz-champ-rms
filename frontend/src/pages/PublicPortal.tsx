@@ -467,10 +467,15 @@ export function PublicPortal() {
                             <Button
                                 onClick={() => setStep("mobile-entry")}
                                 variant="default"
-                                className="mb-10"
+                                className={isEventCompleted ? "mb-2" : "mb-10"}
                             >
                                 Login to Access Admit Card
                             </Button>
+                            {isEventCompleted && (
+                                <p className="text-sm text-blue-600 font-medium mb-10 px-4">
+                                    Awaiting Result. Results will be available soon (tentative). All times in IST.
+                                </p>
+                            )}
                         </motion.div>
                         {importantDatesSection}
                         <HelpSection />
@@ -661,45 +666,49 @@ export function PublicPortal() {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-background text-foreground selection:bg-primary/20">
-            <main className="max-w-md mx-auto px-5 sm:px-6 py-8 sm:py-10 flex flex-col min-h-[100dvh]">
-                {/* Authenticated Header */}
-                {profile && step !== "home" && (
-                    <header className="flex justify-between items-center mb-7 pb-4 border-b border-border">
-                        <div className="text-sm">
-                            <span className="font-semibold text-foreground">
-                                {mobile}
-                            </span>
-                        </div>
-                        <Button
-                            onClick={handleLogout}
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                        >
-                            Logout
-                        </Button>
-                    </header>
-                )}
+        <div className="min-h-[100dvh] bg-gradient-to-b from-background to-secondary/20 text-foreground selection:bg-primary/20">
+            <main className="max-w-xl mx-auto px-6 py-12 flex flex-col min-h-[100dvh]">
+                
+                {/* Main Content Area with Glassmorphism */}
+                <div className="relative backdrop-blur-xl bg-card/60 border border-border/50 shadow-2xl rounded-3xl p-6 sm:p-8 flex-grow flex flex-col">
+                    {/* Authenticated Header */}
+                    {profile && step !== "home" && (
+                        <header className="flex justify-between items-center mb-7 pb-4 border-b border-border">
+                            <div className="text-sm">
+                                <span className="font-semibold text-foreground">
+                                    {mobile}
+                                </span>
+                            </div>
+                            <Button
+                                onClick={handleLogout}
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                            >
+                                Logout
+                            </Button>
+                        </header>
+                    )}
 
-                {/* Main Content */}
-                <div className="flex-grow">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={step}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                        >
-                            {renderStep()}
-                        </motion.div>
-                    </AnimatePresence>
+                    <div className="flex-grow">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={step}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                            >
+                                {renderStep()}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
                 </div>
 
-                {/* Footer */}
-                <footer className="mt-14 pt-6">
+                {/* Footer Section */}
+                <footer className="mt-12 pt-6 text-center text-xs text-muted-foreground flex flex-col items-center">
                     <SatyalokBadge variant="footer" />
+                    <p className="mt-4">© 2026 Quiz Champ. All rights reserved.</p>
                 </footer>
             </main>
 
