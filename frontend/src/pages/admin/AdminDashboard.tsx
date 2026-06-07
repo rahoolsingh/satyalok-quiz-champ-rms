@@ -10,6 +10,8 @@ import { FaqManager } from './FaqManager';
 import { AttendanceDashboard } from './AttendanceDashboard';
 import { AttendanceScanner } from './AttendanceScanner';
 import { AttendanceList } from './AttendanceList';
+import { ResultScanner } from './ResultScanner';
+import { ResultList } from './ResultList';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -36,13 +38,15 @@ import {
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'registrations', label: 'Registrations', icon: <Users className="size-4" /> },
   { id: 'attendance', label: 'Attendance', icon: <ClipboardCheck className="size-4" /> },
-  { id: 'scanner', label: 'Scanner', icon: <ScanLine className="size-4" /> },
+  { id: 'scanner', label: 'Attendance Scanner', icon: <ScanLine className="size-4" /> },
   { id: 'attendanceList', label: 'Attendance List', icon: <ListChecks className="size-4" /> },
+  { id: 'results', label: 'Results (CSV)', icon: <BarChart3 className="size-4" /> },
+  { id: 'resultScanner', label: 'Result Scanner', icon: <ScanLine className="size-4" /> },
+  { id: 'resultList', label: 'Result List', icon: <ListChecks className="size-4" /> },
   { id: 'dates', label: 'Portal Dates', icon: <CalendarDays className="size-4" /> },
   { id: 'fees', label: 'Fees', icon: <Banknote className="size-4" /> },
   { id: 'event', label: 'Event Details', icon: <MapPin className="size-4" /> },
   { id: 'slider', label: 'Slider Images', icon: <Image className="size-4" /> },
-  { id: 'results', label: 'Results', icon: <BarChart3 className="size-4" /> },
   { id: 'sessions', label: 'Sessions', icon: <Lock className="size-4" /> },
   { id: 'faq', label: 'FAQ', icon: <HelpCircle className="size-4" /> },
 ];
@@ -57,6 +61,8 @@ type Tab =
   | 'event'
   | 'slider'
   | 'results'
+  | 'resultScanner'
+  | 'resultList'
   | 'sessions'
   | 'faq';
 
@@ -168,11 +174,13 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           {active === 'attendance' && <AttendanceDashboard />}
           {active === 'scanner' && <AttendanceScanner />}
           {active === 'attendanceList' && <AttendanceList />}
+          {active === 'results' && <ResultUploader />}
+          {active === 'resultScanner' && <ResultScanner />}
+          {active === 'resultList' && <ResultList />}
           {active === 'dates' && <DateConfiguration />}
           {active === 'fees' && <FeeConfiguration />}
           {active === 'event' && <EventConfiguration />}
           {active === 'slider' && <SliderManager />}
-          {active === 'results' && <ResultUploader />}
           {active === 'sessions' && <SessionManager />}
           {active === 'faq' && <FaqManager />}
         </main>

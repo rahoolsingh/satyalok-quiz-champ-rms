@@ -406,6 +406,189 @@ adminRouter.put('/results/publish', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// POST /api/admin/results/scan
+adminRouter.post('/results/scan', upload.single('image'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { qrData, score, rank, remarks } = req.body;
+
+    if (!qrData) return res.status(400).json({ error: 'QR data is required' });
+    if (score === undefined || score === null) return res.status(400).json({ error: 'Score is required' });
+
+    // Parse QR Data
+    let parsed: { id?: string; roll?: string; batch?: string } | null = null;
+    try {
+      parsed = JSON.parse(qrData);
+    } catch {
+      return res.status(400).json({ error: 'Invalid QR code data format' });
+    }
+
+    if (!parsed || (!parsed.id && !parsed.roll)) {
+      return res.status(400).json({ error: 'Invalid QR code. Participant ID or Roll Number missing.' });
+    }
+
+    let participant;
+    if (parsed.id) {
+      participant = await Participant.findById(parsed.id);
+    }
+    if (!participant && parsed.roll) {
+      participant = await Participant.findOne({ rollNumber: parsed.roll });
+    }
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    let answerSheetUrl: string | undefined = undefined;
+
+    // Handle optional image upload
+    if (req.file) {
+      if (!validateImageFormat(req.file.mimetype)) {
+        return res.status(400).json({ error: 'Invalid file format. Only JPEG, PNG, and WebP are allowed.' });
+      }
+      const ext = req.file.mimetype.split('/')[1].replace('jpeg', 'jpg');
+      const s3Key = `results/${participant.rollNumber || participant._id}_${Date.now()}.${ext}`;
+      const uploadRes = await uploadToS3(s3Key, req.file.buffer, req.file.mimetype);
+      answerSheetUrl = uploadRes.url;
+    }
+
+    const numericScore = parseFloat(score);
+    if (isNaN(numericScore)) return res.status(400).json({ error: 'Score must be a number' });
+
+    const numericRank = rank ? parseInt(rank, 10) : undefined;
+
+    // Upsert Result
+    const updateData: any = {
+      rollNumber: participant.rollNumber || 'UNKNOWN',
+      score: numericScore,
+      rank: numericRank,
+      remarks,
+    };
+    if (answerSheetUrl) updateData.answerSheetUrl = answerSheetUrl;
+
+    const result = await Result.findOneAndUpdate(
+      { participantId: participant._id },
+      { $set: updateData },
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({
+      message: 'Result saved successfully',
+      result: {
+        id: result._id.toString(),
+        participantId: result.participantId.toString(),
+        rollNumber: result.rollNumber,
+        score: result.score,
+        rank: result.rank,
+        remarks: result.remarks,
+        answerSheetUrl: result.answerSheetUrl,
+      },
+      participant: {
+        name: participant.name,
+        batchType: participant.batchType,
+      }
+    });
+  } catch (err) {
+    console.error('[results/scan]', err);
+    return res.status(500).json({ error: 'Failed to process scanned result' });
+  }
+});
+
+// GET /api/admin/results
+adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
+  try {
+    const { batch, search, page = '1', limit = '50', sortBy = 'score', sortOrder = 'desc' } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string, 10));
+    const limitNum = Math.min(100, parseInt(limit as string, 10));
+
+    // To filter and sort efficiently, we join Participant and Result using aggregate.
+    // However, since we might want to search participant name, let's use aggregation.
+
+    const matchStage: any = {};
+    if (search) {
+      const s = escapeRegex(search as string);
+      matchStage['$or'] = [
+        { 'participant.name': { $regex: s, $options: 'i' } },
+        { rollNumber: { $regex: s, $options: 'i' } },
+      ];
+    }
+    if (batch && ['JUNIOR', 'SENIOR'].includes(batch as string)) {
+      matchStage['participant.batchType'] = batch;
+    }
+
+    const sortConfig: any = {};
+    if (sortBy === 'score') sortConfig.score = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'rank') sortConfig.rank = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'name') sortConfig['participant.name'] = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'rollNumber') sortConfig.rollNumber = sortOrder === 'asc' ? 1 : -1;
+    else sortConfig.score = -1; // Default
+
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'participants',
+          localField: 'participantId',
+          foreignField: '_id',
+          as: 'participant',
+        },
+      },
+      { $unwind: '$participant' },
+      { $match: matchStage },
+    ];
+
+    const [totalResults, records] = await Promise.all([
+      Result.aggregate([...pipeline, { $count: 'total' }]),
+      Result.aggregate([
+        ...pipeline,
+        { $sort: sortConfig },
+        { $skip: (pageNum - 1) * limitNum },
+        { $limit: limitNum },
+        {
+          $project: {
+            _id: 1,
+            participantId: 1,
+            rollNumber: 1,
+            score: 1,
+            rank: 1,
+            remarks: 1,
+            answerSheetUrl: 1,
+            publishedAt: 1,
+            'participant.name': 1,
+            'participant.batchType': 1,
+            'participant.class': 1,
+            'participant.photoUrl': 1,
+          },
+        },
+      ]),
+    ]);
+
+    const total = totalResults.length > 0 ? totalResults[0].total : 0;
+
+    return res.json({
+      results: records.map(r => ({
+        id: r._id.toString(),
+        participantId: r.participantId.toString(),
+        rollNumber: r.rollNumber,
+        score: r.score,
+        rank: r.rank,
+        remarks: r.remarks,
+        answerSheetUrl: r.answerSheetUrl,
+        publishedAt: r.publishedAt,
+        participantName: r.participant.name,
+        batchType: r.participant.batchType,
+        participantClass: r.participant.class,
+        participantPhotoUrl: r.participant.photoUrl,
+      })),
+      total,
+      page: pageNum,
+      limit: limitNum,
+      pages: Math.ceil(total / limitNum),
+    });
+  } catch (err) {
+    console.error('[results GET]', err);
+    return res.status(500).json({ error: 'Failed to retrieve results' });
+  }
+});
+
 // GET /api/admin/portal/fees
 adminRouter.get('/portal/fees', async (_req: AuthRequest, res: Response) => {
   try {

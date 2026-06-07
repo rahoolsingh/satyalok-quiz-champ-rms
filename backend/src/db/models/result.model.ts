@@ -6,6 +6,7 @@ export interface IResult extends Document {
   score: number;
   rank?: number;
   remarks?: string;
+  answerSheetUrl?: string;
   publishedAt?: Date;
   createdAt: Date;
 }
@@ -17,6 +18,7 @@ const ResultSchema = new Schema<IResult>(
     score: { type: Number, required: true },
     rank: { type: Number },
     remarks: { type: String },
+    answerSheetUrl: { type: String },
     publishedAt: { type: Date },
   },
   { timestamps: { createdAt: 'createdAt', updatedAt: false } }

@@ -150,6 +150,10 @@ export const adminApi = {
     api.put('/admin/slider/reorder', { order }),
   uploadResults: (formData: FormData) =>
     api.post('/admin/results/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  scanResult: (formData: FormData) =>
+    api.post('/admin/results/scan', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getResultsList: (params?: object) =>
+    api.get('/admin/results', { params }),
   publishResults: (publicationDate?: string) =>
     api.put('/admin/results/publish', { publicationDate }),
   getRegistrations: (params?: object) =>
