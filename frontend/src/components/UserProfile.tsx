@@ -38,6 +38,14 @@ export function UserProfile({ profile, portalStatus, onLogout, onCompletePayment
     }
   };
 
+  const isEventCompleted = React.useMemo(() => {
+    if (!portalStatus?.eventDate) return false;
+    const eventDate = new Date(portalStatus.eventDate);
+    // Consider event completed after end of event day
+    eventDate.setHours(23, 59, 59, 999);
+    return new Date() > eventDate;
+  }, [portalStatus?.eventDate]);
+
   return (
     <motion.div
       className="w-full"
@@ -57,7 +65,23 @@ export function UserProfile({ profile, portalStatus, onLogout, onCompletePayment
       {/* Admit Card (if completed) - Show this FIRST */}
       {profile.paymentStatus === 'COMPLETED' && profile.admitCard ? (
         <div className="mt-0">
-          <AdmitCard data={profile.admitCard} participantId={profile.participantId} portalStatus={portalStatus} />
+          {isEventCompleted ? (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center gap-4">
+                <span className="text-4xl">🏆</span>
+                <div className="flex-1">
+                  <p className="font-bold text-blue-900 text-lg">Exam Concluded Successfully!</p>
+                  <p className="text-blue-800 text-sm mt-1">
+                    {portalStatus?.resultPublicationDate 
+                      ? `Please wait for the result announcement on ${new Date(portalStatus.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}.`
+                      : 'Please wait for the result announcement date to be declared.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <AdmitCard data={profile.admitCard} participantId={profile.participantId} portalStatus={portalStatus} />
+          )}
         </div>
       ) : profile.paymentStatus === 'COMPLETED' && !profile.admitCard ? (
         /* Show success message if completed but no admit card yet */
