@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -152,6 +152,13 @@ export function PublicPortal() {
         );
     }
 
+    const isEventCompleted = useMemo(() => {
+        if (!status?.eventDate) return false;
+        const eventDate = new Date(status.eventDate);
+        eventDate.setHours(23, 59, 59, 999);
+        return new Date() > eventDate;
+    }, [status?.eventDate]);
+
     const importantDatesSection = (
         <Card className="mb-8">
             <CardHeader>
@@ -168,29 +175,35 @@ export function PublicPortal() {
                             : 'Not Declared'}
                     </span>
                 </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Date of Examination</span>
-                    <span className="text-sm font-semibold text-foreground text-right">
-                        {status.eventDate
-                            ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
-                            : 'Not Declared'}
-                    </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Reporting Time</span>
-                    <span className="text-sm font-semibold text-foreground text-right">
-                        {status.reportingTime || 'Not Declared'}
-                    </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Exam Time</span>
-                    <span className="text-sm font-semibold text-foreground text-right">
-                        {status.examTime || 'Not Declared'}
-                    </span>
-                </div>
+                
+                {!isEventCompleted && (
+                    <>
+                        <Separator />
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Date of Examination</span>
+                            <span className="text-sm font-semibold text-foreground text-right">
+                                {status.eventDate
+                                    ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+                                    : 'Not Declared'}
+                            </span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Reporting Time</span>
+                            <span className="text-sm font-semibold text-foreground text-right">
+                                {status.reportingTime || 'Not Declared'}
+                            </span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Exam Time</span>
+                            <span className="text-sm font-semibold text-foreground text-right">
+                                {status.examTime || 'Not Declared'}
+                            </span>
+                        </div>
+                    </>
+                )}
+                
                 <Separator />
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Prize Distribution</span>
@@ -203,11 +216,18 @@ export function PublicPortal() {
                 <Separator />
                 <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Result Announcement</span>
-                    <span className="text-sm font-semibold text-foreground text-right">
-                        {status.resultPublicationDate
-                            ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
-                            : 'Not Declared'}
-                    </span>
+                    <div className="text-right">
+                        <span className="text-sm font-semibold text-foreground block">
+                            {status.resultPublicationDate
+                                ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+                                : 'Not Declared'}
+                        </span>
+                        {isEventCompleted && (
+                            <span className="text-xs text-blue-600 font-medium block mt-1">
+                                Awaiting Result will be available as per fb (tentative) all in IST
+                            </span>
+                        )}
+                    </div>
                 </div>
             </CardContent>
         </Card>
