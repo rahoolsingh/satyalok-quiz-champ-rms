@@ -261,11 +261,7 @@ export function PublicPortal() {
                                 ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST`
                                 : 'Not Declared'}
                         </span>
-                        {isEventCompleted && (
-                            <span className="text-xs text-blue-600 font-medium block mt-1">
-                                Awaiting Result will be available as per fb (tentative) all in IST
-                            </span>
-                        )}
+
                     </div>
                 </div>
             </CardContent>
