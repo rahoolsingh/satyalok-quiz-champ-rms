@@ -164,7 +164,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
       <div className="bg-white rounded-xl shadow-md p-6 mb-5">
         <h3 className="text-sm font-bold text-gray-900 mb-3">Important Dates</h3>
         <div className="space-y-2.5 text-sm">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <span className="text-gray-600">Last Date to Apply</span>
             <span className="font-semibold text-gray-900">
               {portalStatus?.closingDate
@@ -172,7 +172,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
                 : 'Not Declared'}
             </span>
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <span className="text-gray-600">Date of Examination</span>
             <span className="font-semibold text-gray-900">
               {portalStatus?.eventDate
@@ -180,7 +180,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
                 : 'Not Declared'}
             </span>
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <span className="text-gray-600">Prize Distribution</span>
             <span className="font-semibold text-gray-900">
               {portalStatus?.prizeDistributionDate
@@ -280,7 +280,7 @@ export function AdmitCard({ data, participantId, portalStatus }: { data: AdmitCa
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+    <div className="flex justify-between items-center gap-2 py-2 border-b border-gray-100 last:border-0">
       <span className="text-sm text-gray-600">{label}</span>
       <span className="text-sm text-gray-900 font-semibold">{value}</span>
     </div>
