@@ -40,11 +40,47 @@ export function UserProfile({ profile, portalStatus, onLogout, onCompletePayment
 
   const isEventCompleted = React.useMemo(() => {
     if (!portalStatus?.eventDate) return false;
-    const eventDate = new Date(portalStatus.eventDate);
-    // Consider event completed after end of event day
-    eventDate.setHours(23, 59, 59, 999);
-    return new Date() > eventDate;
-  }, [portalStatus?.eventDate]);
+    
+    try {
+        const dateObj = new Date(portalStatus.eventDate);
+        const year = dateObj.getFullYear();
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const day = dateObj.getDate().toString().padStart(2, '0');
+        const eventDateStr = `${year}-${month}-${day}`;
+        
+        let hours = 23;
+        let minutes = 59;
+        
+        if (portalStatus.examTime) {
+            const match = portalStatus.examTime.match(/(\d+)(?::(\d+))?\s*(AM|PM)?/i);
+            if (match) {
+                let h = parseInt(match[1], 10);
+                const m = parseInt(match[2] || "0", 10);
+                const ampm = (match[3] || "").toUpperCase();
+                if (ampm === "PM" && h < 12) h += 12;
+                if (ampm === "AM" && h === 12) h = 0;
+                hours = h;
+                minutes = m;
+                // Add 3 hours for exam duration
+                hours += 3; 
+            }
+        }
+        
+        if (hours >= 24) {
+            hours = 23;
+            minutes = 59;
+        }
+        
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        // Construct string in IST (+05:30)
+        const istString = `${eventDateStr}T${pad(hours)}:${pad(minutes)}:00+05:30`;
+        const eventEndTime = new Date(istString);
+        
+        return new Date() > eventEndTime;
+    } catch (e) {
+        return false;
+    }
+  }, [portalStatus?.eventDate, portalStatus?.examTime]);
 
   return (
     <motion.div
