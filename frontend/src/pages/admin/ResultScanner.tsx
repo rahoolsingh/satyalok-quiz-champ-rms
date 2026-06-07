@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, ScanLine, Loader2, CheckCircle2, FileImage } from 'lucide-react';
+import { Camera, ScanLine, Loader2, CheckCircle2, FileImage, ImagePlus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -148,6 +148,18 @@ export function ResultScanner() {
               setQrRaw(raw);
               setQrCandidate(parsed);
               stopCamera();
+
+              // Pre-fill existing result if available
+              try {
+                const res = await adminApi.getResultsList({ search: parsed.roll, limit: 1 });
+                const existing = res.data.results?.find((r: any) => r.rollNumber === parsed.roll);
+                if (existing) {
+                  setScore(existing.score.toString());
+                }
+              } catch (e) {
+                // Ignore failure
+              }
+
               return;
             }
           }
@@ -249,7 +261,7 @@ export function ResultScanner() {
               <CardDescription>Upload OMR sheet and enter marks.</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
                   <Avatar>
                     <AvatarFallback>{getInitials(qrCandidate.name || 'P')}</AvatarFallback>
@@ -261,7 +273,7 @@ export function ResultScanner() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="score">Score Obtained *</Label>
+                  <Label htmlFor="score" className="text-lg">Marks Obtained <span className="text-destructive">*</span></Label>
                   <Input 
                     id="score" 
                     type="number" 
@@ -269,21 +281,36 @@ export function ResultScanner() {
                     required 
                     value={score} 
                     onChange={(e) => setScore(e.target.value)} 
-                    placeholder="e.g. 85.5"
+                    placeholder="0.0"
+                    className="text-4xl h-20 font-bold text-center tracking-tight"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="image">Upload Answer Sheet (Optional)</Label>
-                  <Input 
-                    id="image" 
-                    type="file" 
-                    accept="image/*" 
-                    capture="environment"
-                    ref={fileInputRef}
-                    onChange={(e) => setFile(e.target.files?.[0] || null)} 
-                  />
-                  <p className="text-xs text-muted-foreground">Take a photo or upload an image.</p>
+                <div className="space-y-3">
+                  <Label className="text-lg">Answer Sheet (Optional)</Label>
+                  <Label 
+                    htmlFor="image" 
+                    className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-primary/50 rounded-xl cursor-pointer bg-muted/30 hover:bg-muted/70 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <ImagePlus className={`w-10 h-10 mb-3 ${file ? 'text-emerald-500' : 'text-primary/70'}`} />
+                      <p className="mb-2 text-sm text-foreground font-semibold text-center px-4 line-clamp-1">
+                        {file ? file.name : "Click to upload or take photo"}
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center px-4">
+                        {file ? "Click to change image" : "JPG, PNG, WEBP allowed"}
+                      </p>
+                    </div>
+                    <Input 
+                      id="image" 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      ref={fileInputRef}
+                      className="hidden"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                    />
+                  </Label>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between gap-3 border-t pt-4">
