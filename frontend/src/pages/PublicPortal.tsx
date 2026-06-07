@@ -210,7 +210,7 @@ export function PublicPortal() {
                     <span className="text-sm text-muted-foreground">Last Date to Apply</span>
                     <span className="text-sm font-semibold text-foreground text-right">
                         {status.closingDate
-                            ? `${new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.closingDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+                            ? `${new Date(status.closingDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.closingDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST`
                             : 'Not Declared'}
                     </span>
                 </div>
@@ -222,7 +222,7 @@ export function PublicPortal() {
                             <span className="text-sm text-muted-foreground">Date of Examination</span>
                             <span className="text-sm font-semibold text-foreground text-right">
                                 {status.eventDate
-                                    ? new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })
+                                    ? `${new Date(status.eventDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}`
                                     : 'Not Declared'}
                             </span>
                         </div>
@@ -230,14 +230,14 @@ export function PublicPortal() {
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">Reporting Time</span>
                             <span className="text-sm font-semibold text-foreground text-right">
-                                {status.reportingTime || 'Not Declared'}
+                                {status.reportingTime ? `${status.reportingTime} IST` : 'Not Declared'}
                             </span>
                         </div>
                         <Separator />
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">Exam Time</span>
                             <span className="text-sm font-semibold text-foreground text-right">
-                                {status.examTime || 'Not Declared'}
+                                {status.examTime ? `${status.examTime} IST` : 'Not Declared'}
                             </span>
                         </div>
                     </>
@@ -248,7 +248,7 @@ export function PublicPortal() {
                     <span className="text-sm text-muted-foreground">Prize Distribution</span>
                     <span className="text-sm font-semibold text-foreground text-right">
                         {status.prizeDistributionDate
-                            ? `${new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}${status.prizeDistributionTime ? ` ${status.prizeDistributionTime}` : ''}`
+                            ? `${new Date(status.prizeDistributionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })}${status.prizeDistributionTime ? ` ${status.prizeDistributionTime} IST` : ''}`
                             : 'Not Declared'}
                     </span>
                 </div>
@@ -258,7 +258,7 @@ export function PublicPortal() {
                     <div className="text-right">
                         <span className="text-sm font-semibold text-foreground block">
                             {status.resultPublicationDate
-                                ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}`
+                                ? `${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Kolkata' })} ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST`
                                 : 'Not Declared'}
                         </span>
                         {isEventCompleted && (

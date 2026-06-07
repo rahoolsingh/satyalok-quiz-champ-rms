@@ -91,7 +91,7 @@ export function ResultUploader() {
             <p className="text-sm text-muted-foreground mb-4">No announcement date has been set yet.</p>
           )}
           <div className="space-y-1.5 mb-3">
-            <label className="text-sm font-medium">Set Announcement Date & Time</label>
+            <label className="text-sm font-medium">Set Announcement Date & Time (IST)</label>
             <Input type="datetime-local" value={pubDate} onChange={e => setPubDate(e.target.value)} />
           </div>
           <Button onClick={handlePublish} disabled={publishing}>

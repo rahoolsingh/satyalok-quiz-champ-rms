@@ -99,17 +99,17 @@ export function EventConfiguration() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Event Time</label>
+              <label className="text-sm font-medium">Event Time (IST)</label>
               <Input type="text" value={eventTime} onChange={e => setEventTime(e.target.value)} placeholder="e.g., 10:00 AM - 12:00 PM" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Reporting Time</label>
+                <label className="text-sm font-medium">Reporting Time (IST)</label>
                 <Input type="text" value={reportingTime} onChange={e => setReportingTime(e.target.value)} placeholder="e.g., 3:00 PM" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Exam Time</label>
+                <label className="text-sm font-medium">Exam Time (IST)</label>
                 <Input type="text" value={examTime} onChange={e => setExamTime(e.target.value)} placeholder="e.g., 4:00 PM" />
               </div>
             </div>
@@ -132,7 +132,7 @@ export function EventConfiguration() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Prize Distribution Time</label>
+              <label className="text-sm font-medium">Prize Distribution Time (IST)</label>
               <Input type="text" value={prizeDistributionTime} onChange={e => setPrizeDistributionTime(e.target.value)} placeholder="e.g., 11:00 AM" />
             </div>
 
