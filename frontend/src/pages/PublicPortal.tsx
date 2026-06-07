@@ -130,6 +130,13 @@ export function PublicPortal() {
         setStep("home");
     }, []);
 
+    const isEventCompleted = useMemo(() => {
+        if (!status?.eventDate) return false;
+        const eventDate = new Date(status.eventDate);
+        eventDate.setHours(23, 59, 59, 999);
+        return new Date() > eventDate;
+    }, [status?.eventDate]);
+
     // --- Loading & Error States ---
     if (portalLoading || loadingProfile) {
         return (
@@ -152,12 +159,7 @@ export function PublicPortal() {
         );
     }
 
-    const isEventCompleted = useMemo(() => {
-        if (!status?.eventDate) return false;
-        const eventDate = new Date(status.eventDate);
-        eventDate.setHours(23, 59, 59, 999);
-        return new Date() > eventDate;
-    }, [status?.eventDate]);
+
 
     const importantDatesSection = (
         <Card className="mb-8">
