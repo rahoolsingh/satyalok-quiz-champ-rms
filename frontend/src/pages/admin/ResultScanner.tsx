@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, ScanLine, Loader2, ImagePlus, CheckCircle2 } from 'lucide-react';
+import { Camera, ScanLine, Loader2, CheckCircle2, FileImage } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 declare global {
   interface Window {
@@ -33,17 +34,28 @@ function getInitials(name = 'Participant') {
   return name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
 }
 
+interface RecentResult {
+  id: string;
+  participantId: string;
+  rollNumber: string;
+  score: number;
+  answerSheetUrl?: string;
+  participantName: string;
+  batchType: string;
+  participantPhotoUrl?: string;
+}
+
 export function ResultScanner() {
   const [qrCandidate, setQrCandidate] = useState<ParsedQR | null>(null);
   const [qrRaw, setQrRaw] = useState('');
   
   const [score, setScore] = useState('');
-  const [rank, setRank] = useState('');
-  const [remarks, setRemarks] = useState('');
   const [file, setFile] = useState<File | null>(null);
   
   const [processing, setProcessing] = useState(false);
   const [feedback, setFeedback] = useState<{type: 'success'|'error', msg: string} | null>(null);
+  const [recent, setRecent] = useState<RecentResult[]>([]);
+  const [recentLoading, setRecentLoading] = useState(true);
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -55,12 +67,31 @@ export function ResultScanner() {
     streamRef.current = null;
   }, []);
 
+  const loadRecent = useCallback(async () => {
+    setRecentLoading(true);
+    try {
+      const response = await adminApi.getResultsList({
+        page: 1,
+        limit: 10,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+      setRecent(response.data.results || []);
+    } catch {
+      setRecent([]);
+    } finally {
+      setRecentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRecent();
+  }, [loadRecent]);
+
   const reset = () => {
     setQrCandidate(null);
     setQrRaw('');
     setScore('');
-    setRank('');
-    setRemarks('');
     setFile(null);
     setFeedback(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -142,18 +173,18 @@ export function ResultScanner() {
       const formData = new FormData();
       formData.append('qrData', qrRaw);
       formData.append('score', score);
-      if (rank) formData.append('rank', rank);
-      if (remarks) formData.append('remarks', remarks);
       if (file) formData.append('image', file);
 
       const res = await adminApi.scanResult(formData);
       setFeedback({ type: 'success', msg: res.data.message });
+      
+      // Refresh recent list
+      loadRecent();
+
       // Reset form but keep feedback
       setQrCandidate(null);
       setQrRaw('');
       setScore('');
-      setRank('');
-      setRemarks('');
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setTimeout(() => setFeedback(null), 5000);
@@ -166,128 +197,159 @@ export function ResultScanner() {
   };
 
   return (
-    <div className="flex flex-col gap-5 max-w-2xl mx-auto">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <ScanLine className="size-5 text-primary" />
-          Result Scanner
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Scan admit card QR and upload result.</p>
-      </div>
+    <div className="grid gap-5 lg:grid-cols-2 max-w-6xl mx-auto">
+      <div className="flex flex-col gap-5">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            <ScanLine className="size-5 text-primary" />
+            Result Scanner
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Scan admit card QR and upload result.</p>
+        </div>
 
-      {feedback && (
-        <Alert variant={feedback.type === 'success' ? 'default' : 'destructive'} className={feedback.type === 'success' ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : ''}>
-          {feedback.type === 'success' ? <CheckCircle2 className="size-4 text-emerald-600" /> : null}
-          <AlertTitle>{feedback.type === 'success' ? 'Success' : 'Error'}</AlertTitle>
-          <AlertDescription>{feedback.msg}</AlertDescription>
-        </Alert>
-      )}
+        {feedback && (
+          <Alert variant={feedback.type === 'success' ? 'default' : 'destructive'} className={feedback.type === 'success' ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : ''}>
+            {feedback.type === 'success' ? <CheckCircle2 className="size-4 text-emerald-600" /> : null}
+            <AlertTitle>{feedback.type === 'success' ? 'Success' : 'Error'}</AlertTitle>
+            <AlertDescription>{feedback.msg}</AlertDescription>
+          </Alert>
+        )}
 
-      {!qrCandidate ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Scan QR Code</CardTitle>
-            <CardDescription>Position the QR code within the camera frame.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center p-6">
-            <div className="relative w-full max-w-sm aspect-square bg-black rounded-lg overflow-hidden border-2 border-dashed border-primary/50">
-              <video
-                ref={videoRef}
-                className="absolute inset-0 w-full h-full object-cover"
-                playsInline
-                muted
-              />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="absolute inset-0 border-4 border-primary/30 rounded-lg pointer-events-none m-8" />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <ScanLine className="size-16 text-primary/50 animate-pulse" />
-              </div>
-            </div>
-            {!window.BarcodeDetector && (
-              <p className="mt-4 text-sm text-destructive text-center">
-                Barcode Detector API not supported in your browser. Please use Chrome/Edge on Android or macOS.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Enter Result</CardTitle>
-            <CardDescription>Upload OMR sheet and enter marks.</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                <Avatar>
-                  <AvatarFallback>{getInitials(qrCandidate.name || 'P')}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold">{qrCandidate.name || 'Participant'}</p>
-                  <p className="text-sm text-muted-foreground">{qrCandidate.roll} &bull; <Badge variant="secondary">{qrCandidate.batch}</Badge></p>
+        {!qrCandidate ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Scan QR Code</CardTitle>
+              <CardDescription>Position the QR code within the camera frame.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center p-6">
+              <div className="relative w-full max-w-sm aspect-square bg-black rounded-lg overflow-hidden border-2 border-dashed border-primary/50">
+                <video
+                  ref={videoRef}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  playsInline
+                  muted
+                />
+                <canvas ref={canvasRef} className="hidden" />
+                <div className="absolute inset-0 border-4 border-primary/30 rounded-lg pointer-events-none m-8" />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <ScanLine className="size-16 text-primary/50 animate-pulse" />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="score">Score Obtained *</Label>
-                <Input 
-                  id="score" 
-                  type="number" 
-                  step="0.01"
-                  required 
-                  value={score} 
-                  onChange={(e) => setScore(e.target.value)} 
-                  placeholder="e.g. 85.5"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rank">Rank (Optional)</Label>
-                <Input 
-                  id="rank" 
-                  type="number" 
-                  value={rank} 
-                  onChange={(e) => setRank(e.target.value)} 
-                  placeholder="e.g. 1"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="image">Upload Answer Sheet (Optional)</Label>
-                <Input 
-                  id="image" 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment"
-                  ref={fileInputRef}
-                  onChange={(e) => setFile(e.target.files?.[0] || null)} 
-                />
-                <p className="text-xs text-muted-foreground">You can take a photo or upload an image.</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="remarks">Remarks (Optional)</Label>
-                <Input 
-                  id="remarks" 
-                  type="text" 
-                  value={remarks} 
-                  onChange={(e) => setRemarks(e.target.value)} 
-                  placeholder="e.g. Excellent performance"
-                />
-              </div>
+              {!window.BarcodeDetector && (
+                <p className="mt-4 text-sm text-destructive text-center">
+                  Barcode Detector API not supported in your browser. Please use Chrome/Edge on Android or macOS.
+                </p>
+              )}
             </CardContent>
-            <CardFooter className="flex justify-between gap-3 border-t pt-4">
-              <Button type="button" variant="outline" onClick={reset} disabled={processing}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={processing || !score}>
-                {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Save Result
-              </Button>
-            </CardFooter>
-          </form>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Enter Result</CardTitle>
+              <CardDescription>Upload OMR sheet and enter marks.</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                  <Avatar>
+                    <AvatarFallback>{getInitials(qrCandidate.name || 'P')}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold">{qrCandidate.name || 'Participant'}</p>
+                    <p className="text-sm text-muted-foreground">{qrCandidate.roll} &bull; <Badge variant="secondary">{qrCandidate.batch}</Badge></p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="score">Score Obtained *</Label>
+                  <Input 
+                    id="score" 
+                    type="number" 
+                    step="0.01"
+                    required 
+                    value={score} 
+                    onChange={(e) => setScore(e.target.value)} 
+                    placeholder="e.g. 85.5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="image">Upload Answer Sheet (Optional)</Label>
+                  <Input 
+                    id="image" 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment"
+                    ref={fileInputRef}
+                    onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                  />
+                  <p className="text-xs text-muted-foreground">Take a photo or upload an image.</p>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between gap-3 border-t pt-4">
+                <Button type="button" variant="outline" onClick={reset} disabled={processing}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={processing || !score}>
+                  {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Save Result
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-5">
+        <Card className="flex flex-col h-full max-h-[600px]">
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Submissions</CardTitle>
+            <CardDescription>Last 10 results submitted.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden p-0">
+            <ScrollArea className="h-full">
+              {recentLoading ? (
+                <div className="p-6 flex justify-center">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : recent.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  No recent submissions found.
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recent.map((record) => (
+                    <div key={record.id} className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors">
+                      <Avatar className="size-10">
+                        <AvatarImage src={record.participantPhotoUrl} />
+                        <AvatarFallback>{getInitials(record.participantName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{record.participantName}</p>
+                        <p className="text-xs text-muted-foreground">{record.rollNumber} &bull; {record.batchType}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-primary">{record.score}</p>
+                          <p className="text-[10px] uppercase text-muted-foreground">Score</p>
+                        </div>
+                        {record.answerSheetUrl && (
+                          <a href={record.answerSheetUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 group relative block size-10 rounded overflow-hidden border">
+                            <img src={record.answerSheetUrl} alt="OMR" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <FileImage className="size-4 text-white" />
+                            </div>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, Loader2, Search, Trophy, FileImage } from 'lucide-react';
 
-type BatchFilter = 'ALL' | 'JUNIOR' | 'SENIOR';
+type BatchFilter = 'JUNIOR' | 'SENIOR';
 type SortBy = 'score' | 'rank' | 'name' | 'rollNumber';
 type SortOrder = 'asc' | 'desc';
 
@@ -44,7 +44,7 @@ function getInitials(name: string) {
 export function ResultList() {
   const [records, setRecords] = useState<ResultRecord[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 50, pages: 0 });
-  const [batch, setBatch] = useState<BatchFilter>('ALL');
+  const [batch, setBatch] = useState<BatchFilter>('JUNIOR');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('score');
@@ -60,7 +60,7 @@ export function ResultList() {
   }, [search]);
 
   const params = useMemo(() => ({
-    batch: batch === 'ALL' ? undefined : batch,
+    batch,
     search: debouncedSearch || undefined,
     sortBy,
     sortOrder,
@@ -133,7 +133,6 @@ export function ResultList() {
             </div>
             <Tabs value={batch} onValueChange={value => setBatch(value as BatchFilter)}>
               <TabsList>
-                <TabsTrigger value="ALL">All</TabsTrigger>
                 <TabsTrigger value="JUNIOR">Junior</TabsTrigger>
                 <TabsTrigger value="SENIOR">Senior</TabsTrigger>
               </TabsList>

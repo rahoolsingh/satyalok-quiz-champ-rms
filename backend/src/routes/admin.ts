@@ -500,9 +500,6 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
     const pageNum = Math.max(1, parseInt(page as string, 10));
     const limitNum = Math.min(100, parseInt(limit as string, 10));
 
-    // To filter and sort efficiently, we join Participant and Result using aggregate.
-    // However, since we might want to search participant name, let's use aggregation.
-
     const matchStage: any = {};
     if (search) {
       const s = escapeRegex(search as string);
@@ -517,10 +514,11 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
 
     const sortConfig: any = {};
     if (sortBy === 'score') sortConfig.score = sortOrder === 'asc' ? 1 : -1;
-    else if (sortBy === 'rank') sortConfig.rank = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'rank') sortConfig.calculatedRank = sortOrder === 'asc' ? 1 : -1;
     else if (sortBy === 'name') sortConfig['participant.name'] = sortOrder === 'asc' ? 1 : -1;
     else if (sortBy === 'rollNumber') sortConfig.rollNumber = sortOrder === 'asc' ? 1 : -1;
-    else sortConfig.score = -1; // Default
+    else if (sortBy === 'createdAt') sortConfig.createdAt = sortOrder === 'asc' ? 1 : -1;
+    else sortConfig.score = -1;
 
     const pipeline = [
       {
@@ -532,11 +530,20 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
         },
       },
       { $unwind: '$participant' },
+      {
+        $setWindowFields: {
+          partitionBy: '$participant.batchType',
+          sortBy: { score: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
       { $match: matchStage },
     ];
 
     const [totalResults, records] = await Promise.all([
-      Result.aggregate([...pipeline, { $count: 'total' }]),
+      Result.aggregate([...pipeline, { $count: 'total' }] as any[]),
       Result.aggregate([
         ...pipeline,
         { $sort: sortConfig },
@@ -548,8 +555,7 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
             participantId: 1,
             rollNumber: 1,
             score: 1,
-            rank: 1,
-            remarks: 1,
+            calculatedRank: 1,
             answerSheetUrl: 1,
             publishedAt: 1,
             'participant.name': 1,
@@ -558,7 +564,7 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
             'participant.photoUrl': 1,
           },
         },
-      ]),
+      ] as any[]),
     ]);
 
     const total = totalResults.length > 0 ? totalResults[0].total : 0;
@@ -569,8 +575,7 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
         participantId: r.participantId.toString(),
         rollNumber: r.rollNumber,
         score: r.score,
-        rank: r.rank,
-        remarks: r.remarks,
+        rank: r.calculatedRank,
         answerSheetUrl: r.answerSheetUrl,
         publishedAt: r.publishedAt,
         participantName: r.participant.name,
