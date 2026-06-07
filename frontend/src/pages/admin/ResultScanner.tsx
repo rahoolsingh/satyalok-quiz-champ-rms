@@ -56,11 +56,16 @@ export function ResultScanner() {
   const [feedback, setFeedback] = useState<{type: 'success'|'error', msg: string} | null>(null);
   const [recent, setRecent] = useState<RecentResult[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
+  const [maxMarks, setMaxMarks] = useState<string>(() => localStorage.getItem('adminMaxMarks') || '100');
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('adminMaxMarks', maxMarks);
+  }, [maxMarks]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -181,6 +186,12 @@ export function ResultScanner() {
     setProcessing(true);
     setFeedback(null);
     
+    if (Number(maxMarks) > 0 && Number(score) > Number(maxMarks)) {
+      setFeedback({ type: 'error', msg: `Score cannot exceed the maximum marks (${maxMarks}).` });
+      setProcessing(false);
+      return;
+    }
+    
     try {
       const formData = new FormData();
       formData.append('qrData', qrRaw);
@@ -211,12 +222,25 @@ export function ResultScanner() {
   return (
     <div className="grid gap-5 lg:grid-cols-2 max-w-6xl mx-auto">
       <div className="flex flex-col gap-5">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <ScanLine className="size-5 text-primary" />
-            Result Scanner
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Scan admit card QR and upload result.</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+              <ScanLine className="size-5 text-primary" />
+              Result Scanner
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">Scan admit card QR and upload result.</p>
+          </div>
+          <div className="flex items-center gap-2 bg-background p-2 rounded-lg border shadow-sm shrink-0">
+            <Label htmlFor="maxMarks" className="text-sm font-medium whitespace-nowrap">Max Marks:</Label>
+            <Input 
+              id="maxMarks" 
+              type="number" 
+              value={maxMarks} 
+              onChange={(e) => setMaxMarks(e.target.value)}
+              className="w-20 h-8 text-center font-bold" 
+              min="1"
+            />
+          </div>
         </div>
 
         {feedback && (
