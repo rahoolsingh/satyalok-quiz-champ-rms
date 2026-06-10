@@ -453,10 +453,12 @@ export function PublicPortal() {
                                 Quiz Champ 2026
                             </p>
                             <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-foreground mb-3">
-                                Registration Closed
+                                {status.resultsPublished ? "Results Declared!" : "Registration Closed"}
                             </h1>
                             <p className="text-muted-foreground leading-relaxed mb-10">
-                                Registration is currently closed. If you have already registered, please login to access your admit card.
+                                {status.resultsPublished 
+                                    ? "The results for Quiz Champ 2026 are now out! Login with your registered mobile number to check your marks and rank."
+                                    : "Registration is currently closed. If you have already registered, please login to access your admit card."}
                             </p>
                             
                             {/* Login option for registered users */}
@@ -465,13 +467,11 @@ export function PublicPortal() {
                                 variant="default"
                                 className={isEventCompleted ? "mb-2" : "mb-10"}
                             >
-                                Login to Access Admit Card
+                                {status.resultsPublished ? "Login to View Result" : "Login to Access Admit Card"}
                             </Button>
-                            {isEventCompleted && (
+                            {isEventCompleted && !status.resultsPublished && (
                                 <p className="text-sm text-blue-600 font-medium mb-10 px-4">
-                                    {status.resultsPublished 
-                                      ? "Results have been published! Login to check your result."
-                                      : status.resultPublicationDate 
+                                    {status.resultPublicationDate 
                                         ? `Awaiting Result. Results will be announced on ${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} at ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST.`
                                         : "Awaiting Result. Results will be available soon (tentative). All times in IST."}
                                 </p>
