@@ -469,7 +469,11 @@ export function PublicPortal() {
                             </Button>
                             {isEventCompleted && (
                                 <p className="text-sm text-blue-600 font-medium mb-10 px-4">
-                                    Awaiting Result. Results will be available soon (tentative). All times in IST.
+                                    {status.resultsPublished 
+                                      ? "Results have been published! Login to check your result."
+                                      : status.resultPublicationDate 
+                                        ? `Awaiting Result. Results will be announced on ${new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} at ${new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST.`
+                                        : "Awaiting Result. Results will be available soon (tentative). All times in IST."}
                                 </p>
                             )}
                         </motion.div>
@@ -619,6 +623,16 @@ export function PublicPortal() {
                                 The ultimate knowledge championship for students
                                 across all classes.
                             </motion.p>
+                            {isEventCompleted && status.resultPublicationDate && !status.resultsPublished && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.12 }}
+                                    className="mt-4 inline-block px-4 py-2 bg-primary/10 text-primary font-medium rounded-full text-sm border border-primary/20"
+                                >
+                                    Result Announcement: {new Date(status.resultPublicationDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })} {new Date(status.resultPublicationDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST
+                                </motion.div>
+                            )}
                         </header>
 
                         {images.length > 0 && (
