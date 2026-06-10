@@ -310,7 +310,7 @@ export function ResultScanner() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="score" className="text-sm font-semibold">Total Marks <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="score" className="text-sm font-semibold">Total Marks Obtained<span className="text-destructive">*</span></Label>
                     <Input 
                       id="score" 
                       type="number" 
