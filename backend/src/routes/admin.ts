@@ -546,9 +546,19 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
       },
       { $unwind: '$participant' },
       {
+        $addFields: {
+          compositeScore: {
+            $subtract: [
+              { $multiply: ['$score', 100000] },
+              { $ifNull: ['$negativeMarks', 0] }
+            ]
+          }
+        }
+      },
+      {
         $setWindowFields: {
           partitionBy: '$participant.batchType',
-          sortBy: { score: -1 },
+          sortBy: { compositeScore: -1 },
           output: {
             calculatedRank: { $denseRank: {} },
           },
