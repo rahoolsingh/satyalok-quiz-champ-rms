@@ -36,6 +36,9 @@ export function ResultCard({ profile, portalStatus }: ResultCardProps) {
   };
 
   const result = profile.result;
+  const photoUrl = profile.photoUrl
+    ? `/api/profile/photo-proxy?url=${encodeURIComponent(profile.photoUrl)}`
+    : undefined;
 
   if (!result) {
     return (
@@ -72,11 +75,11 @@ export function ResultCard({ profile, portalStatus }: ResultCardProps) {
           </p>
           
           <div className="flex w-full items-center gap-5 mt-2">
-            {profile.photoUrl && (
+            {photoUrl && (
               <div className="flex-shrink-0">
                 <div className="w-24 h-28 rounded-md overflow-hidden border-2 border-gray-200 shadow-sm bg-white">
                   <img 
-                    src={profile.photoUrl} 
+                    src={photoUrl} 
                     alt={profile.name} 
                     className="w-full h-full object-cover"
                     crossOrigin="anonymous"
@@ -122,22 +125,24 @@ export function ResultCard({ profile, portalStatus }: ResultCardProps) {
             Performance Details
           </h3>
           
-          <div className="grid grid-cols-3 gap-4 mb-5">
-            <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <span className="text-3xl font-bold text-[#0071e3]">{result.score}</span>
-              <span className="text-[10px] text-gray-500 uppercase font-bold mt-1 text-center">Marks<br/>Obtained</span>
+          <div className="space-y-4 mb-5">
+            <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <span className="text-4xl font-bold text-[#0071e3]">{result.score}</span>
+              <span className="text-[11px] text-gray-500 uppercase font-bold mt-1 text-center">Marks Obtained</span>
             </div>
             
-            <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-green-200 shadow-sm relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-green-500"></div>
-              <span className="text-2xl font-bold text-green-600">{result.positiveMarks || 0}</span>
-              <span className="text-[10px] text-gray-500 uppercase font-bold mt-1 text-center">Correct<br/>Answers</span>
-            </div>
-            
-            <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-red-200 shadow-sm relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-red-500"></div>
-              <span className="text-2xl font-bold text-red-600">{result.negativeMarks || 0}</span>
-              <span className="text-[10px] text-gray-500 uppercase font-bold mt-1 text-center">Incorrect<br/>Answers</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-green-200 shadow-sm relative overflow-hidden">
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-green-500"></div>
+                <span className="text-2xl font-bold text-green-600">{result.positiveMarks || 0}</span>
+                <span className="text-[10px] text-gray-500 uppercase font-bold mt-1 text-center">Correct Answers</span>
+              </div>
+              
+              <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-red-200 shadow-sm relative overflow-hidden">
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-red-500"></div>
+                <span className="text-2xl font-bold text-red-600">{result.negativeMarks || 0}</span>
+                <span className="text-[10px] text-gray-500 uppercase font-bold mt-1 text-center">Incorrect Answers</span>
+              </div>
             </div>
           </div>
 
