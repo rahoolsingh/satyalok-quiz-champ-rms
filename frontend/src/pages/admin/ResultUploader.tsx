@@ -60,7 +60,7 @@ export function ResultUploader() {
       <Card className="mb-4">
         <CardHeader>
           <CardTitle>Upload Results (CSV)</CardTitle>
-          <CardDescription>Format: <code className="bg-muted px-1.5 py-0.5 rounded">rollNumber,score,rank,remarks</code></CardDescription>
+          <CardDescription>Format: <code className="bg-muted px-1.5 py-0.5 rounded">rollNumber,score,positiveMarks,negativeMarks,rank,remarks</code></CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpload} className="space-y-3">

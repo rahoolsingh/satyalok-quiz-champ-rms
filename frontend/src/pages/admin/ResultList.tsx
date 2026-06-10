@@ -20,6 +20,8 @@ interface ResultRecord {
   participantId: string;
   rollNumber: string;
   score: number;
+  positiveMarks?: number;
+  negativeMarks?: number;
   rank?: number;
   remarks?: string;
   answerSheetUrl?: string;
@@ -218,7 +220,15 @@ export function ResultList() {
                   <TableCell>{record.participantClass}</TableCell>
                   <TableCell><Badge variant="secondary">{record.batchType}</Badge></TableCell>
                   <TableCell>
-                    <span className="font-semibold text-primary">{record.score}</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-primary">{record.score}</span>
+                      {(record.positiveMarks !== undefined || record.negativeMarks !== undefined) && (
+                        <div className="flex items-center gap-2 text-[10px]">
+                          <span className="text-emerald-600 font-medium">+{record.positiveMarks || 0}</span>
+                          <span className="text-destructive font-medium">-{record.negativeMarks || 0}</span>
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {record.rank ? <Badge variant="default">#{record.rank}</Badge> : '-'}

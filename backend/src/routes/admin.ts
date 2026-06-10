@@ -326,7 +326,7 @@ adminRouter.post('/results/upload', upload.single('file'), async (req: AuthReque
     if (!req.file) return res.status(400).json({ error: 'Result file is required' });
 
     const fileContent = req.file.buffer.toString('utf-8');
-    let records: Array<{ rollNumber: string; score: string; rank?: string; remarks?: string }>;
+    let records: Array<{ rollNumber: string; score: string; positiveMarks?: string; negativeMarks?: string; rank?: string; remarks?: string }>;
 
     try {
       records = parse(fileContent, { columns: true, skip_empty_lines: true, trim: true });
@@ -336,7 +336,7 @@ adminRouter.post('/results/upload', upload.single('file'), async (req: AuthReque
 
     const invalidRolls: string[] = [];
     const validatedRecords: Array<{
-      rollNumber: string; score: number; rank?: number; remarks?: string; participantId: string;
+      rollNumber: string; score: number; positiveMarks?: number; negativeMarks?: number; rank?: number; remarks?: string; participantId: string;
     }> = [];
 
     for (const record of records) {
@@ -354,6 +354,8 @@ adminRouter.post('/results/upload', upload.single('file'), async (req: AuthReque
         validatedRecords.push({
           rollNumber: record.rollNumber,
           score: parseInt(record.score, 10) || 0,
+          positiveMarks: record.positiveMarks !== undefined ? parseFloat(record.positiveMarks) : undefined,
+          negativeMarks: record.negativeMarks !== undefined ? parseFloat(record.negativeMarks) : undefined,
           rank: record.rank ? parseInt(record.rank, 10) : undefined,
           remarks: record.remarks,
           participantId: participant._id.toString(),
@@ -371,7 +373,7 @@ adminRouter.post('/results/upload', upload.single('file'), async (req: AuthReque
     for (const rec of validatedRecords) {
       await Result.findOneAndUpdate(
         { participantId: rec.participantId },
-        { rollNumber: rec.rollNumber, score: rec.score, rank: rec.rank, remarks: rec.remarks },
+        { rollNumber: rec.rollNumber, score: rec.score, positiveMarks: rec.positiveMarks, negativeMarks: rec.negativeMarks, rank: rec.rank, remarks: rec.remarks },
         { upsert: true }
       );
     }
@@ -409,7 +411,7 @@ adminRouter.put('/results/publish', async (req: AuthRequest, res: Response) => {
 // POST /api/admin/results/scan
 adminRouter.post('/results/scan', upload.single('image'), async (req: AuthRequest, res: Response) => {
   try {
-    const { qrData, score, rank, remarks } = req.body;
+    const { qrData, score, positiveMarks, negativeMarks, rank, remarks } = req.body;
 
     if (!qrData) return res.status(400).json({ error: 'QR data is required' });
     if (score === undefined || score === null) return res.status(400).json({ error: 'Score is required' });
@@ -454,12 +456,17 @@ adminRouter.post('/results/scan', upload.single('image'), async (req: AuthReques
     const numericScore = parseFloat(score);
     if (isNaN(numericScore)) return res.status(400).json({ error: 'Score must be a number' });
 
+    const numericPositiveMarks = positiveMarks !== undefined ? parseFloat(positiveMarks) : undefined;
+    const numericNegativeMarks = negativeMarks !== undefined ? parseFloat(negativeMarks) : undefined;
+
     const numericRank = rank ? parseInt(rank, 10) : undefined;
 
     // Upsert Result
     const updateData: any = {
       rollNumber: participant.rollNumber || 'UNKNOWN',
       score: numericScore,
+      positiveMarks: numericPositiveMarks,
+      negativeMarks: numericNegativeMarks,
       rank: numericRank,
       remarks,
     };
@@ -478,6 +485,8 @@ adminRouter.post('/results/scan', upload.single('image'), async (req: AuthReques
         participantId: result.participantId.toString(),
         rollNumber: result.rollNumber,
         score: result.score,
+        positiveMarks: result.positiveMarks,
+        negativeMarks: result.negativeMarks,
         rank: result.rank,
         remarks: result.remarks,
         answerSheetUrl: result.answerSheetUrl,
@@ -513,12 +522,18 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
     }
 
     const sortConfig: any = {};
-    if (sortBy === 'score') sortConfig.score = sortOrder === 'asc' ? 1 : -1;
+    if (sortBy === 'score') {
+      sortConfig.score = sortOrder === 'asc' ? 1 : -1;
+      sortConfig.negativeMarks = 1; // tie breaker
+    }
     else if (sortBy === 'rank') sortConfig.calculatedRank = sortOrder === 'asc' ? 1 : -1;
     else if (sortBy === 'name') sortConfig['participant.name'] = sortOrder === 'asc' ? 1 : -1;
     else if (sortBy === 'rollNumber') sortConfig.rollNumber = sortOrder === 'asc' ? 1 : -1;
     else if (sortBy === 'createdAt') sortConfig.createdAt = sortOrder === 'asc' ? 1 : -1;
-    else sortConfig.score = -1;
+    else {
+      sortConfig.score = -1;
+      sortConfig.negativeMarks = 1;
+    }
 
     const pipeline = [
       {
@@ -533,7 +548,7 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
       {
         $setWindowFields: {
           partitionBy: '$participant.batchType',
-          sortBy: { score: -1 },
+          sortBy: { score: -1, negativeMarks: 1 },
           output: {
             calculatedRank: { $denseRank: {} },
           },
@@ -555,6 +570,8 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
             participantId: 1,
             rollNumber: 1,
             score: 1,
+            positiveMarks: 1,
+            negativeMarks: 1,
             calculatedRank: 1,
             answerSheetUrl: 1,
             publishedAt: 1,
@@ -575,6 +592,8 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
         participantId: r.participantId.toString(),
         rollNumber: r.rollNumber,
         score: r.score,
+        positiveMarks: r.positiveMarks,
+        negativeMarks: r.negativeMarks,
         rank: r.calculatedRank,
         answerSheetUrl: r.answerSheetUrl,
         publishedAt: r.publishedAt,

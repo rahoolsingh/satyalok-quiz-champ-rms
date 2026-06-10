@@ -39,6 +39,8 @@ interface RecentResult {
   participantId: string;
   rollNumber: string;
   score: number;
+  positiveMarks?: number;
+  negativeMarks?: number;
   answerSheetUrl?: string;
   participantName: string;
   batchType: string;
@@ -50,6 +52,8 @@ export function ResultScanner() {
   const [qrRaw, setQrRaw] = useState('');
   
   const [score, setScore] = useState('');
+  const [positiveMarks, setPositiveMarks] = useState('');
+  const [negativeMarks, setNegativeMarks] = useState('');
   const [file, setFile] = useState<File | null>(null);
   
   const [processing, setProcessing] = useState(false);
@@ -97,6 +101,8 @@ export function ResultScanner() {
     setQrCandidate(null);
     setQrRaw('');
     setScore('');
+    setPositiveMarks('');
+    setNegativeMarks('');
     setFile(null);
     setFeedback(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -160,6 +166,8 @@ export function ResultScanner() {
                 const existing = res.data.results?.find((r: any) => r.rollNumber === parsed.roll);
                 if (existing) {
                   setScore(existing.score.toString());
+                  if (existing.positiveMarks !== undefined) setPositiveMarks(existing.positiveMarks.toString());
+                  if (existing.negativeMarks !== undefined) setNegativeMarks(existing.negativeMarks.toString());
                 }
               } catch (e) {
                 // Ignore failure
@@ -196,6 +204,8 @@ export function ResultScanner() {
       const formData = new FormData();
       formData.append('qrData', qrRaw);
       formData.append('score', score);
+      if (positiveMarks) formData.append('positiveMarks', positiveMarks);
+      if (negativeMarks) formData.append('negativeMarks', negativeMarks);
       if (file) formData.append('image', file);
 
       const res = await adminApi.scanResult(formData);
@@ -208,6 +218,8 @@ export function ResultScanner() {
       setQrCandidate(null);
       setQrRaw('');
       setScore('');
+      setPositiveMarks('');
+      setNegativeMarks('');
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setTimeout(() => setFeedback(null), 5000);
@@ -296,18 +308,44 @@ export function ResultScanner() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="score" className="text-lg">Marks Obtained <span className="text-destructive">*</span></Label>
-                  <Input 
-                    id="score" 
-                    type="number" 
-                    step="0.01"
-                    required 
-                    value={score} 
-                    onChange={(e) => setScore(e.target.value)} 
-                    placeholder="0.0"
-                    className="text-4xl h-20 font-bold text-center tracking-tight"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="score" className="text-sm font-semibold">Total Marks <span className="text-destructive">*</span></Label>
+                    <Input 
+                      id="score" 
+                      type="number" 
+                      step="0.01"
+                      required 
+                      value={score} 
+                      onChange={(e) => setScore(e.target.value)} 
+                      placeholder="0.0"
+                      className="text-2xl h-14 font-bold text-center tracking-tight"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="positiveMarks" className="text-sm font-semibold">Positive Marks</Label>
+                    <Input 
+                      id="positiveMarks" 
+                      type="number" 
+                      step="0.01"
+                      value={positiveMarks} 
+                      onChange={(e) => setPositiveMarks(e.target.value)} 
+                      placeholder="0.0"
+                      className="text-2xl h-14 font-bold text-center tracking-tight text-emerald-600"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="negativeMarks" className="text-sm font-semibold">Negative Marks</Label>
+                    <Input 
+                      id="negativeMarks" 
+                      type="number" 
+                      step="0.01"
+                      value={negativeMarks} 
+                      onChange={(e) => setNegativeMarks(e.target.value)} 
+                      placeholder="0.0"
+                      className="text-2xl h-14 font-bold text-center tracking-tight text-destructive"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -383,6 +421,10 @@ export function ResultScanner() {
                         <div className="text-right">
                           <p className="text-sm font-bold text-primary">{record.score}</p>
                           <p className="text-[10px] uppercase text-muted-foreground">Score</p>
+                        </div>
+                        <div className="hidden sm:block text-right border-l pl-3">
+                          <p className="text-xs font-semibold text-emerald-600">+{record.positiveMarks || 0}</p>
+                          <p className="text-xs font-semibold text-destructive">-{record.negativeMarks || 0}</p>
                         </div>
                         {record.answerSheetUrl && (
                           <a href={record.answerSheetUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 group relative block size-10 rounded overflow-hidden border">
