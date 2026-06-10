@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Participant, PortalConfig, Result } from '../db/models';
 import { generateAdmitCardData } from './admitCard';
 
@@ -6,6 +7,7 @@ export interface ProfileData {
   name: string;
   class: string;
   batchType: string;
+  gender?: 'MALE' | 'FEMALE';
   guardianName: string;
   address: string;
   mobileNumber: string;
@@ -57,6 +59,7 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
     name: participant.name,
     class: participant.class,
     batchType: participant.batchType,
+    gender: participant.gender as 'MALE' | 'FEMALE' | undefined,
     guardianName: participant.guardianName,
     address: participant.address,
     mobileNumber: participant.mobileNumber,
@@ -142,7 +145,7 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
         },
         {
           $match: {
-            participantId: participant._id
+            participantId: new mongoose.Types.ObjectId(participant._id.toString())
           }
         }
       ]);

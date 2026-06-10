@@ -10,7 +10,6 @@ import { RegistrationForm } from "../components/RegistrationForm";
 import { MobileEntry } from "../components/MobileEntry";
 import { OTPVerification } from "../components/OTPVerification";
 import { PaymentGateway } from "../components/PaymentGateway";
-import { ResultChecker } from "../components/ResultChecker";
 import { SatyalokBadge } from "../components/SatyalokBadge";
 import { UserProfile } from "../components/UserProfile";
 import { WhatsAppHelp, HelpSection } from "../components/WhatsAppHelp";
@@ -659,17 +658,7 @@ export function PublicPortal() {
 
                         {faqSection}
 
-                        {status.resultsPublished && (
-                            <motion.div
-                                className="mt-10"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                            >
-                                <Separator className="mb-8" />
-                                <ResultChecker />
-                            </motion.div>
-                        )}
+
                     </motion.div>
                 );
         }

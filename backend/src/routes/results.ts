@@ -19,25 +19,58 @@ resultsRouter.get('/:rollNumber', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Results have not been published yet. Please check back later.' });
     }
 
-    const result = await Result.findOne({ rollNumber }).populate<{
-      participantId: { name: string; class: string; batchType: string };
-    }>('participantId', 'name class batchType');
+    const resultsAgg = await Result.aggregate([
+      {
+        $lookup: {
+          from: 'participants',
+          localField: 'participantId',
+          foreignField: '_id',
+          as: 'participantData',
+        },
+      },
+      { $unwind: '$participantData' },
+      {
+        $addFields: {
+          compositeScore: {
+            $subtract: [
+              { $multiply: ['$score', 100000] },
+              { $ifNull: ['$negativeMarks', 0] }
+            ]
+          }
+        }
+      },
+      {
+        $setWindowFields: {
+          partitionBy: '$participantData.batchType',
+          sortBy: { compositeScore: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
+      {
+        $match: {
+          rollNumber: rollNumber
+        }
+      }
+    ]);
 
-    if (!result) {
+    const resultDoc = resultsAgg[0];
+    if (!resultDoc) {
       return res.status(404).json({ error: 'No result found for this roll number.' });
     }
 
-    const p = result.participantId as unknown as { name: string; class: string; batchType: string };
-
     return res.json({
-      rollNumber: result.rollNumber,
-      name: p.name,
-      class: p.class,
-      batchType: p.batchType,
-      score: result.score,
-      rank: result.rank,
-      remarks: result.remarks,
-      publishedAt: result.publishedAt,
+      rollNumber: resultDoc.rollNumber,
+      name: resultDoc.participantData?.name,
+      class: resultDoc.participantData?.class,
+      batchType: resultDoc.participantData?.batchType,
+      score: resultDoc.score,
+      positiveMarks: resultDoc.positiveMarks,
+      negativeMarks: resultDoc.negativeMarks,
+      rank: resultDoc.calculatedRank ?? resultDoc.rank,
+      remarks: resultDoc.remarks,
+      publishedAt: resultDoc.publishedAt,
     });
   } catch (err) {
     console.error(err);
