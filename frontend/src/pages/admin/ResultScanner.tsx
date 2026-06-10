@@ -323,7 +323,7 @@ export function ResultScanner() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="positiveMarks" className="text-sm font-semibold">Positive Marks</Label>
+                    <Label htmlFor="positiveMarks" className="text-sm font-semibold">Correct Answers</Label>
                     <Input 
                       id="positiveMarks" 
                       type="number" 
@@ -335,7 +335,7 @@ export function ResultScanner() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="negativeMarks" className="text-sm font-semibold">Negative Marks</Label>
+                    <Label htmlFor="negativeMarks" className="text-sm font-semibold">Incorrect Answers</Label>
                     <Input 
                       id="negativeMarks" 
                       type="number" 
