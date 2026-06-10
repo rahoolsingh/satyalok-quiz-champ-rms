@@ -146,7 +146,7 @@ export function ResultCard({ profile, portalStatus }: ResultCardProps) {
               <div className="inline-flex items-center gap-3 bg-yellow-100 border border-yellow-300 px-6 py-3 rounded-full shadow-sm">
                 <span className="text-xl">🏆</span>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">All India Rank</span>
+                  <span className="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">Rank</span>
                   <span className="text-xl font-black text-yellow-900 leading-none">#{result.rank}</span>
                 </div>
               </div>
