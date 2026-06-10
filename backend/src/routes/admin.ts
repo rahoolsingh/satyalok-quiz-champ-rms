@@ -548,7 +548,7 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
       {
         $setWindowFields: {
           partitionBy: '$participant.batchType',
-          sortBy: { score: -1, negativeMarks: 1 },
+          sortBy: { score: -1 },
           output: {
             calculatedRank: { $denseRank: {} },
           },
