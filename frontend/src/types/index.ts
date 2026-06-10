@@ -110,4 +110,11 @@ export interface ProfileData {
   paymentAmount?: number;
   registeredAt: string;
   admitCard?: AdmitCardData;
+  result?: {
+    score: number;
+    positiveMarks?: number;
+    negativeMarks?: number;
+    rank?: number;
+    remarks?: string;
+  };
 }

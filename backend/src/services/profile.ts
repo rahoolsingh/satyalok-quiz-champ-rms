@@ -1,4 +1,4 @@
-import { Participant, PortalConfig } from '../db/models';
+import { Participant, PortalConfig, Result } from '../db/models';
 import { generateAdmitCardData } from './admitCard';
 
 export interface ProfileData {
@@ -19,6 +19,13 @@ export interface ProfileData {
   paymentAmount?: number;
   registeredAt: Date;
   admitCard?: ReturnType<typeof generateAdmitCardData>;
+  result?: {
+    score: number;
+    positiveMarks?: number;
+    negativeMarks?: number;
+    rank?: number;
+    remarks?: string;
+  };
 }
 
 export interface DuplicateCheckResult {
@@ -92,6 +99,19 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
       venue: portalConfig?.venue,
       venueMapUrl: portalConfig?.venueMapUrl,
     });
+
+    if (portalConfig?.resultsPublished) {
+      const resultDoc = await Result.findOne({ participantId: participant._id }).lean();
+      if (resultDoc) {
+        profile.result = {
+          score: resultDoc.score,
+          positiveMarks: resultDoc.positiveMarks,
+          negativeMarks: resultDoc.negativeMarks,
+          rank: resultDoc.rank,
+          remarks: resultDoc.remarks,
+        };
+      }
+    }
   }
 
   return profile;

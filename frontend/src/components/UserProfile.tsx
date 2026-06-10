@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ProfileData, PortalStatus } from '../types';
 import { AdmitCard } from './AdmitCard';
+import { ResultCard } from './ResultCard';
 import { profileApi } from '../api/client';
 
 interface UserProfileProps {
@@ -98,10 +99,12 @@ export function UserProfile({ profile, portalStatus, onLogout, onCompletePayment
         </div>
       )}
 
-      {/* Admit Card (if completed) - Show this FIRST */}
-      {profile.paymentStatus === 'COMPLETED' && profile.admitCard ? (
+      {/* Admit Card / Result Card (if completed) */}
+      {profile.paymentStatus === 'COMPLETED' && (profile.admitCard || portalStatus?.resultsPublished) ? (
         <div className="mt-0">
-          {isEventCompleted ? (
+          {portalStatus?.resultsPublished ? (
+            <ResultCard profile={profile} portalStatus={portalStatus} />
+          ) : isEventCompleted ? (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center gap-4">
                 <span className="text-4xl">🏆</span>
@@ -116,10 +119,10 @@ export function UserProfile({ profile, portalStatus, onLogout, onCompletePayment
               </div>
             </div>
           ) : (
-            <AdmitCard data={profile.admitCard} participantId={profile.participantId} portalStatus={portalStatus} />
+            profile.admitCard && <AdmitCard data={profile.admitCard} participantId={profile.participantId} portalStatus={portalStatus} />
           )}
         </div>
-      ) : profile.paymentStatus === 'COMPLETED' && !profile.admitCard ? (
+      ) : profile.paymentStatus === 'COMPLETED' && !profile.admitCard && !portalStatus?.resultsPublished ? (
         /* Show success message if completed but no admit card yet */
         <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-2">
