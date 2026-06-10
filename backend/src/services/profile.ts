@@ -111,13 +111,49 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
       : false;
 
     if (isResultsPublished) {
-      const resultDoc = await Result.findOne({ participantId: participant._id }).lean();
+      const resultsAgg = await Result.aggregate([
+        {
+          $lookup: {
+            from: 'participants',
+            localField: 'participantId',
+            foreignField: '_id',
+            as: 'participantData',
+          },
+        },
+        { $unwind: '$participantData' },
+        {
+          $addFields: {
+            compositeScore: {
+              $subtract: [
+                { $multiply: ['$score', 100000] },
+                { $ifNull: ['$negativeMarks', 0] }
+              ]
+            }
+          }
+        },
+        {
+          $setWindowFields: {
+            partitionBy: '$participantData.batchType',
+            sortBy: { compositeScore: -1 },
+            output: {
+              calculatedRank: { $denseRank: {} },
+            },
+          },
+        },
+        {
+          $match: {
+            participantId: participant._id
+          }
+        }
+      ]);
+
+      const resultDoc = resultsAgg[0];
       if (resultDoc) {
         profile.result = {
           score: resultDoc.score,
           positiveMarks: resultDoc.positiveMarks,
           negativeMarks: resultDoc.negativeMarks,
-          rank: resultDoc.rank,
+          rank: resultDoc.calculatedRank ?? resultDoc.rank,
           remarks: resultDoc.remarks,
         };
       }
