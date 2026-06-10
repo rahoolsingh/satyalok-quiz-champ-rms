@@ -1,5 +1,4 @@
-import { Router, Request, Response } from 'express';
-import axios from 'axios';
+import { Router, Response } from 'express';
 import { sessionAuthMiddleware, SessionRequest } from '../middleware/sessionAuth';
 import { getProfile, checkDuplicateRegistration } from '../services/profile';
 import { Participant, PortalConfig } from '../db/models';
@@ -235,28 +234,5 @@ profileRouter.post(
   }
 );
 
-// GET /api/profile/photo-proxy
-// Proxies participant photo to bypass CORS restrictions when rendering canvas
-profileRouter.get('/photo-proxy', async (req: Request, res: Response) => {
-  try {
-    const url = req.query.url as string;
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
-    }
 
-    if (!url.startsWith('http') || (!url.includes('amazonaws.com') && !url.includes('s3'))) {
-      return res.status(400).json({ error: 'Invalid URL. Only S3 assets can be proxied.' });
-    }
-
-    const response = await axios.get(url, { responseType: 'arraybuffer' });
-    const contentType = response.headers['content-type'] || 'image/jpeg';
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.send(Buffer.from(response.data));
-  } catch (err) {
-    console.error('[photo-proxy] Error proxying image:', err);
-    return res.status(500).json({ error: 'Failed to retrieve image' });
-  }
-});
 
