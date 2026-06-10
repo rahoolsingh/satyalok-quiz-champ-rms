@@ -36,6 +36,9 @@ export function ResultCard({ profile, portalStatus }: ResultCardProps) {
   };
 
   const result = profile.result;
+  const photoUrl = profile.photoUrl
+    ? `${profile.photoUrl}${profile.photoUrl.includes('?') ? '&' : '?'}t=${profile.rollNumber || '1'}`
+    : undefined;
 
   if (!result) {
     return (
@@ -72,13 +75,14 @@ export function ResultCard({ profile, portalStatus }: ResultCardProps) {
           </p>
           
           <div className="flex w-full items-center gap-5 mt-2">
-            {profile.photoUrl && (
+            {photoUrl && (
               <div className="flex-shrink-0">
                 <div className="w-24 h-28 rounded-md overflow-hidden border-2 border-gray-200 shadow-sm bg-white">
                   <img 
-                    src={profile.photoUrl} 
+                    src={photoUrl} 
                     alt={profile.name} 
                     className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
                   />
                 </div>
               </div>
