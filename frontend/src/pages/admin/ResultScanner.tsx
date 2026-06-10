@@ -60,7 +60,7 @@ export function ResultScanner() {
   const [feedback, setFeedback] = useState<{type: 'success'|'error', msg: string} | null>(null);
   const [recent, setRecent] = useState<RecentResult[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
-  const [maxMarks, setMaxMarks] = useState<string>(() => localStorage.getItem('adminMaxMarks') || '100');
+  const [maxMarks, setMaxMarks] = useState<string>(() => localStorage.getItem('adminMaxMarks') || '120');
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
