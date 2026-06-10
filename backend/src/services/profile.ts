@@ -38,9 +38,15 @@ export interface DuplicateCheckResult {
  * Get complete profile data for a user by mobile number
  */
 export async function getProfile(mobileNumber: string): Promise<ProfileData | null> {
-  const participant = await Participant.findOne({ mobileNumber })
+  let participant = await Participant.findOne({ mobileNumber, paymentStatus: 'COMPLETED' })
     .sort({ createdAt: -1 })
     .lean();
+
+  if (!participant) {
+    participant = await Participant.findOne({ mobileNumber })
+      .sort({ createdAt: -1 })
+      .lean();
+  }
 
   if (!participant) {
     return null;
@@ -100,7 +106,11 @@ export async function getProfile(mobileNumber: string): Promise<ProfileData | nu
       venueMapUrl: portalConfig?.venueMapUrl,
     });
 
-    if (portalConfig?.resultsPublished) {
+    const isResultsPublished = portalConfig?.resultPublicationDate 
+      ? new Date() >= new Date(portalConfig.resultPublicationDate)
+      : false;
+
+    if (isResultsPublished) {
       const resultDoc = await Result.findOne({ participantId: participant._id }).lean();
       if (resultDoc) {
         profile.result = {

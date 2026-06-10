@@ -75,9 +75,15 @@ profileRouter.get(
       const mobile = req.verifiedMobile!;
 
       // Find participant by mobile number
-      const participant = await Participant.findOne({ mobileNumber: mobile })
+      let participant = await Participant.findOne({ mobileNumber: mobile, paymentStatus: 'COMPLETED' })
         .sort({ createdAt: -1 })
         .lean();
+
+      if (!participant) {
+        participant = await Participant.findOne({ mobileNumber: mobile })
+          .sort({ createdAt: -1 })
+          .lean();
+      }
 
       if (!participant) {
         return res.status(404).json({ error: 'No registration found' });
