@@ -832,24 +832,13 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
 // GET /api/admin/registrations/vcard
 adminRouter.get('/registrations/vcard', async (req: AuthRequest, res: Response) => {
   try {
-    const { batch, search, status, admitCardDownloaded } = req.query;
+    const { batch, search } = req.query;
 
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {
+      paymentStatus: 'COMPLETED',
+    };
     if (batch && ['JUNIOR', 'SENIOR'].includes(batch as string)) {
       filter.batchType = batch;
-    }
-    if (status) {
-      const statuses = (status as string).split(',').filter(s => ['COMPLETED', 'PENDING', 'FAILED'].includes(s));
-      if (statuses.length === 1) {
-        filter.paymentStatus = statuses[0];
-      } else if (statuses.length > 1) {
-        filter.paymentStatus = { $in: statuses };
-      }
-    }
-    if (admitCardDownloaded === 'true') {
-      filter.admitCardDownloaded = true;
-    } else if (admitCardDownloaded === 'false') {
-      filter.admitCardDownloaded = false;
     }
     if (search) {
       const s = escapeRegex(search as string);

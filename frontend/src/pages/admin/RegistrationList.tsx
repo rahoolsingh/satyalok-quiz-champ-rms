@@ -215,8 +215,6 @@ export function RegistrationList() {
       const res = await adminApi.getRegistrationsVCard({
         search: search || undefined,
         batch: batch || undefined,
-        status: getStatusFilter(),
-        admitCardDownloaded: statusFilter === 'NOT_DOWNLOADED' ? 'false' : undefined,
       });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');
