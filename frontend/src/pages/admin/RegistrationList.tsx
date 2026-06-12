@@ -53,6 +53,7 @@ import {
   ExternalLink,
   UserPlus,
   Loader2,
+  Trophy,
 } from 'lucide-react';
 
 const LIMIT = 20;
@@ -160,6 +161,7 @@ export function RegistrationList() {
   const [hasMore, setHasMore] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [downloadingVCard, setDownloadingVCard] = useState(false);
+  const [sendingBulk, setSendingBulk] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -230,6 +232,21 @@ export function RegistrationList() {
     }
   };
 
+  const sendBulkPrizeLocation = async () => {
+    const confirmSend = window.confirm('Are you sure you want to send the Prize Distribution location details via WhatsApp to ALL completed registrations?');
+    if (!confirmSend) return;
+
+    setSendingBulk(true);
+    try {
+      const res = await adminApi.sendPrizeLocationBulk();
+      alert(res.data.message || 'Bulk send started successfully!');
+    } catch (err: any) {
+      alert(`Bulk send failed: ${err.response?.data?.error || 'Error'}`);
+    } finally {
+      setSendingBulk(false);
+    }
+  };
+
   const execAction = async (fn: () => Promise<any>, name: string) => {
     try { await fn(); } catch (err: any) { alert(`${name}: ${err.response?.data?.error || 'Action failed'}`); }
   };
@@ -263,6 +280,16 @@ export function RegistrationList() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={sendBulkPrizeLocation}
+            className="gap-1.5 text-xs px-3 py-1.5 h-8 text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+            disabled={sendingBulk}
+          >
+            {sendingBulk ? <Loader2 className="size-3.5 animate-spin" /> : <Trophy className="size-3.5" />}
+            Bulk Prize Loc
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -579,6 +606,22 @@ export function RegistrationList() {
                             <CalendarDays className="size-3" />Dates
                           </Button>} />
                           <TooltipContent>Send important dates</TooltipContent>
+                        </ShadTooltip>
+                      )}
+                      {p.paymentStatus === 'COMPLETED' && (
+                        <ShadTooltip>
+                          <TooltipTrigger render={<Button variant="outline" size="xs" disabled={!!loadingActions[`prize-${p.id}`]} onClick={() => execAction(async () => {
+                            setLoadingActions(prev => ({ ...prev, [`prize-${p.id}`]: 'sending' }));
+                            try {
+                              await adminApi.sendPrizeLocation(p.id);
+                              alert(`Prize location sent to ${p.name}`);
+                            } finally {
+                              setLoadingActions(prev => { const n = { ...prev }; delete n[`prize-${p.id}`]; return n; });
+                            }
+                          }, p.name)} className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 gap-1">
+                            {loadingActions[`prize-${p.id}`] ? <Loader2 className="size-3 animate-spin" /> : <Trophy className="size-3" />}Prize
+                          </Button>} />
+                          <TooltipContent>Send prize distribution location details</TooltipContent>
                         </ShadTooltip>
                       )}
                       {godMode && (

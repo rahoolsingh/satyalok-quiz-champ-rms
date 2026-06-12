@@ -184,6 +184,10 @@ export const adminApi = {
     api.post(`/admin/registrations/${participantId}/send-important-dates`, { datesChanged }),
   resendImportantDates: (participantId: string, datesChanged: boolean) =>
     api.post(`/admin/registrations/${participantId}/resend-important-dates`, { datesChanged }),
+  sendPrizeLocation: (participantId: string) =>
+    api.post(`/admin/registrations/${participantId}/send-prize-location`),
+  sendPrizeLocationBulk: () =>
+    api.post('/admin/registrations/send-prize-location-bulk'),
   getSessions: () => api.get('/admin/sessions'),
   expireAllSessions: () => api.post('/admin/sessions/expire-all'),
   expireSession: (sessionId: string) => api.post(`/admin/sessions/${sessionId}/expire`),

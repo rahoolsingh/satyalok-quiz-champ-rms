@@ -9,7 +9,7 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates, sendEventLocation } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
 import { startAdmitCardQueue, getAdmitCardQueueStatus, stopAdmitCardQueue, resetAdmitCardQueueState } from '../services/admitCardQueue';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
@@ -953,6 +953,99 @@ adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to get registrations' });
+  }
+});
+
+// POST /api/admin/registrations/send-prize-location-bulk — send prize distribution venue/map to all completed registrations
+adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequest, res: Response) => {
+  try {
+    const portalConfig = await PortalConfig.findOne({});
+    const venue = portalConfig?.prizeDistributionVenue;
+    const venueMapUrl = portalConfig?.prizeDistributionMapUrl;
+
+    if (!venue || !venueMapUrl) {
+      return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
+    }
+
+    let mapShortSuffix = venueMapUrl;
+    const gooGlMatch = venueMapUrl.match(/maps\.app\.goo\.gl\/(.+)/);
+    if (gooGlMatch) {
+      mapShortSuffix = gooGlMatch[1];
+    }
+
+    const participants = await Participant.find({ paymentStatus: 'COMPLETED' });
+    if (participants.length === 0) {
+      return res.json({ message: 'No completed registrations found to send details' });
+    }
+
+    console.log(`[Bulk Prize Location] Starting bulk send to ${participants.length} participants...`);
+
+    // Respond immediately to avoid request timeouts
+    res.json({ message: `Bulk send started in background for ${participants.length} participants` });
+
+    // Background sending execution loop
+    (async () => {
+      let sentCount = 0;
+      let failedCount = 0;
+      for (const participant of participants) {
+        try {
+          await sendEventLocation(participant.mobileNumber, {
+            name: participant.name,
+            eventType: 'Prize Distribution Ceremony',
+            address: venue,
+            mapUrl: venueMapUrl,
+            mapShortSuffix,
+          });
+          sentCount++;
+          // Pause slightly to rate-limit calls to Meta
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (err) {
+          console.error(`[Bulk Prize Location] Failed to send to ${participant.mobileNumber}:`, err);
+          failedCount++;
+        }
+      }
+      console.log(`[Bulk Prize Location] Completed bulk send. Success: ${sentCount}, Failed: ${failedCount}`);
+    })();
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to initiate bulk send' });
+  }
+});
+
+// POST /api/admin/registrations/:id/send-prize-location — send prize distribution venue/map to individual registration
+adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthRequest, res: Response) => {
+  try {
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    const portalConfig = await PortalConfig.findOne({});
+    const venue = portalConfig?.prizeDistributionVenue;
+    const venueMapUrl = portalConfig?.prizeDistributionMapUrl;
+
+    if (!venue || !venueMapUrl) {
+      return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
+    }
+
+    let mapShortSuffix = venueMapUrl;
+    const gooGlMatch = venueMapUrl.match(/maps\.app\.goo\.gl\/(.+)/);
+    if (gooGlMatch) {
+      mapShortSuffix = gooGlMatch[1];
+    }
+
+    await sendEventLocation(participant.mobileNumber, {
+      name: participant.name,
+      eventType: 'Prize Distribution Ceremony',
+      address: venue,
+      mapUrl: venueMapUrl,
+      mapShortSuffix,
+    });
+
+    return res.json({ message: 'Prize distribution location details sent successfully' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to send prize distribution location details' });
   }
 });
 
