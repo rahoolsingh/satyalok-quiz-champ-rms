@@ -403,6 +403,10 @@ export async function sendAdmitCardWhatsApp(
       type: 'header',
       parameters: [{ type: 'document', document: { id: mediaId, filename: `${filename}.pdf` } }],
     },
+    {
+      type: 'body',
+      parameters: [{ type: 'text', text: data.name }],
+    },
   ]);
 }
 
