@@ -134,6 +134,12 @@ export async function sendWhatsAppOTP(mobileNumber: string, otp: string): Promis
       type: 'body',
       parameters: [{ type: 'text', text: otp }],
     },
+    {
+      type: 'button',
+      sub_type: 'url',
+      index: '0',
+      parameters: [{ type: 'text', text: otp }],
+    },
   ]);
 }
 
@@ -341,12 +347,6 @@ export async function sendEventLocation(
         { type: 'text', text: data.address },
         { type: 'text', text: data.mapUrl },
       ],
-    },
-    {
-      type: 'button',
-      sub_type: 'url',
-      index: '0',
-      parameters: [{ type: 'text', text: data.mapShortSuffix }],
     },
   ]);
 }
