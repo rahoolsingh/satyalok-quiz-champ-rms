@@ -5,7 +5,7 @@ import axios from 'axios';
  * Sends messages via official WhatsApp Business Platform
  */
 
-const META_API_VERSION = 'v21.0';
+const META_API_VERSION = 'v22.0';
 const META_API_BASE = `https://graph.facebook.com/${META_API_VERSION}`;
 
 export interface ThankYouMessageData {
@@ -348,6 +348,12 @@ export async function sendEventLocation(
         { type: 'text', text: data.mapUrl },
       ],
     },
+    {
+      type: 'button',
+      sub_type: 'url',
+      index: '0',
+      parameters: [{ type: 'text', text: data.mapShortSuffix }],
+    },
   ]);
 }
 
@@ -402,10 +408,6 @@ export async function sendAdmitCardWhatsApp(
     {
       type: 'header',
       parameters: [{ type: 'document', document: { id: mediaId, filename: `${filename}.pdf` } }],
-    },
-    {
-      type: 'body',
-      parameters: [{ type: 'text', text: data.name }],
     },
   ]);
 }
