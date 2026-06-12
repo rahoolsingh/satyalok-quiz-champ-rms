@@ -502,6 +502,98 @@ adminRouter.post('/results/scan', upload.single('image'), async (req: AuthReques
   }
 });
 
+// GET /api/admin/results/export
+adminRouter.get('/results/export', async (req: AuthRequest, res: Response) => {
+  try {
+    const { batch, search, sortBy = 'score', sortOrder = 'desc' } = req.query;
+
+    const matchStage: any = {};
+    if (search) {
+      const s = escapeRegex(search as string);
+      matchStage['$or'] = [
+        { 'participant.name': { $regex: s, $options: 'i' } },
+        { rollNumber: { $regex: s, $options: 'i' } },
+      ];
+    }
+    if (batch && ['JUNIOR', 'SENIOR'].includes(batch as string)) {
+      matchStage['participant.batchType'] = batch;
+    }
+
+    const sortConfig: any = {};
+    if (sortBy === 'score') {
+      sortConfig.score = sortOrder === 'asc' ? 1 : -1;
+      sortConfig.negativeMarks = 1; // tie breaker
+    }
+    else if (sortBy === 'rank') sortConfig.calculatedRank = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'name') sortConfig['participant.name'] = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'rollNumber') sortConfig.rollNumber = sortOrder === 'asc' ? 1 : -1;
+    else if (sortBy === 'createdAt') sortConfig.createdAt = sortOrder === 'asc' ? 1 : -1;
+    else {
+      sortConfig.score = -1;
+      sortConfig.negativeMarks = 1;
+    }
+
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'participants',
+          localField: 'participantId',
+          foreignField: '_id',
+          as: 'participant',
+        },
+      },
+      { $unwind: '$participant' },
+      {
+        $addFields: {
+          compositeScore: {
+            $subtract: [
+              { $multiply: ['$score', 100000] },
+              { $ifNull: ['$negativeMarks', 0] }
+            ]
+          }
+        }
+      },
+      {
+        $setWindowFields: {
+          partitionBy: '$participant.batchType',
+          sortBy: { compositeScore: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
+      { $match: matchStage },
+      { $sort: sortConfig },
+    ];
+
+    const records = await Result.aggregate(pipeline as any[]);
+
+    const csvRows = [
+      'Rank,Roll Number,Name,Class,Batch,Score,Correct Answers,Incorrect Answers,Answer Sheet URL,Remarks',
+      ...records.map(r => [
+        r.calculatedRank || '',
+        r.rollNumber || '',
+        `"${(r.participant?.name || '').replace(/"/g, '""')}"`,
+        r.participant?.class || '',
+        r.participant?.batchType || '',
+        r.score !== undefined ? r.score : '',
+        r.positiveMarks !== undefined ? r.positiveMarks : '',
+        r.negativeMarks !== undefined ? r.negativeMarks : '',
+        r.answerSheetUrl || '',
+        `"${(r.remarks || '').replace(/"/g, '""')}"`
+      ].join(','))
+    ];
+
+    const filename = `quiz-results-${batch || 'ALL'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(csvRows.join('\n'));
+  } catch (err) {
+    console.error('[results export GET]', err);
+    return res.status(500).json({ error: 'Failed to export results data' });
+  }
+});
+
 // GET /api/admin/results
 adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
   try {

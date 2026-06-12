@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, Loader2, Search, Trophy, FileImage } from 'lucide-react';
+import { ArrowDownAZ, ArrowUpAZ, ChevronLeft, ChevronRight, Loader2, Search, Trophy, FileImage, Download } from 'lucide-react';
 
 type BatchFilter = 'JUNIOR' | 'SENIOR';
 type SortBy = 'score' | 'rank' | 'name' | 'rollNumber';
@@ -54,7 +54,33 @@ export function ResultList() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const response = await adminApi.exportResultsCsv({
+        batch,
+        search: debouncedSearch || undefined,
+        sortBy,
+        sortOrder,
+      });
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `quiz-results-${batch}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Unable to export results.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search), 300);
@@ -115,6 +141,10 @@ export function ResultList() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{pagination.total} result records</p>
         </div>
+        <Button variant="outline" onClick={exportCsv} disabled={exporting || loading}>
+          {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+          Export CSV
+        </Button>
       </div>
 
       <Card>

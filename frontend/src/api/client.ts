@@ -154,6 +154,8 @@ export const adminApi = {
     api.post('/admin/results/scan', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getResultsList: (params?: object) =>
     api.get('/admin/results', { params }),
+  exportResultsCsv: (params?: object) =>
+    api.get('/admin/results/export', { params, responseType: 'blob' }),
   publishResults: (publicationDate?: string) =>
     api.put('/admin/results/publish', { publicationDate }),
   getRegistrations: (params?: object) =>
