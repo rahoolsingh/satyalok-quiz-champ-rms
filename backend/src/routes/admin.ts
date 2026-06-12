@@ -737,6 +737,90 @@ adminRouter.put('/portal/event-details', async (req: AuthRequest, res: Response)
   }
 });
 
+// GET /api/admin/registrations/vcard
+adminRouter.get('/registrations/vcard', async (req: AuthRequest, res: Response) => {
+  try {
+    const { batch, search, status, admitCardDownloaded } = req.query;
+
+    const filter: Record<string, unknown> = {};
+    if (batch && ['JUNIOR', 'SENIOR'].includes(batch as string)) {
+      filter.batchType = batch;
+    }
+    if (status) {
+      const statuses = (status as string).split(',').filter(s => ['COMPLETED', 'PENDING', 'FAILED'].includes(s));
+      if (statuses.length === 1) {
+        filter.paymentStatus = statuses[0];
+      } else if (statuses.length > 1) {
+        filter.paymentStatus = { $in: statuses };
+      }
+    }
+    if (admitCardDownloaded === 'true') {
+      filter.admitCardDownloaded = true;
+    } else if (admitCardDownloaded === 'false') {
+      filter.admitCardDownloaded = false;
+    }
+    if (search) {
+      const s = escapeRegex(search as string);
+      filter.$or = [
+        { name: { $regex: s, $options: 'i' } },
+        { rollNumber: { $regex: s, $options: 'i' } },
+        { mobileNumber: { $regex: s, $options: 'i' } },
+        { guardianName: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
+        { merchantTransactionId: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const participants = await Participant.find(filter).sort({ name: 1 }).lean();
+    
+    const currentYear = new Date().getFullYear();
+    const vcardContent = participants.map((p) => {
+      const prefix = `quizchamp_${currentYear}`;
+      const fullName = `${prefix}_${p.name}`;
+      const formattedN = `;${fullName};;;`;
+
+      let phone = p.mobileNumber.trim();
+      if (/^\d{10}$/.test(phone)) {
+        phone = `+91${phone}`;
+      } else if (/^91\d{10}$/.test(phone)) {
+        phone = `+${phone}`;
+      } else if (!phone.startsWith('+')) {
+        phone = `+91${phone}`;
+      }
+
+      const lines = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        `FN:${fullName}`,
+        `N:${formattedN}`,
+        `TEL;TYPE=CELL,VOICE:${phone}`,
+      ];
+
+      if (p.email) {
+        lines.push(`EMAIL;TYPE=PREF,INTERNET:${p.email.trim()}`);
+      }
+
+      const notes = [
+        `Roll Number: ${p.rollNumber || 'N/A'}`,
+        `Class: ${p.class || 'N/A'}`,
+        `Batch: ${p.batchType || 'N/A'}`,
+        `Guardian: ${p.guardianName || 'N/A'}`,
+      ].join(', ');
+      lines.push(`NOTE:${notes}`);
+
+      lines.push('END:VCARD');
+      return lines.join('\r\n');
+    }).join('\r\n');
+
+    res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="quizchamp_${currentYear}_contacts.vcf"`);
+    return res.send(vcardContent);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to generate vCard' });
+  }
+});
+
 // GET /api/admin/registrations
 adminRouter.get('/registrations', async (req: AuthRequest, res: Response) => {
   try {

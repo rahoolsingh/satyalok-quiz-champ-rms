@@ -159,6 +159,7 @@ export function RegistrationList() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadingVCard, setDownloadingVCard] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -206,6 +207,29 @@ export function RegistrationList() {
     searchTimeoutRef.current = setTimeout(() => { setPage(1); load(1); }, 400);
   };
 
+  const downloadVCard = async () => {
+    setDownloadingVCard(true);
+    try {
+      const res = await adminApi.getRegistrationsVCard({
+        search: search || undefined,
+        batch: batch || undefined,
+        status: getStatusFilter(),
+        admitCardDownloaded: statusFilter === 'NOT_DOWNLOADED' ? 'false' : undefined,
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      const currentYear = new Date().getFullYear();
+      a.download = `quizchamp_${currentYear}_contacts.vcf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`vCard download failed: ${err.response?.data?.error || 'Error'}`);
+    } finally {
+      setDownloadingVCard(false);
+    }
+  };
+
   const execAction = async (fn: () => Promise<any>, name: string) => {
     try { await fn(); } catch (err: any) { alert(`${name}: ${err.response?.data?.error || 'Action failed'}`); }
   };
@@ -238,10 +262,22 @@ export function RegistrationList() {
             {total} total{counts.junior > 0 && ` · ${counts.junior} junior`}{counts.senior > 0 && ` · ${counts.senior} senior`}
           </p>
         </div>
-        <Badge variant="outline" className="gap-1.5 text-xs px-3 py-1.5">
-          <TrendingUp className="size-3.5" />
-          {metrics.formsFilled} filled
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadVCard}
+            className="gap-1.5 text-xs px-3 py-1.5 h-8"
+            disabled={downloadingVCard}
+          >
+            {downloadingVCard ? <Loader2 className="size-3.5 animate-spin" /> : <FileDown className="size-3.5" />}
+            Download vCard
+          </Button>
+          <Badge variant="outline" className="gap-1.5 text-xs px-3 py-1.5 h-8">
+            <TrendingUp className="size-3.5" />
+            {metrics.formsFilled} filled
+          </Badge>
+        </div>
       </div>
 
       {/* Stats */}

@@ -9,6 +9,7 @@ describe('validateRegistration', () => {
     guardianName: 'Ramesh Sharma',
     address: '123 Main Street, Delhi',
     mobileNumber: '9876543210',
+    questionPaperLanguage: 'ENGLISH' as const,
   };
 
   it('accepts a fully valid registration', () => {
