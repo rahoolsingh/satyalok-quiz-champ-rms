@@ -190,6 +190,8 @@ export const adminApi = {
     api.post(`/admin/registrations/${participantId}/send-prize-location`),
   sendPrizeLocationBulk: () =>
     api.post('/admin/registrations/send-prize-location-bulk'),
+  sendPrizeLocationBulkResults: (maxRank: number) =>
+    api.post('/admin/results/send-prize-location-bulk', { maxRank }),
   getSessions: () => api.get('/admin/sessions'),
   expireAllSessions: () => api.post('/admin/sessions/expire-all'),
   expireSession: (sessionId: string) => api.post(`/admin/sessions/${sessionId}/expire`),

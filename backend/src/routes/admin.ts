@@ -722,6 +722,128 @@ adminRouter.get('/results', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// POST /api/admin/results/send-prize-location-bulk — send prize distribution venue/map to 1-X rank holders in the results
+adminRouter.post('/results/send-prize-location-bulk', async (req: AuthRequest, res: Response) => {
+  try {
+    const maxRank = parseInt(req.body.maxRank as string, 10) || 13;
+    if (isNaN(maxRank) || maxRank <= 0) {
+      return res.status(400).json({ error: 'Invalid maxRank value' });
+    }
+
+    const portalConfig = await PortalConfig.findOne({});
+    const venue = portalConfig?.prizeDistributionVenue;
+    const venueMapUrl = portalConfig?.prizeDistributionMapUrl;
+
+    if (!venue || !venueMapUrl) {
+      return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
+    }
+
+    const pipeline = [
+      { $match: { paymentStatus: 'COMPLETED' } },
+      {
+        $lookup: {
+          from: 'results',
+          localField: '_id',
+          foreignField: 'participantId',
+          as: 'result',
+        },
+      },
+      {
+        $unwind: {
+          path: '$result',
+          preserveNullAndEmptyArrays: false, // only participants with results!
+        },
+      },
+      {
+        $addFields: {
+          compositeScore: {
+            $cond: {
+              if: { $gt: ['$result.score', null] },
+              then: {
+                $subtract: [
+                  { $multiply: ['$result.score', 100000] },
+                  { $ifNull: ['$result.negativeMarks', 0] }
+                ]
+              },
+              else: -999999
+            }
+          }
+        }
+      },
+      {
+        $setWindowFields: {
+          partitionBy: '$batchType',
+          sortBy: { compositeScore: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
+    ];
+
+    const participants = await Participant.aggregate(pipeline as any[]);
+    
+    // Filter to only 1-X rank holders
+    const targetParticipants = participants.filter(participant => {
+      const rank = participant.result ? (participant.result.rank || participant.calculatedRank) : null;
+      return rank !== null && rank <= maxRank;
+    });
+
+    if (targetParticipants.length === 0) {
+      return res.json({ message: `No completed results found with rank 1 to ${maxRank}` });
+    }
+
+    const dateStr = portalConfig?.prizeDistributionDate
+      ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'TBA';
+    const timeStr = portalConfig?.prizeDistributionTime || 'TBA';
+    const venueStr = portalConfig?.prizeDistributionVenue || 'TBA';
+    const mapUrlStr = portalConfig?.prizeDistributionMapUrl || 'TBA';
+
+    console.log(`[Bulk Result Prize Location] Starting bulk send to ${targetParticipants.length} participants with rank 1 to ${maxRank}...`);
+
+    // Respond immediately to avoid request timeouts
+    res.json({ message: `Bulk send started in background for ${targetParticipants.length} participants (ranks 1 to ${maxRank})` });
+
+    // Background sending execution loop
+    (async () => {
+      let sentCount = 0;
+      let failedCount = 0;
+      const currentYear = new Date().getFullYear().toString();
+      const prizesAwardedToText = `all rank holders from 1st to ${getOrdinal(maxRank)} rank`;
+
+      for (const participant of targetParticipants) {
+        try {
+          const rank = participant.result ? (participant.result.rank || participant.calculatedRank) : null;
+          const rankStr = rank ? getOrdinal(rank) : 'N/A';
+
+          await sendWinnerTemplate(participant.mobileNumber, {
+            name: participant.name,
+            rank: rankStr,
+            year: currentYear,
+            prizesAwardedTo: prizesAwardedToText,
+            date: dateStr,
+            time: timeStr,
+            venue: venueStr,
+            mapUrl: mapUrlStr,
+          });
+          sentCount++;
+          // Pause slightly to rate-limit calls to Meta
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (err) {
+          console.error(`[Bulk Result Prize Location] Failed to send to ${participant.mobileNumber}:`, err);
+          failedCount++;
+        }
+      }
+      console.log(`[Bulk Result Prize Location] Completed bulk send. Success: ${sentCount}, Failed: ${failedCount}`);
+    })();
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to initiate bulk send' });
+  }
+});
+
+
 // GET /api/admin/portal/fees
 adminRouter.get('/portal/fees', async (_req: AuthRequest, res: Response) => {
   try {

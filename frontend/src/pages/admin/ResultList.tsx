@@ -56,6 +56,9 @@ export function ResultList() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [maxRank, setMaxRank] = useState(13);
+  const [sendingBulk, setSendingBulk] = useState(false);
+  const [bulkSuccessMessage, setBulkSuccessMessage] = useState('');
 
   const exportCsv = async () => {
     setExporting(true);
@@ -98,6 +101,7 @@ export function ResultList() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setBulkSuccessMessage('');
     try {
       const response = await adminApi.getResultsList(params);
       setRecords(response.data.results || []);
@@ -114,6 +118,29 @@ export function ResultList() {
       setLoading(false);
     }
   }, [params]);
+
+  const sendPrizeBulk = async () => {
+    const confirmSend = window.confirm(
+      `Are you sure you want to send prize distribution WhatsApp invitations to all rank holders from rank 1 to ${maxRank}?`
+    );
+    if (!confirmSend) return;
+
+    setSendingBulk(true);
+    setBulkSuccessMessage('');
+    setError('');
+    try {
+      const response = await adminApi.sendPrizeLocationBulkResults(maxRank);
+      setBulkSuccessMessage(response.data.message || 'Bulk invitations initiated successfully.');
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          'Failed to send bulk prize invitations.'
+      );
+    } finally {
+      setSendingBulk(false);
+    }
+  };
 
   useEffect(() => {
     load();
@@ -141,10 +168,34 @@ export function ResultList() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{pagination.total} result records</p>
         </div>
-        <Button variant="outline" onClick={exportCsv} disabled={exporting || loading}>
-          {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-          Export CSV
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 bg-background border rounded-md px-3 py-1.5 shadow-sm text-sm">
+            <span className="text-muted-foreground font-medium">Top Ranks to Invite (1 to X):</span>
+            <Input
+              type="number"
+              min="1"
+              value={maxRank}
+              onChange={(e) => setMaxRank(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-16 h-8 text-center"
+            />
+          </div>
+          <Button
+            variant="default"
+            onClick={sendPrizeBulk}
+            disabled={sendingBulk || loading}
+          >
+            {sendingBulk ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trophy className="mr-2 h-4 w-4" />
+            )}
+            Send Prize Invitations
+          </Button>
+          <Button variant="outline" onClick={exportCsv} disabled={exporting || loading}>
+            {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -206,6 +257,12 @@ export function ResultList() {
       {error && (
         <Card size="sm" className="border-destructive/30">
           <CardContent className="text-sm text-destructive">{error}</CardContent>
+        </Card>
+      )}
+
+      {bulkSuccessMessage && (
+        <Card size="sm" className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="text-sm text-emerald-600">{bulkSuccessMessage}</CardContent>
         </Card>
       )}
 
