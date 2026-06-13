@@ -426,3 +426,29 @@ export async function sendCustomMessage(mobileNumber: string, message: string): 
 
   await sendMetaTextMessage(mobileNumber, message);
 }
+
+/**
+ * Sends a generic message using the approved 'general' template
+ * Template: general (en, UTILITY)
+ * Body: Dear Candidate,\n{{1}}\n\nIf you have any questions, please contact our support team.\nSubodh Kumar: 6207782702
+ */
+export async function sendGeneralTemplate(
+  mobileNumber: string,
+  bodyText: string
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] General template → ${mobileNumber}: ${bodyText}`);
+    return;
+  }
+
+  await sendMetaTemplate(mobileNumber, 'general', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: bodyText },
+      ],
+    },
+  ]);
+}

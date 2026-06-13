@@ -9,7 +9,7 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates, sendEventLocation } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates, sendEventLocation, sendGeneralTemplate } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
 import { startAdmitCardQueue, getAdmitCardQueueStatus, stopAdmitCardQueue, resetAdmitCardQueueState } from '../services/admitCardQueue';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
@@ -852,7 +852,51 @@ adminRouter.get('/registrations/vcard', async (req: AuthRequest, res: Response) 
       ];
     }
 
-    const participants = await Participant.find(filter).sort({ name: 1 }).lean();
+    const pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'results',
+          localField: '_id',
+          foreignField: 'participantId',
+          as: 'result',
+        },
+      },
+      {
+        $unwind: {
+          path: '$result',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          compositeScore: {
+            $cond: {
+              if: { $gt: ['$result.score', null] },
+              then: {
+                $subtract: [
+                  { $multiply: ['$result.score', 100000] },
+                  { $ifNull: ['$result.negativeMarks', 0] }
+                ]
+              },
+              else: -999999
+            }
+          }
+        }
+      },
+      {
+        $setWindowFields: {
+          partitionBy: '$batchType',
+          sortBy: { compositeScore: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
+      { $sort: { name: 1 } }
+    ];
+
+    const participants = await Participant.aggregate(pipeline as any[]);
     
     const currentYear = new Date().getFullYear();
     const vcardContent = participants.map((p) => {
@@ -881,12 +925,22 @@ adminRouter.get('/registrations/vcard', async (req: AuthRequest, res: Response) 
         lines.push(`EMAIL;TYPE=PREF,INTERNET:${p.email.trim()}`);
       }
 
-      const notes = [
+      const notesList = [
         `Roll Number: ${p.rollNumber || 'N/A'}`,
         `Class: ${p.class || 'N/A'}`,
         `Batch: ${p.batchType || 'N/A'}`,
         `Guardian: ${p.guardianName || 'N/A'}`,
-      ].join(', ');
+      ];
+
+      if (p.result && typeof p.result.score === 'number') {
+        notesList.push(`Score: ${p.result.score}`);
+        const rank = p.result.rank || p.calculatedRank;
+        if (rank && p.compositeScore > -999999) {
+          notesList.push(`Rank: #${rank}`);
+        }
+      }
+
+      const notes = notesList.join(', ');
       lines.push(`NOTE:${notes}`);
 
       lines.push('END:VCARD');
@@ -1048,16 +1102,17 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
       return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
     }
 
-    let mapShortSuffix = venueMapUrl;
-    const gooGlMatch = venueMapUrl.match(/maps\.app\.goo\.gl\/(.+)/);
-    if (gooGlMatch) {
-      mapShortSuffix = gooGlMatch[1];
-    }
-
     const participants = await Participant.find({ paymentStatus: 'COMPLETED' });
     if (participants.length === 0) {
       return res.json({ message: 'No completed registrations found to send details' });
     }
+
+    const dateStr = portalConfig?.prizeDistributionDate
+      ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'TBA';
+    const timeStr = portalConfig?.prizeDistributionTime || 'TBA';
+    const venueStr = portalConfig?.prizeDistributionVenue || 'TBA';
+    const mapUrlStr = portalConfig?.prizeDistributionMapUrl || 'TBA';
 
     console.log(`[Bulk Prize Location] Starting bulk send to ${participants.length} participants...`);
 
@@ -1070,13 +1125,17 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
       let failedCount = 0;
       for (const participant of participants) {
         try {
-          await sendEventLocation(participant.mobileNumber, {
-            name: participant.name,
-            eventType: 'Prize Distribution Ceremony',
-            address: venue,
-            mapUrl: venueMapUrl,
-            mapShortSuffix,
-          });
+          const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony.
+
+Prizes are awarded to all rank holders from 1st to 13th rank.
+
+📍 Venue Details & Time:
+Date: ${dateStr}
+Time: ${timeStr}
+Venue: ${venueStr}
+Map Location: ${mapUrlStr}`;
+
+          await sendGeneralTemplate(participant.mobileNumber, bodyText);
           sentCount++;
           // Pause slightly to rate-limit calls to Meta
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -1109,19 +1168,24 @@ adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthReque
       return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
     }
 
-    let mapShortSuffix = venueMapUrl;
-    const gooGlMatch = venueMapUrl.match(/maps\.app\.goo\.gl\/(.+)/);
-    if (gooGlMatch) {
-      mapShortSuffix = gooGlMatch[1];
-    }
+    const dateStr = portalConfig?.prizeDistributionDate
+      ? new Date(portalConfig.prizeDistributionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+      : 'TBA';
+    const timeStr = portalConfig?.prizeDistributionTime || 'TBA';
+    const venueStr = portalConfig?.prizeDistributionVenue || 'TBA';
+    const mapUrlStr = portalConfig?.prizeDistributionMapUrl || 'TBA';
 
-    await sendEventLocation(participant.mobileNumber, {
-      name: participant.name,
-      eventType: 'Prize Distribution Ceremony',
-      address: venue,
-      mapUrl: venueMapUrl,
-      mapShortSuffix,
-    });
+    const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony.
+
+Prizes are awarded to all rank holders from 1st to 13th rank.
+
+📍 Venue Details & Time:
+Date: ${dateStr}
+Time: ${timeStr}
+Venue: ${venueStr}
+Map Location: ${mapUrlStr}`;
+
+    await sendGeneralTemplate(participant.mobileNumber, bodyText);
 
     return res.json({ message: 'Prize distribution location details sent successfully' });
   } catch (err) {
