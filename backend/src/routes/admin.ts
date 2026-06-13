@@ -816,10 +816,11 @@ adminRouter.post('/results/send-prize-location-bulk', async (req: AuthRequest, r
         try {
           const rank = participant.result ? (participant.result.rank || participant.calculatedRank) : null;
           const rankStr = rank ? getOrdinal(rank) : 'N/A';
+          const formattedRank = rankStr !== 'N/A' ? `*${rankStr}*` : 'N/A';
 
           await sendWinnerTemplate(participant.mobileNumber, {
             name: participant.name,
-            rank: rankStr,
+            rank: formattedRank,
             year: currentYear,
             prizesAwardedTo: prizesAwardedToText,
             date: dateStr,
@@ -1301,10 +1302,11 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
           const hasResult = participant.result && typeof participant.result.score === 'number';
           const rank = hasResult ? (participant.result.rank || participant.calculatedRank) : null;
           const rankStr = rank ? getOrdinal(rank) : 'N/A';
+          const formattedRank = rankStr !== 'N/A' ? `*${rankStr}*` : 'N/A';
 
           await sendWinnerTemplate(participant.mobileNumber, {
             name: participant.name,
-            rank: rankStr,
+            rank: formattedRank,
             year: currentYear,
             prizesAwardedTo: 'all rank holders from 1st to 13th rank',
             date: dateStr,
@@ -1399,10 +1401,11 @@ adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthReque
     const hasResult = participant.result && typeof participant.result.score === 'number';
     const rank = hasResult ? (participant.result.rank || participant.calculatedRank) : null;
     const rankStr = rank ? getOrdinal(rank) : 'N/A';
+    const formattedRank = rankStr !== 'N/A' ? `*${rankStr}*` : 'N/A';
 
     await sendWinnerTemplate(participant.mobileNumber, {
       name: participant.name,
-      rank: rankStr,
+      rank: formattedRank,
       year: currentYear,
       prizesAwardedTo: 'all rank holders from 1st to 13th rank',
       date: dateStr,
