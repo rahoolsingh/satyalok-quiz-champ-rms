@@ -1178,22 +1178,18 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
         try {
           const hasResult = participant.result && typeof participant.result.score === 'number';
           const rank = hasResult ? (participant.result.rank || participant.calculatedRank) : null;
+          const rankStr = rank ? getOrdinal(rank) : 'N/A';
 
-          if (rank && rank >= 1 && rank <= 13) {
-            await sendWinnerTemplate(participant.mobileNumber, {
-              name: participant.name,
-              rank: getOrdinal(rank),
-              year: currentYear,
-              prizesAwardedTo: 'all rank holders from 1st to 13th rank',
-              date: dateStr,
-              time: timeStr,
-              venue: venueStr,
-              mapUrl: mapUrlStr,
-            });
-          } else {
-            const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
-            await sendGeneralTemplate(participant.mobileNumber, bodyText);
-          }
+          await sendWinnerTemplate(participant.mobileNumber, {
+            name: participant.name,
+            rank: rankStr,
+            year: currentYear,
+            prizesAwardedTo: 'all rank holders from 1st to 13th rank',
+            date: dateStr,
+            time: timeStr,
+            venue: venueStr,
+            mapUrl: mapUrlStr,
+          });
           sentCount++;
           // Pause slightly to rate-limit calls to Meta
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -1280,22 +1276,18 @@ adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthReque
     const currentYear = new Date().getFullYear().toString();
     const hasResult = participant.result && typeof participant.result.score === 'number';
     const rank = hasResult ? (participant.result.rank || participant.calculatedRank) : null;
+    const rankStr = rank ? getOrdinal(rank) : 'N/A';
 
-    if (rank && rank >= 1 && rank <= 13) {
-      await sendWinnerTemplate(participant.mobileNumber, {
-        name: participant.name,
-        rank: getOrdinal(rank),
-        year: currentYear,
-        prizesAwardedTo: 'all rank holders from 1st to 13th rank',
-        date: dateStr,
-        time: timeStr,
-        venue: venueStr,
-        mapUrl: mapUrlStr,
-      });
-    } else {
-      const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
-      await sendGeneralTemplate(participant.mobileNumber, bodyText);
-    }
+    await sendWinnerTemplate(participant.mobileNumber, {
+      name: participant.name,
+      rank: rankStr,
+      year: currentYear,
+      prizesAwardedTo: 'all rank holders from 1st to 13th rank',
+      date: dateStr,
+      time: timeStr,
+      venue: venueStr,
+      mapUrl: mapUrlStr,
+    });
 
     return res.json({ message: 'Prize distribution location details sent successfully' });
   } catch (err) {
