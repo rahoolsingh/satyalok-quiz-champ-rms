@@ -1125,15 +1125,7 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
       let failedCount = 0;
       for (const participant of participants) {
         try {
-          const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony.
-
-Prizes are awarded to all rank holders from 1st to 13th rank.
-
-📍 Venue Details & Time:
-Date: ${dateStr}
-Time: ${timeStr}
-Venue: ${venueStr}
-Map Location: ${mapUrlStr}`;
+          const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
 
           await sendGeneralTemplate(participant.mobileNumber, bodyText);
           sentCount++;
@@ -1175,15 +1167,7 @@ adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthReque
     const venueStr = portalConfig?.prizeDistributionVenue || 'TBA';
     const mapUrlStr = portalConfig?.prizeDistributionMapUrl || 'TBA';
 
-    const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony.
-
-Prizes are awarded to all rank holders from 1st to 13th rank.
-
-📍 Venue Details & Time:
-Date: ${dateStr}
-Time: ${timeStr}
-Venue: ${venueStr}
-Map Location: ${mapUrlStr}`;
+    const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
 
     await sendGeneralTemplate(participant.mobileNumber, bodyText);
 
