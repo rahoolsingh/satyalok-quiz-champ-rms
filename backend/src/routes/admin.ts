@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -9,13 +10,19 @@ import { AdminUser, PortalConfig, SliderImage, Participant, Result, IPortalConfi
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validateImageFormat } from '../services/validation';
 import { isValidRollNumber } from '../services/rollNumber';
-import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates, sendEventLocation, sendGeneralTemplate } from '../services/whatsapp';
+import { sendGroupInvite, sendAdmitCardReminder, sendPaymentReminder, sendThankYouMessage, sendImportantDates, sendEventLocation, sendGeneralTemplate, sendWinnerTemplate } from '../services/whatsapp';
 import { getPortalConfig } from '../services/portalState';
 import { startAdmitCardQueue, getAdmitCardQueueStatus, stopAdmitCardQueue, resetAdmitCardQueueState } from '../services/admitCardQueue';
 import { uploadToS3, deleteFromS3 } from '../services/storage';
 import { ManualStatus } from '../types';
 
 export const adminRouter = Router();
+
+function getOrdinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB
 const DEFAULT_FEE_JUNIOR = 100;
@@ -1102,7 +1109,50 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
       return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
     }
 
-    const participants = await Participant.find({ paymentStatus: 'COMPLETED' });
+    const pipeline = [
+      { $match: { paymentStatus: 'COMPLETED' } },
+      {
+        $lookup: {
+          from: 'results',
+          localField: '_id',
+          foreignField: 'participantId',
+          as: 'result',
+        },
+      },
+      {
+        $unwind: {
+          path: '$result',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          compositeScore: {
+            $cond: {
+              if: { $gt: ['$result.score', null] },
+              then: {
+                $subtract: [
+                  { $multiply: ['$result.score', 100000] },
+                  { $ifNull: ['$result.negativeMarks', 0] }
+                ]
+              },
+              else: -999999
+            }
+          }
+        }
+      },
+      {
+        $setWindowFields: {
+          partitionBy: '$batchType',
+          sortBy: { compositeScore: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
+    ];
+
+    const participants = await Participant.aggregate(pipeline as any[]);
     if (participants.length === 0) {
       return res.json({ message: 'No completed registrations found to send details' });
     }
@@ -1123,11 +1173,27 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
     (async () => {
       let sentCount = 0;
       let failedCount = 0;
+      const currentYear = new Date().getFullYear().toString();
       for (const participant of participants) {
         try {
-          const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
+          const hasResult = participant.result && typeof participant.result.score === 'number';
+          const rank = hasResult ? (participant.result.rank || participant.calculatedRank) : null;
 
-          await sendGeneralTemplate(participant.mobileNumber, bodyText);
+          if (rank && rank >= 1 && rank <= 13) {
+            await sendWinnerTemplate(participant.mobileNumber, {
+              name: participant.name,
+              rank: getOrdinal(rank),
+              year: currentYear,
+              prizesAwardedTo: 'all rank holders from 1st to 13th rank',
+              date: dateStr,
+              time: timeStr,
+              venue: venueStr,
+              mapUrl: mapUrlStr,
+            });
+          } else {
+            const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
+            await sendGeneralTemplate(participant.mobileNumber, bodyText);
+          }
           sentCount++;
           // Pause slightly to rate-limit calls to Meta
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -1147,17 +1213,61 @@ adminRouter.post('/registrations/send-prize-location-bulk', async (req: AuthRequ
 // POST /api/admin/registrations/:id/send-prize-location — send prize distribution venue/map to individual registration
 adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthRequest, res: Response) => {
   try {
-    const participant = await Participant.findById(req.params.id);
-    if (!participant) {
-      return res.status(404).json({ error: 'Participant not found' });
-    }
-
     const portalConfig = await PortalConfig.findOne({});
     const venue = portalConfig?.prizeDistributionVenue;
     const venueMapUrl = portalConfig?.prizeDistributionMapUrl;
 
     if (!venue || !venueMapUrl) {
       return res.status(400).json({ error: 'Prize distribution venue or map URL is not configured' });
+    }
+
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'results',
+          localField: '_id',
+          foreignField: 'participantId',
+          as: 'result',
+        },
+      },
+      {
+        $unwind: {
+          path: '$result',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          compositeScore: {
+            $cond: {
+              if: { $gt: ['$result.score', null] },
+              then: {
+                $subtract: [
+                  { $multiply: ['$result.score', 100000] },
+                  { $ifNull: ['$result.negativeMarks', 0] }
+                ]
+              },
+              else: -999999
+            }
+          }
+        }
+      },
+      {
+        $setWindowFields: {
+          partitionBy: '$batchType',
+          sortBy: { compositeScore: -1 },
+          output: {
+            calculatedRank: { $denseRank: {} },
+          },
+        },
+      },
+    ];
+
+    const participants = await Participant.aggregate(pipeline as any[]);
+    const participant = participants.find(p => p._id.toString() === req.params.id);
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
     }
 
     const dateStr = portalConfig?.prizeDistributionDate
@@ -1167,9 +1277,25 @@ adminRouter.post('/registrations/:id/send-prize-location', async (req: AuthReque
     const venueStr = portalConfig?.prizeDistributionVenue || 'TBA';
     const mapUrlStr = portalConfig?.prizeDistributionMapUrl || 'TBA';
 
-    const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
+    const currentYear = new Date().getFullYear().toString();
+    const hasResult = participant.result && typeof participant.result.score === 'number';
+    const rank = hasResult ? (participant.result.rank || participant.calculatedRank) : null;
 
-    await sendGeneralTemplate(participant.mobileNumber, bodyText);
+    if (rank && rank >= 1 && rank <= 13) {
+      await sendWinnerTemplate(participant.mobileNumber, {
+        name: participant.name,
+        rank: getOrdinal(rank),
+        year: currentYear,
+        prizesAwardedTo: 'all rank holders from 1st to 13th rank',
+        date: dateStr,
+        time: timeStr,
+        venue: venueStr,
+        mapUrl: mapUrlStr,
+      });
+    } else {
+      const bodyText = `Congratulations on completing the Quiz Champ! You are cordially invited to the Prize Distribution Ceremony. Prizes are awarded to all rank holders from 1st to 13th rank. 📍 Venue Details & Time: Date: ${dateStr}, Time: ${timeStr}, Venue: ${venueStr}, Map Location: ${mapUrlStr}`;
+      await sendGeneralTemplate(participant.mobileNumber, bodyText);
+    }
 
     return res.json({ message: 'Prize distribution location details sent successfully' });
   } catch (err) {

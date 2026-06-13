@@ -452,3 +452,46 @@ export async function sendGeneralTemplate(
     },
   ]);
 }
+
+export interface WinnerTemplateData {
+  name: string;
+  rank: string;
+  year: string;
+  prizesAwardedTo: string;
+  date: string;
+  time: string;
+  venue: string;
+  mapUrl: string;
+}
+
+/**
+ * Sends congratulations and prize ceremony invitation via approved 'quizchamp_winner' template
+ * Template: quizchamp_winner (en, UTILITY)
+ */
+export async function sendWinnerTemplate(
+  mobileNumber: string,
+  data: WinnerTemplateData
+): Promise<void> {
+  const provider = process.env.WHATSAPP_PROVIDER || 'mock';
+
+  if (provider === 'mock') {
+    console.log(`[MOCK WhatsApp] Winner template → ${mobileNumber}: Rank ${data.rank}`);
+    return;
+  }
+
+  await sendMetaTemplate(mobileNumber, 'quizchamp_winner', 'en', [
+    {
+      type: 'body',
+      parameters: [
+        { type: 'text', text: data.name },
+        { type: 'text', text: data.rank },
+        { type: 'text', text: data.year },
+        { type: 'text', text: data.prizesAwardedTo },
+        { type: 'text', text: data.date },
+        { type: 'text', text: data.time },
+        { type: 'text', text: data.venue },
+        { type: 'text', text: data.mapUrl },
+      ],
+    },
+  ]);
+}
